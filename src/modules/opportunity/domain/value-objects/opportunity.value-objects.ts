@@ -1,5 +1,6 @@
 export * from './money.vo';
 export * from './relevance-score.vo';
+export * from './opportunity-filters';
 
 export interface Location {
   readonly city: string | null;
