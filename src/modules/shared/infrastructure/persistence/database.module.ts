@@ -10,10 +10,10 @@ export const DATABASE_POOL = Symbol('DATABASE_POOL');
     {
       provide: DATABASE_POOL,
       useFactory: () => {
-        const connectionString =
-          process.env.DATABASE_URL ||
-          process.env.TEST_DATABASE_URL ||
-          'postgres://postgres:postgres@localhost:5433/pliegos_test';
+        const connectionString = process.env.DATABASE_URL;
+        if (!connectionString) {
+          throw new Error('DATABASE_URL is not set');
+        }
         return new Pool({ connectionString });
       },
     },

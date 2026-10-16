@@ -1,3 +1,4 @@
+import { requireTestDatabaseUrl } from '../modules/shared/testing/test-database-url';
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import supertest from 'supertest';
@@ -27,10 +28,7 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
   let alertRepo: AlertRepositoryPort;
 
   beforeAll(async () => {
-    const testDbUrl =
-      process.env.DATABASE_URL ||
-      process.env.TEST_DATABASE_URL ||
-      'postgres://postgres:postgres@localhost:5433/pliegos_test';
+    const testDbUrl = requireTestDatabaseUrl();
 
     pool = new Pool({ connectionString: testDbUrl });
     await initDatabaseSchema(pool);

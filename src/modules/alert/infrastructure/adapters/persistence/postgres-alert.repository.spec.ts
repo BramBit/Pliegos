@@ -1,3 +1,4 @@
+import { requireTestDatabaseUrl } from '../../../../shared/testing/test-database-url';
 import { Pool } from 'pg';
 import { PostgresAlertRepository } from './postgres-alert.repository';
 import { initDatabaseSchema } from '../../../../shared/infrastructure/persistence/database.schema';
@@ -8,8 +9,7 @@ import {
   asOpportunityId,
 } from '../../../../shared/domain/typed-id';
 
-const TEST_DATABASE_URL =
-  process.env.TEST_DATABASE_URL || 'postgres://postgres:postgres@localhost:5433/pliegos_test';
+const TEST_DATABASE_URL = requireTestDatabaseUrl();
 
 describe('PostgresAlertRepository (Real Test Database)', () => {
   let pool: Pool;
