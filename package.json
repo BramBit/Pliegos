@@ -10,6 +10,7 @@
     "start:dev": "tsc && node --watch dist/src/main.js",
     "db:migrate": "tsc && node dist/scripts/migrate.js",
     "db:init": "pnpm db:migrate",
+    "audit:data": "tsc && node dist/scripts/audit-data.js",
     "test": "CI=true NODE_OPTIONS=--experimental-vm-modules jest",
     "test:watch": "NODE_OPTIONS=--experimental-vm-modules jest --watch",
     "test:cov": "CI=true NODE_OPTIONS=--experimental-vm-modules jest --coverage",
