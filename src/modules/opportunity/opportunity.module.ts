@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
-import { Pool } from 'pg';
+import { BullModule, getQueueToken } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
+import { Pool } from 'pg';
 import { DATABASE_POOL } from '../shared/infrastructure/persistence/database.module';
 import { AiModule } from '../shared/infrastructure/ai/ai.module';
 import { AI_PROVIDER_PORT, AIProviderPort } from '../recommendation/domain/ports/ai-provider.port';
@@ -17,10 +18,11 @@ import {
 } from './infrastructure/adapters/queue/bullmq-analysis-queue.adapter';
 import { SyncOpportunitiesUseCase } from './application/use-cases/sync-opportunities.use-case';
 import { SearchOpportunitiesUseCase } from './application/use-cases/search-opportunities.use-case';
+import { AnalyzeOpportunityJob } from './infrastructure/jobs/analyze-opportunity.job';
 import { OpportunityController } from './infrastructure/controllers/opportunity.controller';
 
 @Module({
-  imports: [AiModule],
+  imports: [AiModule, BullModule.registerQueue({ name: ANALYSIS_QUEUE_NAME })],
   controllers: [OpportunityController],
   providers: [
     {
@@ -41,17 +43,10 @@ import { OpportunityController } from './infrastructure/controllers/opportunity.
     },
     {
       provide: ANALYSIS_QUEUE_PORT,
-      useFactory: () => {
-        const queue = new Queue(ANALYSIS_QUEUE_NAME, {
-          connection: {
-            host: process.env.REDIS_HOST || 'localhost',
-            port: Number(process.env.REDIS_PORT) || 6379,
-            maxRetriesPerRequest: null,
-          },
-        });
-        return new BullMQAnalysisQueueAdapter(queue);
-      },
+      useFactory: (queue: Queue) => new BullMQAnalysisQueueAdapter(queue),
+      inject: [getQueueToken(ANALYSIS_QUEUE_NAME)],
     },
+    AnalyzeOpportunityJob,
     {
       provide: SyncOpportunitiesUseCase,
       useFactory: (source, repo, queue) => new SyncOpportunitiesUseCase(source, repo, queue),

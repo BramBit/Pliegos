@@ -1,4 +1,4 @@
-import { Injectable, Logger, LoggerService } from '@nestjs/common';
+import { Inject, Injectable, Logger, LoggerService, Optional } from '@nestjs/common';
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
 import {
@@ -6,9 +6,15 @@ import {
   ANALYZE_OPPORTUNITY_JOB_NAME,
   AnalyzeOpportunityJobPayload,
 } from '../adapters/queue/bullmq-analysis-queue.adapter';
-import { OpportunityRepositoryPort } from '../../domain/ports/opportunity.repository.port';
-import { AIProviderPort } from '../../../recommendation/domain/ports/ai-provider.port';
-import { SearchIndexPort } from '../../domain/ports/search-index.port';
+import {
+  OPPORTUNITY_REPOSITORY_PORT,
+  OpportunityRepositoryPort,
+} from '../../domain/ports/opportunity.repository.port';
+import {
+  AI_PROVIDER_PORT,
+  AIProviderPort,
+} from '../../../recommendation/domain/ports/ai-provider.port';
+import { SEARCH_INDEX_PORT, SearchIndexPort } from '../../domain/ports/search-index.port';
 import { withOpportunityAnalysis } from '../../domain/entities/opportunity.entity';
 import { Requirement } from '../../domain/value-objects/opportunity.value-objects';
 
@@ -17,16 +23,19 @@ export interface IJobLike<T = any> {
   id?: string;
 }
 
-@Processor(ANALYSIS_QUEUE_NAME)
+@Processor(ANALYSIS_QUEUE_NAME, {
+  concurrency: Number(process.env.ANALYSIS_CONCURRENCY) || 2,
+})
 @Injectable()
 export class AnalyzeOpportunityJob extends WorkerHost {
   private readonly logger: LoggerService;
 
   constructor(
+    @Inject(OPPORTUNITY_REPOSITORY_PORT)
     private readonly opportunityRepository: OpportunityRepositoryPort,
-    private readonly aiProvider: AIProviderPort,
-    private readonly searchIndex: SearchIndexPort,
-    logger?: LoggerService,
+    @Inject(AI_PROVIDER_PORT) private readonly aiProvider: AIProviderPort,
+    @Inject(SEARCH_INDEX_PORT) private readonly searchIndex: SearchIndexPort,
+    @Optional() @Inject('ANALYSIS_JOB_LOGGER') logger?: LoggerService,
   ) {
     super();
     this.logger = logger ?? new Logger(AnalyzeOpportunityJob.name);
@@ -62,7 +71,9 @@ export class AnalyzeOpportunityJob extends WorkerHost {
       .join('. ');
 
     // 2. Generate concise Spanish analytical summary via local chat model (llama3.1)
-    const summary = await this.aiProvider.summarize(textToAnalyze);
+    // Set ANALYSIS_SUMMARIZE=false for a fast embeddings-only bulk load (skips the slow LLM call)
+    const summary =
+      process.env.ANALYSIS_SUMMARIZE === 'false' ? '' : await this.aiProvider.summarize(textToAnalyze);
 
     // 3. Extract baseline requirements
     const requirements: Requirement[] = [

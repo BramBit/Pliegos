@@ -49,7 +49,7 @@ describe('SecopAdapter', () => {
 
       const parsedUrl = new URL(calledUrl);
       expect(parsedUrl.origin + parsedUrl.pathname).toBe(DEFAULT_SECOP_ENDPOINT);
-      expect(parsedUrl.searchParams.get('$order')).toBe('fecha_de_publicacion_del DESC');
+      expect(parsedUrl.searchParams.get('$order')).toBe('fecha_de_publicacion_del DESC, id_del_proceso ASC');
       expect(parsedUrl.searchParams.get('$where')).toBeNull();
       expect(result).toHaveLength(sampleFixture.length);
       expect(result[0].id_del_proceso).toBe('CO1.REQ.7128715');
@@ -75,8 +75,9 @@ describe('SecopAdapter', () => {
       await adapter.fetchLatest(since);
 
       const parsedUrl = new URL(calledUrl);
-      expect(parsedUrl.searchParams.get('$where')).toBe(`fecha_de_publicacion_del >= '${since.toISOString()}'`);
-      expect(parsedUrl.searchParams.get('$order')).toBe('fecha_de_publicacion_del DESC');
+      const expectedSoqlDate = since.toISOString().replace(/Z$/, '');
+      expect(parsedUrl.searchParams.get('$where')).toBe(`fecha_de_publicacion_del >= '${expectedSoqlDate}'`);
+      expect(parsedUrl.searchParams.get('$order')).toBe('fecha_de_publicacion_del DESC, id_del_proceso ASC');
     });
 
     it('throws error when SECOP endpoint returns non-200 HTTP status', async () => {
@@ -91,11 +92,103 @@ describe('SecopAdapter', () => {
       const adapter = new SecopAdapter({
         fetchFn: mockFetch,
         logger: fakeLogger,
+        sleepFn: async () => undefined,
       });
 
       await expect(adapter.fetchLatest()).rejects.toThrow(
         'Failed to fetch from SECOP endpoint (https://www.datos.gov.co/resource/p6dx-8zbt.json): HTTP 503 Service Unavailable',
       );
+    });
+  });
+
+  describe('pagination and resilience', () => {
+    const makePage = (n: number, start = 0) =>
+      Array.from({ length: n }, (_, i) => ({ ...sampleFixture[0], id_del_proceso: `P${start + i}` }));
+
+    it('paginates with $limit/$offset until a short page is returned', async () => {
+      const urls: URL[] = [];
+      const pages = [makePage(3, 0), makePage(3, 3), makePage(1, 6)];
+      const mockFetch: typeof fetch = jest.fn(async (url: string | URL | Request) => {
+        urls.push(new URL(url.toString()));
+        return { ok: true, status: 200, json: async () => pages[urls.length - 1] } as Response;
+      });
+      const adapter = new SecopAdapter({ fetchFn: mockFetch, logger: fakeLogger, pageSize: 3 });
+
+      const result = await adapter.fetchLatest();
+
+      expect(result).toHaveLength(7);
+      expect(urls.map((u) => u.searchParams.get('$offset'))).toEqual(['0', '3', '6']);
+      expect(urls.every((u) => u.searchParams.get('$limit') === '3')).toBe(true);
+    });
+
+    it('stops at maxRecords and trims the last page limit', async () => {
+      const urls: URL[] = [];
+      const mockFetch: typeof fetch = jest.fn(async (url: string | URL | Request) => {
+        const u = new URL(url.toString());
+        urls.push(u);
+        return {
+          ok: true,
+          status: 200,
+          json: async () => makePage(Number(u.searchParams.get('$limit'))),
+        } as Response;
+      });
+      const adapter = new SecopAdapter({ fetchFn: mockFetch, logger: fakeLogger, pageSize: 3 });
+
+      const result = await adapter.fetchLatest(undefined, { maxRecords: 5 });
+
+      expect(result).toHaveLength(5);
+      expect(urls.map((u) => u.searchParams.get('$limit'))).toEqual(['3', '2']);
+    });
+
+    it('retries on HTTP 429 and 5xx with backoff, then succeeds', async () => {
+      const sleeps: number[] = [];
+      let calls = 0;
+      const mockFetch: typeof fetch = jest.fn(async () => {
+        calls++;
+        if (calls === 1) return { ok: false, status: 429, statusText: 'Too Many Requests' } as Response;
+        if (calls === 2) return { ok: false, status: 503, statusText: 'Unavailable' } as Response;
+        return { ok: true, status: 200, json: async () => makePage(1) } as Response;
+      });
+      const adapter = new SecopAdapter({
+        fetchFn: mockFetch,
+        logger: fakeLogger,
+        retryBaseDelayMs: 100,
+        sleepFn: async (ms) => {
+          sleeps.push(ms);
+        },
+      });
+
+      const result = await adapter.fetchLatest();
+
+      expect(result).toHaveLength(1);
+      expect(sleeps).toEqual([100, 200]);
+    });
+
+    it('does not retry non-retriable HTTP 4xx errors', async () => {
+      const mockFetch: typeof fetch = jest.fn(async () => {
+        return { ok: false, status: 400, statusText: 'Bad Request' } as Response;
+      });
+      const adapter = new SecopAdapter({
+        fetchFn: mockFetch,
+        logger: fakeLogger,
+        sleepFn: async () => undefined,
+      });
+
+      await expect(adapter.fetchLatest()).rejects.toThrow('HTTP 400');
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+    });
+
+    it('sends the Socrata app token header when configured', async () => {
+      let headers: Record<string, string> = {};
+      const mockFetch: typeof fetch = jest.fn(async (_url: string | URL | Request, init?: RequestInit) => {
+        headers = init?.headers as Record<string, string>;
+        return { ok: true, status: 200, json: async () => [] } as Response;
+      });
+      const adapter = new SecopAdapter({ fetchFn: mockFetch, logger: fakeLogger, appToken: 'tok' });
+
+      await adapter.fetchLatest();
+
+      expect(headers['X-App-Token']).toBe('tok');
     });
   });
 

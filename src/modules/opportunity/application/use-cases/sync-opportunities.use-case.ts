@@ -25,6 +25,7 @@ import { createMoney } from '../../domain/value-objects/money.vo';
 export interface ISyncOpportunitiesUseCase {
   execute(input: {
     since?: Date;
+    maxRecords?: number;
   }): Promise<Result<{ created: number; updated: number }, SourceUnavailableError>>;
 }
 
@@ -37,18 +38,34 @@ export class SyncOpportunitiesUseCase implements ISyncOpportunitiesUseCase {
 
   async execute(input: {
     since?: Date;
+    maxRecords?: number;
   }): Promise<Result<{ created: number; updated: number }, SourceUnavailableError>> {
-    let rawProcesses: RawSecopProcess[];
+    const counters = { created: 0, updated: 0 };
+    const fetchOptions = { maxRecords: input.maxRecords };
 
     try {
-      rawProcesses = await this.source.fetchLatest(input.since);
+      if (this.source.fetchPages) {
+        for await (const page of this.source.fetchPages(input.since, fetchOptions)) {
+          await this.processPage(page, counters);
+        }
+      } else {
+        const rawProcesses: RawSecopProcess[] = await this.source.fetchLatest(
+          input.since,
+          fetchOptions,
+        );
+        await this.processPage(rawProcesses, counters);
+      }
     } catch {
       return err(createSourceUnavailableError('SECOP'));
     }
 
-    let created = 0;
-    let updated = 0;
+    return ok(counters);
+  }
 
+  private async processPage(
+    rawProcesses: RawSecopProcess[],
+    counters: { created: number; updated: number },
+  ): Promise<void> {
     for (const raw of rawProcesses) {
       const existing = await this.repository.findByExternalId(raw.id_del_proceso);
 
@@ -59,7 +76,7 @@ export class SyncOpportunitiesUseCase implements ISyncOpportunitiesUseCase {
           if (this.analysisQueue) {
             await this.analysisQueue.enqueueAnalysis(newOppResult.value.id);
           }
-          created++;
+          counters.created++;
         }
       } else {
         const changes = this.detectDiff(existing, raw);
@@ -86,12 +103,10 @@ export class SyncOpportunitiesUseCase implements ISyncOpportunitiesUseCase {
           if (this.analysisQueue) {
             await this.analysisQueue.enqueueAnalysis(updatedOpp.id);
           }
-          updated++;
+          counters.updated++;
         }
       }
     }
-
-    return ok({ created, updated });
   }
 
   private mapToOpportunity(raw: RawSecopProcess): Result<Opportunity, unknown> {

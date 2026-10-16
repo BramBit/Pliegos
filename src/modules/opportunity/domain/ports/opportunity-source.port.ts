@@ -22,8 +22,15 @@ export interface RawSecopProcess {
   readonly respuestas_al_procedimiento?: string;
 }
 
+export interface SourceFetchOptions {
+  readonly pageSize?: number;
+  readonly maxRecords?: number;
+}
+
 export interface OpportunitySourcePort {
-  fetchLatest(since?: Date): Promise<RawSecopProcess[]>;
+  fetchLatest(since?: Date, options?: SourceFetchOptions): Promise<RawSecopProcess[]>;
+  /** Optional streaming variant for large loads (processes one page at a time). */
+  fetchPages?(since?: Date, options?: SourceFetchOptions): AsyncIterable<RawSecopProcess[]>;
 }
 
 export const OPPORTUNITY_SOURCE_PORT = Symbol('OPPORTUNITY_SOURCE_PORT');

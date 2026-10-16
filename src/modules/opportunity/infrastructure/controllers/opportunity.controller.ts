@@ -54,7 +54,10 @@ export class OpportunityController {
     body: SyncOpportunitiesDto,
   ) {
     const sinceDate = body.since ? new Date(body.since) : undefined;
-    const result = await this.syncOpportunitiesUseCase.execute({ since: sinceDate });
+    const result = await this.syncOpportunitiesUseCase.execute({
+      since: sinceDate,
+      maxRecords: body.maxRecords ?? (Number(process.env.SECOP_SYNC_MAX_RECORDS) || 5000),
+    });
 
     if (!result.ok) {
       throw new BadGatewayException({

@@ -145,8 +145,15 @@ export class PostgresOpportunityRepository implements OpportunityRepositoryPort 
       where.push(`amount <= $${params.length}`);
     }
 
+    if (filters.actionableOnly) {
+      where.push(`status IN ('Published', 'Amended')`);
+      where.push('(closing_date IS NULL OR closing_date >= NOW())');
+    }
+
+    const limit = Math.min(Math.max(Math.trunc(filters.limit ?? 100), 1), 1000);
+
     const whereSql = where.length > 0 ? `WHERE ${where.join(' AND ')}` : '';
-    const query = `SELECT * FROM opportunities ${whereSql} ORDER BY published_at DESC LIMIT 100;`;
+    const query = `SELECT * FROM opportunities ${whereSql} ORDER BY published_at DESC LIMIT ${limit};`;
 
     const res: QueryResult<OpportunityRow> = await this.pool.query(query, params);
     return res.rows.map((row) => this.mapRowToEntity(row));

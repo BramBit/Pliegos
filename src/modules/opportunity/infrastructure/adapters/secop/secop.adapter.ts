@@ -18,6 +18,18 @@ export interface SecopAdapterOptions {
   readonly endpointUrl?: string;
   readonly fetchFn?: typeof fetch;
   readonly logger?: LoggerService;
+  /** Socrata page size ($limit). Default 1000. */
+  readonly pageSize?: number;
+  /** Optional Socrata app token (X-App-Token) to avoid anonymous throttling. */
+  readonly appToken?: string;
+  readonly maxRetries?: number;
+  readonly retryBaseDelayMs?: number;
+  readonly sleepFn?: (ms: number) => Promise<void>;
+}
+
+export interface FetchOptions {
+  readonly pageSize?: number;
+  readonly maxRecords?: number;
 }
 
 export const DEFAULT_SECOP_ENDPOINT = 'https://www.datos.gov.co/resource/p6dx-8zbt.json';
@@ -27,40 +39,120 @@ export class SecopAdapter implements OpportunitySourcePort {
   private readonly endpointUrl: string;
   private readonly fetchFn: typeof fetch;
   private readonly logger: LoggerService;
+  private readonly pageSize: number;
+  private readonly appToken?: string;
+  private readonly maxRetries: number;
+  private readonly retryBaseDelayMs: number;
+  private readonly sleepFn: (ms: number) => Promise<void>;
 
   constructor(options?: SecopAdapterOptions) {
+    this.pageSize = options?.pageSize ?? (Number(process.env.SECOP_PAGE_SIZE) || 1000);
+    this.appToken = options?.appToken ?? process.env.SECOP_APP_TOKEN;
+    this.maxRetries = options?.maxRetries ?? 4;
+    this.retryBaseDelayMs = options?.retryBaseDelayMs ?? 1000;
+    this.sleepFn = options?.sleepFn ?? ((ms) => new Promise((r) => setTimeout(r, ms)));
     this.endpointUrl = options?.endpointUrl ?? DEFAULT_SECOP_ENDPOINT;
     this.fetchFn = options?.fetchFn ?? globalThis.fetch.bind(globalThis);
     this.logger = options?.logger ?? new Logger(SecopAdapter.name);
   }
 
   /**
-   * Fetches latest opportunities from the SECOP II dataset.
-   * If `since` is provided, filters via Socrata SoQL ($where).
+   * Fetches latest opportunities from the SECOP II dataset, paginating through Socrata
+   * until `maxRecords` is reached (default: all pages). Prefer `fetchPages` for large loads
+   * to avoid holding every record in memory.
    */
-  async fetchLatest(since?: Date): Promise<RawSecopProcess[]> {
+  async fetchLatest(since?: Date, options?: FetchOptions): Promise<RawSecopProcess[]> {
+    const all: RawSecopProcess[] = [];
+    for await (const page of this.fetchPages(since, options)) {
+      all.push(...page);
+    }
+    return all;
+  }
+
+  /**
+   * Streams SECOP II records page by page using Socrata `$limit`/`$offset` with a
+   * deterministic ordering (publication date + process id) so pages never overlap.
+   * Each page request is retried with exponential backoff on HTTP 429/5xx and network errors.
+   */
+  async *fetchPages(since?: Date, options?: FetchOptions): AsyncGenerator<RawSecopProcess[]> {
+    const pageSize = options?.pageSize ?? this.pageSize;
+    const maxRecords = options?.maxRecords ?? Number.POSITIVE_INFINITY;
+    let offset = 0;
+
+    while (offset < maxRecords) {
+      const limit = Math.min(pageSize, maxRecords - offset);
+      const page = await this.fetchPage(since, limit, offset);
+      if (page.length === 0) return;
+
+      yield page;
+      offset += page.length;
+      if (page.length < limit) return;
+    }
+  }
+
+  private async fetchPage(
+    since: Date | undefined,
+    limit: number,
+    offset: number,
+  ): Promise<RawSecopProcess[]> {
     const url = new URL(this.endpointUrl);
 
+    const clauses: string[] = [];
+
     if (since && !isNaN(since.getTime())) {
-      url.searchParams.set('$where', `fecha_de_publicacion_del >= '${since.toISOString()}'`);
+      // Socrata's floating_timestamp SoQL type requires ISO format without timezone 'Z'
+      const soqlDate = since.toISOString().replace(/Z$/, '');
+      clauses.push(`fecha_de_publicacion_del >= '${soqlDate}'`);
     }
 
-    url.searchParams.set('$order', 'fecha_de_publicacion_del DESC');
+    if (clauses.length > 0) {
+      url.searchParams.set('$where', clauses.join(' AND '));
+    }
+    url.searchParams.set('$order', 'fecha_de_publicacion_del DESC, id_del_proceso ASC');
+    url.searchParams.set('$limit', String(limit));
+    url.searchParams.set('$offset', String(offset));
 
-    const response = await this.fetchFn(url.toString(), {
-      method: 'GET',
-      headers: {
-        Accept: 'application/json',
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(
-        `Failed to fetch from SECOP endpoint (${this.endpointUrl}): HTTP ${response.status} ${response.statusText}`,
-      );
+    const headers: Record<string, string> = { Accept: 'application/json' };
+    if (this.appToken) {
+      headers['X-App-Token'] = this.appToken;
     }
 
-    return (await response.json()) as RawSecopProcess[];
+    let lastError: Error | undefined;
+    for (let attempt = 0; attempt <= this.maxRetries; attempt++) {
+      let retryAfterMs: number | undefined;
+      try {
+        const response = await this.fetchFn(url.toString(), { method: 'GET', headers });
+
+        if (response.ok) {
+          return (await response.json()) as RawSecopProcess[];
+        }
+
+        lastError = new Error(
+          `Failed to fetch from SECOP endpoint (${this.endpointUrl}): HTTP ${response.status} ${response.statusText}`,
+        );
+        const retriable = response.status === 429 || response.status >= 500;
+        if (!retriable) throw lastError;
+
+        const retryAfter = Number(response.headers?.get?.('Retry-After'));
+        if (Number.isFinite(retryAfter) && retryAfter > 0) retryAfterMs = retryAfter * 1000;
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error(String(error));
+        // Non-retriable HTTP errors were thrown above with an "HTTP 4xx" message
+        if (/HTTP 4\d\d/.test(lastError.message) && !/HTTP 429/.test(lastError.message)) {
+          throw lastError;
+        }
+      }
+
+      if (attempt < this.maxRetries) {
+        const delay = retryAfterMs ?? this.retryBaseDelayMs * 2 ** attempt;
+        this.logger.warn(
+          `SECOP page offset=${offset} failed (${lastError?.message}); retry ${attempt + 1}/${this.maxRetries} in ${delay}ms`,
+        );
+        await this.sleepFn(delay);
+      }
+    }
+
+    throw lastError ?? new Error('Failed to fetch from SECOP endpoint');
   }
 
   /**
