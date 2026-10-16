@@ -1,0 +1,314 @@
+### ==============================================================================
+### Pliegos — API REST Client Collection (Phase 1 MVP)
+### File: api.http (VS Code REST Client extension)
+### Description: Comprehensive manual testing and verification suite for every
+###              endpoint in Pliegos, including realistic Colombian SECOP II
+###              payloads, structured & semantic search, contractor profiles,
+###              explainable recommendations, feedback, and alerts.
+###
+### Execution Order:
+###   1. Docs: GET /reference and GET /api-json
+###   2. Sync: POST /opportunities/sync
+###   3. Search: POST /opportunities/search (hybrid, semantic-only, structured-only)
+###   4. Profiles: POST /profiles (configureProfileTech, configureProfileCivilInfra)
+###   5. Recommendations: GET /recommendations/:profileId
+###   6. Feedback: POST /recommendations/:id/feedback (Participate & Discard)
+###   7. Alerts: POST /alerts/review-follow-up
+###   8. Negative cases: invalid body (400), unknown profileId (404), invalid feedback (400)
+### ==============================================================================
+
+### Variables for request chaining
+@baseUrl = http://localhost:3000
+@profileId = d9b2d63d-a232-4d2c-8cb4-e5e6b72a44f1
+@recommendationId = 3bfc62c2-5918-426b-a908-660eb2e5a662
+
+### ==============================================================================
+### 1. API Documentation & OpenAPI Specification
+### ==============================================================================
+
+# Validates OpenAPI 3.0 specification generation from NestJS decorators
+# @name getOpenApiSpec
+GET {{baseUrl}}/api-json
+Accept: application/json
+
+###
+
+# Validates Scalar interactive documentation UI mounted on the server
+# @name getScalarDocs
+GET {{baseUrl}}/reference
+Accept: text/html
+
+### ==============================================================================
+### 2. Opportunities Ingestion (SECOP II Sync)
+### ==============================================================================
+
+# Validates ingestion of procurement processes from SECOP II / Socrata API,
+# verifying the ISO 8601 date filter, normalizing tenders to Opportunity entities,
+# persisting them in PostgreSQL, and enqueuing async AI analysis jobs in BullMQ.
+# @name syncOpportunitiesWithDate
+POST {{baseUrl}}/opportunities/sync
+Content-Type: application/json
+
+{
+  "since": "2026-01-01T00:00:00.000Z"
+}
+
+###
+
+# Validates full synchronization without a date boundary (syncs latest available tenders)
+# @name syncOpportunitiesFull
+POST {{baseUrl}}/opportunities/sync
+Content-Type: application/json
+
+{}
+
+### ==============================================================================
+### 3. Opportunities Search (Hybrid, Semantic & Structured)
+### ==============================================================================
+
+# Validates hybrid search combining natural language semantic query with structured
+# filters (UNSPSC prefix, department, and budget range) using pgvector cosine distance.
+# @name searchOpportunitiesHybrid
+POST {{baseUrl}}/opportunities/search
+Content-Type: application/json
+
+{
+  "query": "Desarrollo de software a la medida, plataformas web e integración de sistemas",
+  "categoryCodePrefix": "V1.8011",
+  "department": "Cundinamarca",
+  "minAmount": 50000000,
+  "maxAmount": 500000000,
+  "limit": 10
+}
+
+
+###
+
+# Validates pure semantic search using AI vector embeddings (nomic-embed-text 768 dims)
+# to match contractor intent against opportunity summaries and procedural descriptions.
+# @name searchOpportunitiesSemanticOnly
+POST {{baseUrl}}/opportunities/search
+Content-Type: application/json
+
+{
+  "query": "Mantenimiento preventivo y correctivo de infraestructura tecnológica y ciberseguridad",
+  "limit": 5
+}
+
+###
+
+# Validates structured relational filtering without vector embedding generation,
+# filtering strictly by UNSPSC segment, geographic execution area, and budget thresholds.
+# @name searchOpportunitiesStructuredOnly
+POST {{baseUrl}}/opportunities/search
+Content-Type: application/json
+
+{
+  "categoryCodePrefix": "V1.8111",
+  "department": "Antioquia",
+  "minAmount": 20000000,
+  "maxAmount": 300000000,
+  "limit": 10
+}
+
+### ==============================================================================
+### 4. Contractor Profiles Configuration
+### ==============================================================================
+
+# Validates contractor profile creation with an explicit UUID (@profileId),
+# registering IT/Software capabilities, non-negative experience years, budget bounds,
+# and UNSPSC category preferences for subsequent recommendation matching.
+# @name configureProfileTech
+POST {{baseUrl}}/profiles
+Content-Type: application/json
+
+{
+  "profileId": "{{profileId}}",
+  "ownerId": "usr-tech-innovations-01",
+  "sector": "Tecnologías de la Información y Desarrollo de Software",
+  "capabilities": [
+    {
+      "name": "Desarrollo de Software Fullstack y Arquitectura Cloud",
+      "yearsOfExperience": 7
+    },
+    {
+      "name": "Inteligencia Artificial y Modelos de Lenguaje",
+      "yearsOfExperience": 3
+    },
+    {
+      "name": "Ciberseguridad y Auditoría de Sistemas",
+      "yearsOfExperience": 5
+    }
+  ],
+  "preferences": {
+    "categoryCodes": [
+      "V1.81111500",
+      "V1.80111600",
+      "V1.43230000"
+    ],
+    "keywords": [
+      "software",
+      "inteligencia artificial",
+      "cloud",
+      "interoperabilidad",
+      "datos"
+    ],
+    "amountRange": {
+      "min": 50000000,
+      "max": 500000000
+    },
+    "departments": [
+      "Distrito Capital de Bogotá",
+      "Cundinamarca",
+      "Antioquia"
+    ]
+  }
+}
+
+###
+
+# Validates profile creation with a server-generated UUID and distinct preferences
+# (Civil Engineering / Infrastructure contractor, higher budget bracket, regional scope).
+# @name configureProfileCivilInfra
+POST {{baseUrl}}/profiles
+Content-Type: application/json
+
+{
+  "ownerId": "usr-infra-colombia-02",
+  "sector": "Infraestructura, Construcción y Obras Civiles",
+  "capabilities": [
+    {
+      "name": "Interventoría Técnica, Administrativa y Financiera de Obras",
+      "yearsOfExperience": 10
+    },
+    {
+      "name": "Construcción y Mantenimiento de Malla Vial Urbana y Rural",
+      "yearsOfExperience": 8
+    },
+    {
+      "name": "Estudios de Suelos, Topografía y Geotecnia",
+      "yearsOfExperience": 6
+    }
+  ],
+  "preferences": {
+    "categoryCodes": [
+      "V1.72141000",
+      "V1.81101500",
+      "V1.72121100"
+    ],
+    "keywords": [
+      "interventoría",
+      "mantenimiento vial",
+      "pavimentación",
+      "obras civiles",
+      "puentes"
+    ],
+    "amountRange": {
+      "min": 150000000,
+      "max": 1500000000
+    },
+    "departments": [
+      "Santander",
+      "Boyacá",
+      "Cundinamarca",
+      "Tolima"
+    ]
+  }
+}
+
+### ==============================================================================
+### 5. Explainable Recommendations Engine
+### ==============================================================================
+
+# Validates AI-driven recommendation generation for a profile (@profileId).
+# Validates profile lookup, computes multi-factor score via MatchingService
+# (35% semantic similarity, 35% UNSPSC category, 20% budget, 10% location),
+# persists recommendations, and returns results sorted by relevance with explanations.
+# @name getRecommendations
+GET {{baseUrl}}/recommendations/{{profileId}}
+Accept: application/json
+
+### ==============================================================================
+### 6. Recommendation Feedback Loop
+### ==============================================================================
+
+# Validates recording user decision ('Participate') on a specific recommendation,
+# verifying the recommendation ID exists, validating the decision enum via Zod,
+# and saving the feedback timestamp for closed-loop learning.
+# @name registerFeedbackParticipate
+POST {{baseUrl}}/recommendations/{{recommendationId}}/feedback
+Content-Type: application/json
+
+{
+  "decision": "Participate"
+}
+
+###
+
+# Validates recording a rejection decision ('Discard') when an opportunity is skipped
+# @name registerFeedbackDiscard
+POST {{baseUrl}}/recommendations/{{recommendationId}}/feedback
+Content-Type: application/json
+
+{
+  "decision": "Discard"
+}
+
+### ==============================================================================
+### 7. Alerts & Follow-up Monitoring
+### ==============================================================================
+
+# Validates scanning undelivered alerts (amendments/adendas and upcoming deadlines),
+# dispatching email notifications via NotificationPort, marking alerts as delivered,
+# and returning the count of dispatched notifications.
+# @name reviewFollowUpAlerts
+POST {{baseUrl}}/alerts/review-follow-up
+Content-Type: application/json
+
+{}
+
+### ==============================================================================
+### 8. Negative Test Cases & Validation Errors (Expect 400 / 404)
+### ==============================================================================
+
+# Validates input validation error handling (Expect HTTP 400 Bad Request):
+# minAmount cannot exceed maxAmount in budget preferences.
+# @name negativeProfileInvalidAmountRange
+POST {{baseUrl}}/profiles
+Content-Type: application/json
+
+{
+  "ownerId": "usr-test-invalid",
+  "sector": "Servicios de Software",
+  "capabilities": [],
+  "preferences": {
+    "categoryCodes": ["V1.81111500"],
+    "keywords": ["software"],
+    "amountRange": {
+      "min": 500000000,
+      "max": 100000000
+    },
+    "departments": []
+  }
+}
+
+###
+
+# Validates non-existent profile error handling (Expect HTTP 404 Not Found):
+# Looking up recommendations for a non-registered profile ID.
+# @name negativeRecommendationsUnknownProfile
+GET {{baseUrl}}/recommendations/00000000-0000-0000-0000-000000000000
+Accept: application/json
+
+###
+
+# Validates feedback domain enum validation (Expect HTTP 400 Bad Request):
+# Decision must strictly be 'Participate' or 'Discard'.
+# @name negativeFeedbackInvalidDecision
+POST {{baseUrl}}/recommendations/{{recommendationId}}/feedback
+Content-Type: application/json
+
+{
+  "decision": "MaybeLater"
+}
+
