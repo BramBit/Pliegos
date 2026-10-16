@@ -1,5 +1,6 @@
 import { Pool } from 'pg';
-import { initDatabaseSchema } from '../src/modules/shared/infrastructure/persistence/database.schema';
+import * as path from 'node:path';
+import { runMigrations } from '../src/modules/shared/infrastructure/persistence/migrator';
 import { SecopAdapter } from '../src/modules/opportunity/infrastructure/adapters/secop/secop.adapter';
 import { OllamaAdapter } from '../src/modules/recommendation/infrastructure/adapters/ollama/ollama.adapter';
 import { PgVectorAdapter } from '../src/modules/opportunity/infrastructure/adapters/search/pgvector.adapter';
@@ -34,7 +35,7 @@ async function main() {
 
   try {
     console.log('0. [INFRA] Conectando a PostgreSQL e inicializando esquema...');
-    await initDatabaseSchema(pool);
+    await runMigrations(pool, path.resolve(__dirname, '../../migrations'));
     console.log('   ✓ Extension pgvector y tablas de base de datos verificadas.\n');
 
     // Inicializar Adaptadores

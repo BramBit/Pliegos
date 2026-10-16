@@ -139,9 +139,9 @@ pnpm install
 ```
 
 ### 5. Inicializar el Esquema de Base de Datos
-Ejecuta el script que aplica la extensión `vector`, las tablas y los índices HNSW:
+Aplica las migraciones SQL versionadas de `migrations/` (extensión `vector`, tablas, índices y restricciones). Es idempotente: solo ejecuta las que faltan.
 ```bash
-pnpm run db:init
+pnpm run db:migrate
 ```
 
 ### 6. Iniciar la Aplicación
@@ -208,7 +208,7 @@ pnpm run e2e
 | `pnpm run build` | Compila el código TypeScript a JavaScript en `./dist`. |
 | `pnpm start` | Inicia la aplicación en producción desde `./dist/src/main.js`. |
 | `pnpm run start:dev` | Compila y levanta la aplicación con el modo watch nativo de Node.js. |
-| `pnpm run db:init` | Aplica el DDL de base de datos (`vector`, tablas e índices) contra PostgreSQL. |
+| `pnpm run db:migrate` | Aplica las migraciones SQL versionadas de `migrations/` contra `DATABASE_URL` (idempotente). `db:init` es un alias. |
 | `pnpm test` | Ejecuta la suite completa de pruebas con Jest. |
 | `pnpm run test:cov` | Ejecuta las pruebas y calcula la cobertura de código. |
 | `pnpm run check:ollama`| Valida la conectividad con Ollama y la generación de embeddings. |

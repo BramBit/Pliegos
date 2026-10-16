@@ -1,7 +1,8 @@
+import { seedProfile } from '../../../../shared/testing/seed';
 import { requireTestDatabaseUrl } from '../../../../shared/testing/test-database-url';
 import { Pool } from 'pg';
 import { PostgresAlertRepository } from './postgres-alert.repository';
-import { initDatabaseSchema } from '../../../../shared/infrastructure/persistence/database.schema';
+import { migrateTestDatabase } from '../../../../shared/testing/migrate-test-database';
 import { Alert } from '../../../domain/entities/alert.entity';
 import {
   asAlertId,
@@ -17,7 +18,7 @@ describe('PostgresAlertRepository (Real Test Database)', () => {
 
   beforeAll(async () => {
     pool = new Pool({ connectionString: TEST_DATABASE_URL });
-    await initDatabaseSchema(pool);
+    await migrateTestDatabase(pool);
     repo = new PostgresAlertRepository(pool);
   });
 
@@ -27,6 +28,7 @@ describe('PostgresAlertRepository (Real Test Database)', () => {
 
   beforeEach(async () => {
     await pool.query('DELETE FROM alerts;');
+    for (const id of ['prof-1', 'prof-2', 'prof-3']) await seedProfile(pool, id);
   });
 
   it('saves an alert and finds only undelivered alerts', async () => {

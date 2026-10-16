@@ -1,3 +1,4 @@
+import { seedOpportunity, seedProfile } from '../modules/shared/testing/seed';
 import { requireTestDatabaseUrl } from '../modules/shared/testing/test-database-url';
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
@@ -7,7 +8,7 @@ import { Pool } from 'pg';
 import { AppModule } from '../app.module';
 import { setupSwaggerAndScalar } from '../setup-swagger';
 import { DATABASE_POOL } from '../modules/shared/infrastructure/persistence/database.module';
-import { initDatabaseSchema } from '../modules/shared/infrastructure/persistence/database.schema';
+import { migrateTestDatabase } from '../modules/shared/testing/migrate-test-database';
 import { OPPORTUNITY_SOURCE_PORT } from '../modules/opportunity/domain/ports/opportunity-source.port';
 import { AI_PROVIDER_PORT } from '../modules/recommendation/domain/ports/ai-provider.port';
 import { ANALYSIS_QUEUE_PORT } from '../modules/opportunity/domain/ports/analysis-queue.port';
@@ -31,7 +32,7 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
     const testDbUrl = requireTestDatabaseUrl();
 
     pool = new Pool({ connectionString: testDbUrl });
-    await initDatabaseSchema(pool);
+    await migrateTestDatabase(pool);
 
     const mockAiProvider = {
       embed: jest.fn().mockResolvedValue(new Array(768).fill(0.05)),
@@ -288,6 +289,8 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
       if (!testRecResult.ok) throw new Error(testRecResult.error.message);
       const testRec = testRecResult.value;
 
+      await seedProfile(pool, 'prof-feedback-test');
+      await seedOpportunity(pool, 'opp-feedback-test');
       await recRepo.save(testRec);
 
       const response = await request(app.getHttpServer())
@@ -334,6 +337,7 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
       if (!alertResult.ok) throw new Error(alertResult.error.message);
       const alert = alertResult.value;
 
+      await seedProfile(pool, 'profile-alert-e2e');
       await alertRepo.save(alert);
 
       const response = await request(app.getHttpServer())

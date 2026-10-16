@@ -1,7 +1,8 @@
+import { seedOpportunity, seedProfile } from '../../../../shared/testing/seed';
 import { requireTestDatabaseUrl } from '../../../../shared/testing/test-database-url';
 import { Pool } from 'pg';
 import { PostgresRecommendationRepository } from './postgres-recommendation.repository';
-import { initDatabaseSchema } from '../../../../shared/infrastructure/persistence/database.schema';
+import { migrateTestDatabase } from '../../../../shared/testing/migrate-test-database';
 import { Recommendation } from '../../../domain/entities/recommendation.entity';
 import {
   asRecommendationId,
@@ -17,7 +18,7 @@ describe('PostgresRecommendationRepository (Real Test Database)', () => {
 
   beforeAll(async () => {
     pool = new Pool({ connectionString: TEST_DATABASE_URL });
-    await initDatabaseSchema(pool);
+    await migrateTestDatabase(pool);
     repo = new PostgresRecommendationRepository(pool);
   });
 
@@ -27,6 +28,8 @@ describe('PostgresRecommendationRepository (Real Test Database)', () => {
 
   beforeEach(async () => {
     await pool.query('DELETE FROM recommendations;');
+    for (const id of ['prof-rec-1', 'prof-fb']) await seedProfile(pool, id);
+    for (const id of ['opp-1', 'opp-2', 'opp-fb']) await seedOpportunity(pool, id);
   });
 
   it('saves and finds recommendations by profile ordered by score descending', async () => {

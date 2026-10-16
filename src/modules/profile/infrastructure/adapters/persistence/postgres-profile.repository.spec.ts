@@ -1,7 +1,7 @@
 import { requireTestDatabaseUrl } from '../../../../shared/testing/test-database-url';
 import { Pool } from 'pg';
 import { PostgresProfileRepository } from './postgres-profile.repository';
-import { initDatabaseSchema } from '../../../../shared/infrastructure/persistence/database.schema';
+import { migrateTestDatabase } from '../../../../shared/testing/migrate-test-database';
 import { Profile } from '../../../domain/entities/profile.entity';
 import { asProfileId, asUserId } from '../../../../shared/domain/typed-id';
 
@@ -13,7 +13,7 @@ describe('PostgresProfileRepository (Real Test Database)', () => {
 
   beforeAll(async () => {
     pool = new Pool({ connectionString: TEST_DATABASE_URL });
-    await initDatabaseSchema(pool);
+    await migrateTestDatabase(pool);
     repo = new PostgresProfileRepository(pool);
   });
 

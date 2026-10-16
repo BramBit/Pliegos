@@ -62,6 +62,9 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
   if (!result.success) {
     const problems = result.error.issues.map((issue) => {
       const name = issue.path.join('.') || '(root)';
+      if (issue.path.length === 1 && cleaned[String(issue.path[0])] === undefined) {
+        return `${name}: is required (not set or empty)`;
+      }
       return `${name}: ${issue.message}`;
     });
     throw new EnvValidationError(problems);
