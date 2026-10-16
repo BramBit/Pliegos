@@ -1,6 +1,5 @@
-import { Global, Inject, Module, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import { Global, Inject, Module, OnModuleDestroy } from '@nestjs/common';
 import { Pool } from 'pg';
-import { initDatabaseSchema } from './database.schema';
 
 export const DATABASE_POOL = Symbol('DATABASE_POOL');
 
@@ -20,12 +19,8 @@ export const DATABASE_POOL = Symbol('DATABASE_POOL');
   ],
   exports: [DATABASE_POOL],
 })
-export class DatabaseModule implements OnModuleInit, OnModuleDestroy {
+export class DatabaseModule implements OnModuleDestroy {
   constructor(@Inject(DATABASE_POOL) private readonly pool: Pool) {}
-
-  async onModuleInit() {
-    await initDatabaseSchema(this.pool);
-  }
 
   async onModuleDestroy() {
     // Graceful closure handled when process terminates
