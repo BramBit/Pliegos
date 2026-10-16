@@ -5,6 +5,9 @@
   "private": true,
   "scripts": {
     "build": "tsc",
+    "start": "tsc && node dist/src/main.js",
+    "start:dev": "tsc && node --watch dist/src/main.js",
+    "db:init": "tsc && node dist/scripts/init-db.js",
     "test": "CI=true NODE_OPTIONS=--experimental-vm-modules jest",
     "test:watch": "NODE_OPTIONS=--experimental-vm-modules jest --watch",
     "test:cov": "CI=true NODE_OPTIONS=--experimental-vm-modules jest --coverage",
@@ -20,6 +23,7 @@
     "@nestjs/config": "^12.0.1",
     "@nestjs/core": "^12.1.2",
     "@nestjs/platform-express": "^12.1.2",
+    "@nestjs/schedule": "^12.0.2",
     "@nestjs/swagger": "^12.0.2",
     "@scalar/nestjs-api-reference": "^1.2.25",
     "bullmq": "^6.3.11",
