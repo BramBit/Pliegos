@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Param,
+  Query,
   Body,
   HttpCode,
   HttpStatus,
@@ -46,9 +47,14 @@ export class RecommendationController {
     status: HttpStatus.NOT_FOUND,
     description: 'El perfil solicitado no existe',
   })
-  async getRecommendations(@Param('profileId') profileId: string) {
+  async getRecommendations(
+    @Param('profileId') profileId: string,
+    @Query('limit') limit?: string,
+  ) {
+    const parsedLimit = Number.parseInt(limit ?? '', 10);
     const result = await this.getRecommendationsUseCase.execute({
       profileId: asProfileId(profileId),
+      limit: Number.isFinite(parsedLimit) && parsedLimit > 0 ? Math.min(parsedLimit, 100) : undefined,
     });
 
     if (!result.ok) {

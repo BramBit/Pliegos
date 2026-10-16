@@ -183,4 +183,52 @@ describe('GetRecommendationsUseCase', () => {
     // Verified saved in repository
     expect(recRepo.recommendations).toHaveLength(2);
   });
+
+  it('requests only actionable candidates from the repository', async () => {
+    await profileRepo.save(testProfile);
+    const spy = jest.spyOn(oppRepo, 'findByFilters');
+
+    await useCase.execute({ profileId: testProfile.id });
+
+    expect(spy).toHaveBeenCalledWith(expect.objectContaining({ actionableOnly: true }));
+  });
+
+  it('reuses recommendation id and feedback on repeated calls (no duplicates)', async () => {
+    await profileRepo.save(testProfile);
+    await oppRepo.save(oppHigh);
+    // Upsert-aware save, like the Postgres repository
+    recRepo.save = async (rec: Recommendation) => {
+      const idx = recRepo.recommendations.findIndex((r) => r.id === rec.id);
+      if (idx >= 0) recRepo.recommendations[idx] = rec;
+      else recRepo.recommendations.push(rec);
+    };
+
+    const first = await useCase.execute({ profileId: testProfile.id });
+    if (!first.ok) throw new Error('first call failed');
+    recRepo.recommendations[0] = {
+      ...recRepo.recommendations[0],
+      feedback: { decision: 'Participate', recordedAt: new Date() },
+    };
+
+    const second = await useCase.execute({ profileId: testProfile.id });
+    if (!second.ok) throw new Error('second call failed');
+
+    expect(recRepo.recommendations).toHaveLength(1);
+    expect(second.value[0].id).toBe(first.value[0].id);
+    expect(second.value[0].feedback?.decision).toBe('Participate');
+  });
+
+  it('returns only the top N recommendations when limit is provided', async () => {
+    await profileRepo.save(testProfile);
+    await oppRepo.save(oppLow);
+    await oppRepo.save(oppHigh);
+
+    const result = await useCase.execute({ profileId: testProfile.id, limit: 1 });
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value).toHaveLength(1);
+      expect(result.value[0].opportunityId).toBe('opp-high');
+    }
+  });
 });

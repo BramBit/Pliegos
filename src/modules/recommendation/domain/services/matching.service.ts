@@ -48,8 +48,13 @@ export class MatchingService {
   async computeBreakdown(
     opportunity: Opportunity,
     profile: Profile,
+    precomputedSemanticSimilarity?: number,
   ): Promise<ScoringBreakdown> {
-    const semanticSimilarity = await this.computeSemanticSimilarity(profile, opportunity);
+    // A precomputed value (e.g. pgvector cosine similarity) skips the per-pair LLM call
+    const semanticSimilarity =
+      precomputedSemanticSimilarity !== undefined
+        ? Math.min(1, Math.max(0, precomputedSemanticSimilarity))
+        : await this.computeSemanticSimilarity(profile, opportunity);
     const categoryMatch = this.computeCategoryMatch(
       opportunity.categoryCode,
       profile.preferences.categoryCodes,
@@ -142,6 +147,28 @@ export class MatchingService {
       explanation: breakdown.explanation,
       feedback: null,
     };
+  }
+
+  /**
+   * Builds the text that represents a profile for semantic matching.
+   * Shared so embeddings-based scoring uses the same text as the LLM-based path.
+   */
+  static buildProfileText(profile: Profile): string {
+    const parts: string[] = [];
+    if (profile.preferences.keywords.length > 0) parts.push(profile.preferences.keywords.join(', '));
+    if (profile.capabilities.length > 0) {
+      parts.push(profile.capabilities.map((c: Capability) => c.name).join(', '));
+    }
+    if (profile.sector) parts.push(profile.sector);
+    return parts.join('. ') || profile.sector;
+  }
+
+  /**
+   * Maps a raw embedding cosine similarity to 0..1. nomic-embed-text yields roughly
+   * 0.40 (unrelated) to 0.75 (strongly related) for short Spanish texts.
+   */
+  static normalizeCosine(cosine: number, low = 0.4, high = 0.75): number {
+    return Math.min(1, Math.max(0, (cosine - low) / (high - low)));
   }
 
   /**
