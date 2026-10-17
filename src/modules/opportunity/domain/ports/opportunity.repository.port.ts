@@ -1,6 +1,7 @@
 import { Opportunity } from '../entities/opportunity.entity';
 import { OpportunityId } from '../../../shared/domain/typed-id';
 import { OpportunityFilters } from '../value-objects/opportunity-filters';
+import { Analysis } from '../value-objects/opportunity.value-objects';
 
 export interface SyncState {
   readonly source: string;
@@ -11,6 +12,8 @@ export interface SyncState {
 export interface OpportunityRepositoryPort {
   save(opportunity: Opportunity): Promise<void>;
   saveMany(opportunities: Opportunity[]): Promise<void>;
+  saveAnalysis(id: OpportunityId, analysis: Analysis): Promise<void>;
+  withAnalysisLock?(id: OpportunityId, work: () => Promise<void>): Promise<void>;
   findById(id: OpportunityId): Promise<Opportunity | null>;
   findByExternalId(externalId: string): Promise<Opportunity | null>;
   findByExternalIds(externalIds: string[]): Promise<Opportunity[]>;

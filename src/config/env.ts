@@ -21,6 +21,8 @@ const envSchema = z.object({
   OLLAMA_BASE_URL: httpUrl,
   OLLAMA_EMBED_MODEL: nonEmpty,
   OLLAMA_CHAT_MODEL: nonEmpty,
+  OLLAMA_EMBED_TIMEOUT_MS: positiveInt.default(30000),
+  OLLAMA_CHAT_TIMEOUT_MS: positiveInt.default(120000),
 
   SYNC_OPPORTUNITIES_CRON: nonEmpty,
   REVIEW_FOLLOW_UP_CRON: nonEmpty,

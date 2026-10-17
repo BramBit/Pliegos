@@ -41,6 +41,13 @@ class FakeOpportunityRepo implements OpportunityRepositoryPort {
     this.opportunities.push(...opportunities);
   }
 
+  async saveAnalysis(id: OpportunityId, analysis: Opportunity['analysis']): Promise<void> {
+    const idx = this.opportunities.findIndex((o) => o.id === id);
+    if (idx >= 0) {
+      this.opportunities[idx] = { ...this.opportunities[idx], analysis };
+    }
+  }
+
   async findById(id: OpportunityId): Promise<Opportunity | null> {
     return this.opportunities.find((o) => o.id === id) ?? null;
   }

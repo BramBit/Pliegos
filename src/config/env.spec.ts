@@ -21,6 +21,8 @@ describe('loadEnv', () => {
     expect(env.SECOP_PAGE_SIZE).toBe(1000);
     expect(env.SECOP_SYNC_MAX_RECORDS).toBe(5000);
     expect(env.SECOP_SYNC_WINDOW_DAYS).toBe(14);
+    expect(env.OLLAMA_EMBED_TIMEOUT_MS).toBe(30000);
+    expect(env.OLLAMA_CHAT_TIMEOUT_MS).toBe(120000);
     expect(env.ANALYSIS_CONCURRENCY).toBe(2);
     expect(env.ANALYSIS_SUMMARIZE).toBe(true);
     expect(env.TEST_DATABASE_URL).toBeUndefined();

@@ -63,4 +63,5 @@ export interface Analysis {
   readonly summary: string;
   readonly requirements: Requirement[];
   readonly embeddingGeneratedAt: Date | null;  // null until the queued analysis job runs
+  readonly contentHash?: string;
 }

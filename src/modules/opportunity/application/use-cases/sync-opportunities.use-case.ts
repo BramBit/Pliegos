@@ -300,7 +300,11 @@ export class SyncOpportunitiesUseCase implements ISyncOpportunitiesUseCase {
         }
       } else {
         const changes = this.compareSourceWithStored(existing, src);
-        if (changes.length > 0) {
+        const entityChanged =
+          existing.contractingEntity.name !== src.entityName ||
+          existing.contractingEntity.taxId !== src.entityTaxId;
+
+        if (changes.length > 0 || entityChanged) {
           let updatedOpp: Opportunity = existing;
           for (const change of changes) {
             updatedOpp = withOpportunityChange(updatedOpp, change);
@@ -311,10 +315,19 @@ export class SyncOpportunitiesUseCase implements ISyncOpportunitiesUseCase {
           );
           const amount = moneyResult.ok ? moneyResult.value : updatedOpp.amount;
 
+          const shouldEnqueueAnalysis =
+            existing.title !== src.title ||
+            existing.description !== src.description ||
+            existing.contractingEntity.name !== src.entityName;
+
           updatedOpp = {
             ...updatedOpp,
             title: src.title,
             description: src.description,
+            contractingEntity: {
+              name: src.entityName,
+              taxId: src.entityTaxId,
+            },
             amount,
             amountKnown: src.amount !== null,
             isCompetitive: src.isCompetitive,
@@ -326,7 +339,9 @@ export class SyncOpportunitiesUseCase implements ISyncOpportunitiesUseCase {
           };
 
           toSave.push(updatedOpp);
-          toEnqueue.push(updatedOpp.id);
+          if (shouldEnqueueAnalysis) {
+            toEnqueue.push(updatedOpp.id);
+          }
           pageUpdated++;
         } else {
           pageUnchanged++;

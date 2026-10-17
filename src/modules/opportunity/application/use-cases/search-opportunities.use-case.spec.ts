@@ -20,6 +20,13 @@ class FakeRepo implements OpportunityRepositoryPort {
     }
   }
 
+  async saveAnalysis(id: OpportunityId, analysis: Opportunity['analysis']): Promise<void> {
+    const existing = this.data.get(id);
+    if (existing) {
+      this.data.set(id, { ...existing, analysis });
+    }
+  }
+
   async findById(id: OpportunityId): Promise<Opportunity | null> {
     return this.data.get(id) ?? null;
   }

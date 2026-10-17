@@ -1,12 +1,13 @@
 import { LoggerService } from '@nestjs/common';
+import { Pool } from 'pg';
 import {
   AnalyzeOpportunityJob,
+  computeAnalysisContentHash,
   IJobLike,
 } from './analyze-opportunity.job';
 import {
   BullMQAnalysisQueueAdapter,
   IQueueLike,
-  ANALYSIS_QUEUE_NAME,
   ANALYZE_OPPORTUNITY_JOB_NAME,
   AnalyzeOpportunityJobPayload,
 } from '../adapters/queue/bullmq-analysis-queue.adapter';
@@ -15,8 +16,15 @@ import { AIProviderPort } from '../../../recommendation/domain/ports/ai-provider
 import { SearchIndexPort } from '../../domain/ports/search-index.port';
 import { Opportunity } from '../../domain/entities/opportunity.entity';
 import { asOpportunityId } from '../../../shared/domain/typed-id';
+import {
+  OpportunityLockBusyError,
+  PostgresOpportunityRepository,
+} from '../adapters/persistence/postgres-opportunity.repository';
+import { PgVectorAdapter } from '../adapters/search/pgvector.adapter';
+import { requireTestDatabaseUrl } from '../../../shared/testing/test-database-url';
+import { migrateTestDatabase } from '../../../shared/testing/migrate-test-database';
 
-describe('BullMQ Analysis Queue & Job Processing (In-Memory Setup)', () => {
+describe('BullMQ Analysis Queue & Job Processing', () => {
   let fakeLogger: LoggerService & { logs: string[]; warnings: string[] };
 
   beforeEach(() => {
@@ -62,7 +70,8 @@ describe('BullMQ Analysis Queue & Job Processing (In-Memory Setup)', () => {
     });
   });
 
-  describe('AnalyzeOpportunityJob (Worker Processor)', () => {
+  describe('AnalyzeOpportunityJob (In-Memory Unit Tests)', () => {
+    let storedOpportunity: Opportunity | null;
     let mockOppRepo: jest.Mocked<OpportunityRepositoryPort>;
     let mockAiProvider: jest.Mocked<AIProviderPort>;
     let mockSearchIndex: jest.Mocked<SearchIndexPort>;
@@ -88,7 +97,7 @@ describe('BullMQ Analysis Queue & Job Processing (In-Memory Setup)', () => {
       contractType: 'Obra publica',
       procurementModality: 'Licitacion publica',
       isCompetitive: true,
-      categoryCode: 'V1.72121400',
+      categoryCode: '72121400',
       publishedAt: new Date('2026-03-01T00:00:00.000Z'),
       lastPublishedAt: new Date('2026-03-01T00:00:00.000Z'),
       closingDate: new Date('2026-03-30T00:00:00.000Z'),
@@ -105,10 +114,20 @@ describe('BullMQ Analysis Queue & Job Processing (In-Memory Setup)', () => {
     };
 
     beforeEach(() => {
+      storedOpportunity = { ...sampleOpportunity };
+
       mockOppRepo = {
         save: jest.fn().mockResolvedValue(undefined),
         saveMany: jest.fn().mockResolvedValue(undefined),
-        findById: jest.fn().mockResolvedValue(sampleOpportunity),
+        saveAnalysis: jest.fn(async (_id, analysis) => {
+          if (storedOpportunity) {
+            storedOpportunity = { ...storedOpportunity, analysis };
+          }
+        }),
+        withAnalysisLock: jest.fn(async (_id, work) => {
+          await work();
+        }),
+        findById: jest.fn(async (_id) => storedOpportunity),
         findByExternalId: jest.fn().mockResolvedValue(null),
         findByExternalIds: jest.fn().mockResolvedValue([]),
         findByFilters: jest.fn().mockResolvedValue([]),
@@ -121,7 +140,9 @@ describe('BullMQ Analysis Queue & Job Processing (In-Memory Setup)', () => {
       };
 
       mockSearchIndex = {
-        indexOpportunity: jest.fn().mockResolvedValue(undefined),
+        indexOpportunity: jest.fn(async (opp) => {
+          await mockAiProvider.embed(opp.title);
+        }),
         semanticSearch: jest.fn().mockResolvedValue([]),
       };
 
@@ -130,10 +151,11 @@ describe('BullMQ Analysis Queue & Job Processing (In-Memory Setup)', () => {
         mockAiProvider,
         mockSearchIndex,
         fakeLogger,
+        'nomic-embed-text',
       );
     });
 
-    it('processes job: generates summary, requirements, indexes in pgvector, and updates repository', async () => {
+    it('processes job: generates summary, requirements, contentHash, indexes in pgvector, and persists via saveAnalysis', async () => {
       const job: IJobLike<AnalyzeOpportunityJobPayload> = {
         id: 'job-test-1',
         data: { opportunityId: sampleOpportunity.id },
@@ -141,36 +163,58 @@ describe('BullMQ Analysis Queue & Job Processing (In-Memory Setup)', () => {
 
       await processor.process(job);
 
-      // 1. Retrieved opportunity from repo
+      expect(mockOppRepo.withAnalysisLock).toHaveBeenCalledTimes(1);
       expect(mockOppRepo.findById).toHaveBeenCalledWith(sampleOpportunity.id);
-
-      // 2. Called AI Provider to summarize
       expect(mockAiProvider.summarize).toHaveBeenCalledWith(
         expect.stringContaining('Mantenimiento preventivo de vias urbanas'),
       );
-
-      // 3. Indexed in search index (pgvector)
       expect(mockSearchIndex.indexOpportunity).toHaveBeenCalledTimes(1);
-      const indexedOpp: Opportunity = mockSearchIndex.indexOpportunity.mock.calls[0][0];
-      expect(indexedOpp.analysis).not.toBeNull();
-      expect(indexedOpp.analysis?.summary).toBe('Resumen sintetizado por IA de las obras viales.');
-      expect(indexedOpp.analysis?.requirements).toHaveLength(3);
-      expect(indexedOpp.analysis?.requirements[0].type).toBe('financial');
-      expect(indexedOpp.analysis?.requirements[1].type).toBe('technical');
-      expect(indexedOpp.analysis?.requirements[2].type).toBe('legal');
-      expect(indexedOpp.analysis?.embeddingGeneratedAt).toBeInstanceOf(Date);
 
-      // 4. Saved updated opportunity in repository
-      expect(mockOppRepo.save).toHaveBeenCalledWith(indexedOpp);
+      const expectedHash = computeAnalysisContentHash(sampleOpportunity, 'nomic-embed-text');
+      expect(mockOppRepo.saveAnalysis).toHaveBeenCalledWith(
+        sampleOpportunity.id,
+        expect.objectContaining({
+          summary: 'Resumen sintetizado por IA de las obras viales.',
+          contentHash: expectedHash,
+        }),
+      );
+      expect(mockOppRepo.save).not.toHaveBeenCalled();
+    });
 
-      // 5. Logged success
+    it('analyzing the same opportunity twice makes zero Ollama calls the second time', async () => {
+      const job: IJobLike<AnalyzeOpportunityJobPayload> = {
+        id: 'job-test-idempotent',
+        data: { opportunityId: sampleOpportunity.id },
+      };
+
+      // First run performs summarize + embed
+      await processor.process(job);
+      expect(mockAiProvider.summarize).toHaveBeenCalledTimes(1);
+      expect(mockAiProvider.embed).toHaveBeenCalledTimes(1);
+      expect(mockOppRepo.saveAnalysis).toHaveBeenCalledTimes(1);
+
+      mockAiProvider.summarize.mockClear();
+      mockAiProvider.embed.mockClear();
+      mockOppRepo.saveAnalysis.mockClear();
+
+      // Second run over the same opportunity (even if closingDate changed in the meantime)
+      storedOpportunity = {
+        ...storedOpportunity!,
+        closingDate: new Date('2026-04-20T00:00:00.000Z'),
+      };
+
+      await processor.process(job);
+
+      expect(mockAiProvider.summarize).not.toHaveBeenCalled();
+      expect(mockAiProvider.embed).not.toHaveBeenCalled();
+      expect(mockOppRepo.saveAnalysis).not.toHaveBeenCalled();
       expect(fakeLogger.logs).toContainEqual(
-        expect.stringContaining('Successfully completed analysis & indexing for Opportunity opp-job-1'),
+        expect.stringContaining('contentHash'),
       );
     });
 
     it('skips processing and logs warning if opportunity is not found', async () => {
-      mockOppRepo.findById.mockResolvedValueOnce(null);
+      storedOpportunity = null;
 
       const job: IJobLike<AnalyzeOpportunityJobPayload> = {
         id: 'job-missing',
@@ -182,10 +226,145 @@ describe('BullMQ Analysis Queue & Job Processing (In-Memory Setup)', () => {
       expect(mockOppRepo.findById).toHaveBeenCalledWith('opp-not-found');
       expect(mockAiProvider.summarize).not.toHaveBeenCalled();
       expect(mockSearchIndex.indexOpportunity).not.toHaveBeenCalled();
-      expect(mockOppRepo.save).not.toHaveBeenCalled();
+      expect(mockOppRepo.saveAnalysis).not.toHaveBeenCalled();
       expect(fakeLogger.warnings).toContainEqual(
         expect.stringContaining('Opportunity opp-not-found not found in repository. Skipping analysis.'),
       );
+    });
+  });
+
+  describe('AnalyzeOpportunityJob (Real Test Database Integration)', () => {
+    const TEST_DATABASE_URL = requireTestDatabaseUrl();
+    let pool: Pool;
+    let repo: PostgresOpportunityRepository;
+
+    beforeAll(async () => {
+      pool = new Pool({ connectionString: TEST_DATABASE_URL });
+      await migrateTestDatabase(pool);
+      repo = new PostgresOpportunityRepository(pool);
+    });
+
+    afterAll(async () => {
+      await pool.end();
+    });
+
+    beforeEach(async () => {
+      await pool.query('DELETE FROM opportunity_embeddings;');
+      await pool.query('DELETE FROM opportunities;');
+    });
+
+    it('does not lose concurrent closing_date update while the analysis job runs, and enforces pg_try_advisory_lock', async () => {
+      const oppId = asOpportunityId('opp-race-test-1');
+      const initialClosingDate = new Date('2026-03-30T17:00:00.000Z');
+      const concurrentClosingDate = new Date('2026-04-25T17:00:00.000Z');
+
+      const initialOpportunity: Opportunity = {
+        id: oppId,
+        title: 'Construcción de puente vehicular',
+        description: 'Obras estructurales de puente sobre río Magdalena',
+        contractingEntity: {
+          name: 'INVIAS',
+          taxId: '800215807',
+        },
+        location: {
+          city: 'Honda',
+          department: 'Tolima',
+        },
+        amount: {
+          amount: 1_200_000_000,
+          currency: 'COP',
+        },
+        amountKnown: true,
+        contractType: 'Obra',
+        procurementModality: 'Licitación pública',
+        isCompetitive: true,
+        categoryCode: '72141100',
+        publishedAt: new Date('2026-03-01T00:00:00.000Z'),
+        lastPublishedAt: new Date('2026-03-01T00:00:00.000Z'),
+        closingDate: initialClosingDate,
+        isOpenForSubmission: true,
+        status: 'Published',
+        source: {
+          sourceName: 'SECOP',
+          externalId: 'CO1.REQ.RACE1',
+          humanReference: 'INV-PUENTE-01',
+          originalUrl: 'https://community.secop.gov.co/race1',
+        },
+        analysis: null,
+        changeHistory: [],
+      };
+
+      await repo.save(initialOpportunity);
+
+      let concurrentLockAttemptError: unknown = null;
+
+      const aiProvider: jest.Mocked<AIProviderPort> = {
+        embed: jest.fn().mockResolvedValue(new Array(768).fill(0.02)),
+        summarize: jest.fn(async (_text: string) => {
+          // 1. While job 1 holds the advisory lock and has already loaded initialOpportunity,
+          // update closing_date in the database concurrently (simulating a concurrent sync).
+          await pool.query(
+            'UPDATE opportunities SET closing_date = $2 WHERE id = $1',
+            [oppId, concurrentClosingDate],
+          );
+
+          // 2. Also verify a second concurrent job for the same opportunity fails fast on the advisory lock.
+          const secondJobProcessor = new AnalyzeOpportunityJob(
+            repo,
+            aiProvider,
+            pgVector,
+            fakeLogger,
+            'nomic-embed-text',
+          );
+          try {
+            await secondJobProcessor.process({ id: 'job-2', data: { opportunityId: oppId } });
+          } catch (err) {
+            concurrentLockAttemptError = err;
+          }
+
+          return 'Resumen del puente vehicular sobre el río Magdalena.';
+        }),
+        scoreSimilarity: jest.fn().mockResolvedValue(0.9),
+      };
+
+      const pgVector = new PgVectorAdapter({
+        pool,
+        aiProvider,
+        logger: fakeLogger,
+      });
+
+      const jobProcessor = new AnalyzeOpportunityJob(
+        repo,
+        aiProvider,
+        pgVector,
+        fakeLogger,
+        'nomic-embed-text',
+      );
+
+      // First run: executes while closing_date is updated concurrently
+      await jobProcessor.process({ id: 'job-1', data: { opportunityId: oppId } });
+
+      // Concurrent lock attempt while job-1 was running threw OpportunityLockBusyError
+      expect(concurrentLockAttemptError).toBeInstanceOf(OpportunityLockBusyError);
+
+      // Verify closing_date update was NOT overwritten by the job!
+      const afterFirstRun = await repo.findById(oppId);
+      expect(afterFirstRun).not.toBeNull();
+      expect(afterFirstRun?.closingDate).toEqual(concurrentClosingDate);
+      expect(afterFirstRun?.analysis?.summary).toBe(
+        'Resumen del puente vehicular sobre el río Magdalena.',
+      );
+      expect(afterFirstRun?.analysis?.contentHash).toBe(
+        computeAnalysisContentHash(initialOpportunity, 'nomic-embed-text'),
+      );
+
+      // Second run after lock is released: contentHash matches -> zero Ollama calls
+      aiProvider.summarize.mockClear();
+      aiProvider.embed.mockClear();
+
+      await jobProcessor.process({ id: 'job-3', data: { opportunityId: oppId } });
+      expect(aiProvider.summarize).not.toHaveBeenCalled();
+      expect(aiProvider.embed).not.toHaveBeenCalled();
     });
   });
 });

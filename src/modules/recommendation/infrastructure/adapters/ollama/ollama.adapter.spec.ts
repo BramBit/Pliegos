@@ -54,17 +54,35 @@ describe('OllamaAdapter', () => {
       expect(result).toEqual(mockVector);
     });
 
-    it('returns array of 768 zeros without network call when text is empty or blank', async () => {
+    it('throws error when text is empty or blank (never returns a zero vector)', async () => {
       const mockFetch: typeof fetch = jest.fn();
       const adapter = new OllamaAdapter({ fetchFn: mockFetch });
 
-      const resEmpty = await adapter.embed('');
-      const resBlank = await adapter.embed('   ');
-
-      expect(resEmpty).toHaveLength(768);
-      expect(resBlank).toHaveLength(768);
-      expect(resEmpty.every((n) => n === 0)).toBe(true);
+      await expect(adapter.embed('')).rejects.toThrow(
+        'Ollama embed error: cannot generate embedding for empty text',
+      );
+      await expect(adapter.embed('   ')).rejects.toThrow(
+        'Ollama embed error: cannot generate embedding for empty text',
+      );
       expect(mockFetch).not.toHaveBeenCalled();
+    });
+
+    it('aborts request when embedTimeoutMs expires', async () => {
+      const mockFetch: typeof fetch = jest.fn(
+        (_url: string | URL | Request, init?: RequestInit) =>
+          new Promise<Response>((_resolve, reject) => {
+            init?.signal?.addEventListener('abort', () => {
+              reject(new Error('This operation was aborted'));
+            });
+          }),
+      );
+
+      const adapter = new OllamaAdapter({
+        fetchFn: mockFetch,
+        embedTimeoutMs: 20,
+      });
+
+      await expect(adapter.embed('texto lento')).rejects.toThrow('This operation was aborted');
     });
 
     it('throws error when Ollama endpoint returns HTTP error', async () => {

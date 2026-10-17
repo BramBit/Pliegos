@@ -7,7 +7,14 @@ import {
 import { Opportunity } from '../../../domain/entities/opportunity.entity';
 import { OpportunityId, asOpportunityId } from '../../../../shared/domain/typed-id';
 import { OpportunityFilters } from '../../../domain/value-objects/opportunity-filters';
-import { OpportunityStatus } from '../../../domain/value-objects/opportunity.value-objects';
+import { Analysis, OpportunityStatus } from '../../../domain/value-objects/opportunity.value-objects';
+
+export class OpportunityLockBusyError extends Error {
+  constructor(public readonly opportunityId: OpportunityId) {
+    super(`Advisory lock busy for opportunity ${opportunityId}; will retry`);
+    this.name = 'OpportunityLockBusyError';
+  }
+}
 
 export interface OpportunityRow {
   id: string;
@@ -70,7 +77,7 @@ const UPSERT_OPPORTUNITY_SQL = `
     source_external_id = EXCLUDED.source_external_id,
     source_human_reference = EXCLUDED.source_human_reference,
     source_original_url = EXCLUDED.source_original_url,
-    analysis = EXCLUDED.analysis,
+    analysis = COALESCE(EXCLUDED.analysis, opportunities.analysis),
     change_history = EXCLUDED.change_history,
     updated_at = CURRENT_TIMESTAMP;
 `;
@@ -97,6 +104,34 @@ export class PostgresOpportunityRepository implements OpportunityRepositoryPort 
       await client.query('ROLLBACK');
       throw error;
     } finally {
+      client.release();
+    }
+  }
+
+  async saveAnalysis(id: OpportunityId, analysis: Analysis): Promise<void> {
+    await this.pool.query(
+      'UPDATE opportunities SET analysis = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $1',
+      [id, JSON.stringify(analysis)],
+    );
+  }
+
+  async withAnalysisLock<T>(id: OpportunityId, work: () => Promise<T>): Promise<T> {
+    const client: PoolClient = await this.pool.connect();
+    let acquired = false;
+    try {
+      const lockRes = await client.query<{ locked: boolean }>(
+        'SELECT pg_try_advisory_lock(hashtext($1)) AS locked',
+        [id],
+      );
+      acquired = Boolean(lockRes.rows[0]?.locked);
+      if (!acquired) {
+        throw new OpportunityLockBusyError(id);
+      }
+      return await work();
+    } finally {
+      if (acquired) {
+        await client.query('SELECT pg_advisory_unlock(hashtext($1))', [id]);
+      }
       client.release();
     }
   }

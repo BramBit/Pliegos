@@ -87,6 +87,14 @@ class FakeOpportunityRepository implements OpportunityRepositoryPort {
     }
   }
 
+  async saveAnalysis(id: OpportunityId, analysis: Opportunity['analysis']): Promise<void> {
+    for (const [extId, opp] of this.opportunities.entries()) {
+      if (opp.id === id) {
+        this.opportunities.set(extId, { ...opp, analysis });
+      }
+    }
+  }
+
   async findById(id: OpportunityId): Promise<Opportunity | null> {
     for (const opp of this.opportunities.values()) {
       if (opp.id === id) return opp;
@@ -300,6 +308,29 @@ describe('SyncOpportunitiesUseCase', () => {
       }),
     );
 
+    // A change of closingDate or status does NOT enqueue re-analysis (only initial creation was enqueued)
+    expect(fakeQueue.queuedOpportunityIds).toHaveLength(1);
+  });
+
+  it('enqueues re-analysis when title, description, or entity changed, but not on status/closingDate change', async () => {
+    await useCase.execute({});
+    expect(fakeQueue.queuedOpportunityIds).toHaveLength(1);
+
+    // Status change alone -> does not enqueue
+    fakeSource.processes = [{ ...sourceSample, status: 'Closed', isOpenForSubmission: false }];
+    await useCase.execute({});
+    expect(fakeQueue.queuedOpportunityIds).toHaveLength(1);
+
+    // Description change -> enqueues
+    fakeSource.processes = [
+      {
+        ...sourceSample,
+        status: 'Closed',
+        isOpenForSubmission: false,
+        description: 'Descripción actualizada con nuevos servidores GPU',
+      },
+    ];
+    await useCase.execute({});
     expect(fakeQueue.queuedOpportunityIds).toHaveLength(2);
   });
 
