@@ -11,6 +11,8 @@
     "db:migrate": "tsc && node dist/scripts/migrate.js",
     "db:init": "pnpm db:migrate",
     "audit:data": "tsc && node dist/scripts/audit-data.js",
+    "eval:export": "tsc && node dist/scripts/eval-export.js",
+    "eval:run": "tsc && node dist/scripts/eval-run.js",
     "test": "CI=true NODE_OPTIONS=--experimental-vm-modules jest",
     "test:watch": "NODE_OPTIONS=--experimental-vm-modules jest --watch",
     "test:cov": "CI=true NODE_OPTIONS=--experimental-vm-modules jest --coverage",

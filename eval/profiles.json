@@ -1,0 +1,75 @@
+[
+  {
+    "id": "golden-tech",
+    "ownerId": "golden",
+    "sector": "Tecnologías de la Información y Desarrollo de Software",
+    "capabilities": [
+      { "name": "Desarrollo de software a la medida y plataformas web", "yearsOfExperience": 7 },
+      { "name": "Ciberseguridad y auditoría de sistemas", "yearsOfExperience": 5 },
+      { "name": "Infraestructura tecnológica y soporte de TI", "yearsOfExperience": 6 }
+    ],
+    "preferences": {
+      "categoryCodes": ["V1.81111500", "V1.80111600", "V1.43230000"],
+      "keywords": [
+        "software",
+        "sistemas de información",
+        "plataforma web",
+        "ciberseguridad",
+        "soporte tecnológico"
+      ],
+      "amountRange": { "min": 50000000, "max": 500000000 },
+      "departments": ["Distrito Capital de Bogotá", "Cundinamarca", "Antioquia"]
+    }
+  },
+  {
+    "id": "golden-infra",
+    "ownerId": "golden",
+    "sector": "Infraestructura, Construcción y Obras Civiles",
+    "capabilities": [
+      { "name": "Interventoría técnica de obras", "yearsOfExperience": 10 },
+      { "name": "Construcción y mantenimiento de vías", "yearsOfExperience": 8 },
+      { "name": "Estudios de suelos y topografía", "yearsOfExperience": 6 }
+    ],
+    "preferences": {
+      "categoryCodes": ["V1.72141000", "V1.81101500", "V1.72121100"],
+      "keywords": [
+        "interventoría",
+        "mantenimiento vial",
+        "pavimentación",
+        "obras civiles",
+        "puentes"
+      ],
+      "amountRange": { "min": 150000000, "max": 1500000000 },
+      "departments": ["Santander", "Boyacá", "Cundinamarca", "Tolima"]
+    }
+  },
+  {
+    "id": "golden-food",
+    "ownerId": "golden",
+    "sector": "Consultoría en Calidad, Inocuidad e Ingeniería de Alimentos",
+    "capabilities": [
+      { "name": "Auditoría de inocuidad alimentaria, BPM y HACCP", "yearsOfExperience": 8 },
+      { "name": "Control de calidad microbiológica y fisicoquímica de alimentos", "yearsOfExperience": 6 },
+      { "name": "Interventoría y supervisión de programas de alimentación escolar (PAE)", "yearsOfExperience": 5 }
+    ],
+    "preferences": {
+      "categoryCodes": ["V1.80101500", "V1.81141500", "V1.93131600", "V1.50000000"],
+      "keywords": [
+        "inocuidad alimentaria",
+        "calidad de alimentos",
+        "BPM",
+        "HACCP",
+        "alimentación escolar",
+        "ingeniería de alimentos",
+        "manipulación de alimentos"
+      ],
+      "amountRange": { "min": 20000000, "max": 400000000 },
+      "departments": [
+        "Distrito Capital de Bogotá",
+        "Cundinamarca",
+        "Antioquia",
+        "Valle del Cauca"
+      ]
+    }
+  }
+]
