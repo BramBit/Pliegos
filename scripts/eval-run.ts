@@ -98,7 +98,7 @@ async function main() {
       embedTimeoutMs: env.OLLAMA_EMBED_TIMEOUT_MS,
       chatTimeoutMs: env.OLLAMA_CHAT_TIMEOUT_MS,
     });
-    const matching = new MatchingService(ai);
+    const matching = new MatchingService();
 
     for (const profile of profiles) {
       const profileLabels = allLabels[profile.id] ?? {};
@@ -122,12 +122,13 @@ async function main() {
       );
       const opportunities = loaded.filter((o): o is Opportunity => o !== null);
 
-      const profileVec = await ai.embed(MatchingService.buildProfileText(profile));
+      const [profileVec] = await ai.embed([MatchingService.buildProfileText(profile)]);
       const sims = await pool.query<{ id: string; cos: number }>(
         `SELECT opportunity_id AS id, 1 - (embedding <=> $1::vector) AS cos
          FROM opportunity_embeddings
-         WHERE opportunity_id = ANY($2::text[])`,
-        [`[${profileVec.join(',')}]`, opportunities.map((o) => o.id)],
+         WHERE opportunity_id = ANY($2::text[])
+           AND embedding_model = $3`,
+        [`[${profileVec.join(',')}]`, opportunities.map((o) => o.id), ai.model],
       );
       const cosById = new Map(sims.rows.map((r) => [r.id, Number(r.cos)]));
 
@@ -140,7 +141,7 @@ async function main() {
       for (const opp of opportunities) {
         const rawCos = cosById.get(opp.id);
         const semantic =
-          rawCos !== undefined ? MatchingService.normalizeCosine(rawCos) : undefined;
+          rawCos !== undefined ? MatchingService.normalizeCosine(rawCos) : null;
         const breakdown = await matching.computeBreakdown(opp, profile, semantic);
         scored.push({
           opp,

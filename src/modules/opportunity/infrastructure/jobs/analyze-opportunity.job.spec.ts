@@ -12,7 +12,7 @@ import {
   AnalyzeOpportunityJobPayload,
 } from '../adapters/queue/bullmq-analysis-queue.adapter';
 import { OpportunityRepositoryPort } from '../../domain/ports/opportunity.repository.port';
-import { AIProviderPort } from '../../../recommendation/domain/ports/ai-provider.port';
+import { TextGeneratorPort } from '../../../recommendation/domain/ports/ai-provider.port';
 import { SearchIndexPort } from '../../domain/ports/search-index.port';
 import { Opportunity } from '../../domain/entities/opportunity.entity';
 import { asOpportunityId } from '../../../shared/domain/typed-id';
@@ -23,6 +23,7 @@ import {
 import { PgVectorAdapter } from '../adapters/search/pgvector.adapter';
 import { requireTestDatabaseUrl } from '../../../shared/testing/test-database-url';
 import { migrateTestDatabase } from '../../../shared/testing/migrate-test-database';
+import { HashEmbedder } from '../../../shared/testing/hash-embedder';
 
 describe('BullMQ Analysis Queue & Job Processing', () => {
   let fakeLogger: LoggerService & { logs: string[]; warnings: string[] };
@@ -73,7 +74,8 @@ describe('BullMQ Analysis Queue & Job Processing', () => {
   describe('AnalyzeOpportunityJob (In-Memory Unit Tests)', () => {
     let storedOpportunity: Opportunity | null;
     let mockOppRepo: jest.Mocked<OpportunityRepositoryPort>;
-    let mockAiProvider: jest.Mocked<AIProviderPort>;
+    let mockTextGenerator: jest.Mocked<TextGeneratorPort>;
+    let embedder: HashEmbedder;
     let mockSearchIndex: jest.Mocked<SearchIndexPort>;
     let processor: AnalyzeOpportunityJob;
 
@@ -133,25 +135,26 @@ describe('BullMQ Analysis Queue & Job Processing', () => {
         findByFilters: jest.fn().mockResolvedValue([]),
       };
 
-      mockAiProvider = {
-        embed: jest.fn().mockResolvedValue(new Array(768).fill(0.01)),
+      mockTextGenerator = {
         summarize: jest.fn().mockResolvedValue('Resumen sintetizado por IA de las obras viales.'),
-        scoreSimilarity: jest.fn().mockResolvedValue(0.95),
       };
+
+      embedder = new HashEmbedder('nomic-embed-text');
 
       mockSearchIndex = {
         indexOpportunity: jest.fn(async (opp) => {
-          await mockAiProvider.embed(opp.title);
+          await embedder.embed([opp.title]);
         }),
         semanticSearch: jest.fn().mockResolvedValue([]),
+        similarities: jest.fn().mockResolvedValue(new Map()),
       };
 
       processor = new AnalyzeOpportunityJob(
         mockOppRepo,
-        mockAiProvider,
+        mockTextGenerator,
         mockSearchIndex,
         fakeLogger,
-        'nomic-embed-text',
+        embedder,
       );
     });
 
@@ -165,7 +168,7 @@ describe('BullMQ Analysis Queue & Job Processing', () => {
 
       expect(mockOppRepo.withAnalysisLock).toHaveBeenCalledTimes(1);
       expect(mockOppRepo.findById).toHaveBeenCalledWith(sampleOpportunity.id);
-      expect(mockAiProvider.summarize).toHaveBeenCalledWith(
+      expect(mockTextGenerator.summarize).toHaveBeenCalledWith(
         expect.stringContaining('Mantenimiento preventivo de vias urbanas'),
       );
       expect(mockSearchIndex.indexOpportunity).toHaveBeenCalledTimes(1);
@@ -189,12 +192,12 @@ describe('BullMQ Analysis Queue & Job Processing', () => {
 
       // First run performs summarize + embed
       await processor.process(job);
-      expect(mockAiProvider.summarize).toHaveBeenCalledTimes(1);
-      expect(mockAiProvider.embed).toHaveBeenCalledTimes(1);
+      expect(mockTextGenerator.summarize).toHaveBeenCalledTimes(1);
+      expect(embedder.calls).toBe(1);
       expect(mockOppRepo.saveAnalysis).toHaveBeenCalledTimes(1);
 
-      mockAiProvider.summarize.mockClear();
-      mockAiProvider.embed.mockClear();
+      mockTextGenerator.summarize.mockClear();
+      embedder.calls = 0;
       mockOppRepo.saveAnalysis.mockClear();
 
       // Second run over the same opportunity (even if closingDate changed in the meantime)
@@ -205,8 +208,8 @@ describe('BullMQ Analysis Queue & Job Processing', () => {
 
       await processor.process(job);
 
-      expect(mockAiProvider.summarize).not.toHaveBeenCalled();
-      expect(mockAiProvider.embed).not.toHaveBeenCalled();
+      expect(mockTextGenerator.summarize).not.toHaveBeenCalled();
+      expect(embedder.calls).toBe(0);
       expect(mockOppRepo.saveAnalysis).not.toHaveBeenCalled();
       expect(fakeLogger.logs).toContainEqual(
         expect.stringContaining('contentHash'),
@@ -224,7 +227,7 @@ describe('BullMQ Analysis Queue & Job Processing', () => {
       await processor.process(job);
 
       expect(mockOppRepo.findById).toHaveBeenCalledWith('opp-not-found');
-      expect(mockAiProvider.summarize).not.toHaveBeenCalled();
+      expect(mockTextGenerator.summarize).not.toHaveBeenCalled();
       expect(mockSearchIndex.indexOpportunity).not.toHaveBeenCalled();
       expect(mockOppRepo.saveAnalysis).not.toHaveBeenCalled();
       expect(fakeLogger.warnings).toContainEqual(
@@ -297,9 +300,15 @@ describe('BullMQ Analysis Queue & Job Processing', () => {
       await repo.save(initialOpportunity);
 
       let concurrentLockAttemptError: unknown = null;
+      const embedder = new HashEmbedder('nomic-embed-text');
 
-      const aiProvider: jest.Mocked<AIProviderPort> = {
-        embed: jest.fn().mockResolvedValue(new Array(768).fill(0.02)),
+      const pgVector = new PgVectorAdapter({
+        pool,
+        embedder,
+        logger: fakeLogger,
+      });
+
+      const textGenerator: jest.Mocked<TextGeneratorPort> = {
         summarize: jest.fn(async (_text: string) => {
           // 1. While job 1 holds the advisory lock and has already loaded initialOpportunity,
           // update closing_date in the database concurrently (simulating a concurrent sync).
@@ -311,10 +320,10 @@ describe('BullMQ Analysis Queue & Job Processing', () => {
           // 2. Also verify a second concurrent job for the same opportunity fails fast on the advisory lock.
           const secondJobProcessor = new AnalyzeOpportunityJob(
             repo,
-            aiProvider,
+            textGenerator,
             pgVector,
             fakeLogger,
-            'nomic-embed-text',
+            embedder,
           );
           try {
             await secondJobProcessor.process({ id: 'job-2', data: { opportunityId: oppId } });
@@ -324,21 +333,14 @@ describe('BullMQ Analysis Queue & Job Processing', () => {
 
           return 'Resumen del puente vehicular sobre el río Magdalena.';
         }),
-        scoreSimilarity: jest.fn().mockResolvedValue(0.9),
       };
-
-      const pgVector = new PgVectorAdapter({
-        pool,
-        aiProvider,
-        logger: fakeLogger,
-      });
 
       const jobProcessor = new AnalyzeOpportunityJob(
         repo,
-        aiProvider,
+        textGenerator,
         pgVector,
         fakeLogger,
-        'nomic-embed-text',
+        embedder,
       );
 
       // First run: executes while closing_date is updated concurrently
@@ -358,13 +360,20 @@ describe('BullMQ Analysis Queue & Job Processing', () => {
         computeAnalysisContentHash(initialOpportunity, 'nomic-embed-text'),
       );
 
+      // Verify embedding_model was written to opportunity_embeddings
+      const embRow = await pool.query<{ embedding_model: string }>(
+        'SELECT embedding_model FROM opportunity_embeddings WHERE opportunity_id = $1',
+        [oppId],
+      );
+      expect(embRow.rows[0]?.embedding_model).toBe('nomic-embed-text');
+
       // Second run after lock is released: contentHash matches -> zero Ollama calls
-      aiProvider.summarize.mockClear();
-      aiProvider.embed.mockClear();
+      textGenerator.summarize.mockClear();
+      embedder.calls = 0;
 
       await jobProcessor.process({ id: 'job-3', data: { opportunityId: oppId } });
-      expect(aiProvider.summarize).not.toHaveBeenCalled();
-      expect(aiProvider.embed).not.toHaveBeenCalled();
+      expect(textGenerator.summarize).not.toHaveBeenCalled();
+      expect(embedder.calls).toBe(0);
     });
   });
 });

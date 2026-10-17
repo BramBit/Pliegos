@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { Pool } from 'pg';
 import { DATABASE_POOL } from '../shared/infrastructure/persistence/database.module';
 import { AiModule } from '../shared/infrastructure/ai/ai.module';
-import { AI_PROVIDER_PORT, AIProviderPort } from './domain/ports/ai-provider.port';
+import { EMBEDDER_PORT, EmbedderPort } from './domain/ports/ai-provider.port';
 import { RECOMMENDATION_REPOSITORY_PORT } from './domain/ports/recommendation.repository.port';
 import { PostgresRecommendationRepository } from './infrastructure/adapters/persistence/postgres-recommendation.repository';
 import { MatchingService } from './domain/services/matching.service';
@@ -13,6 +13,7 @@ import { ProfileModule } from '../profile/profile.module';
 import { OpportunityModule } from '../opportunity/opportunity.module';
 import { PROFILE_REPOSITORY_PORT } from '../profile/domain/ports/profile.repository.port';
 import { OPPORTUNITY_REPOSITORY_PORT } from '../opportunity/domain/ports/opportunity.repository.port';
+import { SEARCH_INDEX_PORT, SearchIndexPort } from '../opportunity/domain/ports/search-index.port';
 
 @Module({
   imports: [AiModule, ProfileModule, OpportunityModule],
@@ -25,18 +26,33 @@ import { OPPORTUNITY_REPOSITORY_PORT } from '../opportunity/domain/ports/opportu
     },
     {
       provide: MatchingService,
-      useFactory: (aiProvider: AIProviderPort) => new MatchingService(aiProvider),
-      inject: [AI_PROVIDER_PORT],
+      useFactory: () => new MatchingService(),
     },
     {
       provide: GetRecommendationsUseCase,
-      useFactory: (profileRepo, oppRepo, recRepo, matchingService) =>
-        new GetRecommendationsUseCase(profileRepo, oppRepo, recRepo, matchingService),
+      useFactory: (
+        profileRepo,
+        oppRepo,
+        recRepo,
+        matchingService: MatchingService,
+        embedder: EmbedderPort,
+        searchIndex: SearchIndexPort,
+      ) =>
+        new GetRecommendationsUseCase(
+          profileRepo,
+          oppRepo,
+          recRepo,
+          matchingService,
+          embedder,
+          searchIndex,
+        ),
       inject: [
         PROFILE_REPOSITORY_PORT,
         OPPORTUNITY_REPOSITORY_PORT,
         RECOMMENDATION_REPOSITORY_PORT,
         MatchingService,
+        EMBEDDER_PORT,
+        SEARCH_INDEX_PORT,
       ],
     },
     {

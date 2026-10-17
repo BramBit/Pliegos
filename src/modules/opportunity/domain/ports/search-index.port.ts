@@ -5,6 +5,10 @@ import { OpportunityFilters } from '../value-objects/opportunity-filters';
 export interface SearchIndexPort {
   indexOpportunity(opportunity: Opportunity): Promise<void>;
   semanticSearch(queryVector: number[], filters: OpportunityFilters): Promise<OpportunityId[]>;
+  similarities(
+    profileVector: number[],
+    opportunityIds: OpportunityId[],
+  ): Promise<Map<OpportunityId, number>>;
 }
 
 export const SEARCH_INDEX_PORT = Symbol('SEARCH_INDEX_PORT');

@@ -1,11 +1,14 @@
 import { Module } from '@nestjs/common';
-import { AI_PROVIDER_PORT } from '../../../recommendation/domain/ports/ai-provider.port';
+import {
+  EMBEDDER_PORT,
+  TEXT_GENERATOR_PORT,
+} from '../../../recommendation/domain/ports/ai-provider.port';
 import { OllamaAdapter } from '../../../recommendation/infrastructure/adapters/ollama/ollama.adapter';
 
 @Module({
   providers: [
     {
-      provide: AI_PROVIDER_PORT,
+      provide: OllamaAdapter,
       useFactory: () => {
         return new OllamaAdapter({
           baseUrl: process.env.OLLAMA_BASE_URL || 'http://localhost:11434',
@@ -14,7 +17,15 @@ import { OllamaAdapter } from '../../../recommendation/infrastructure/adapters/o
         });
       },
     },
+    {
+      provide: EMBEDDER_PORT,
+      useExisting: OllamaAdapter,
+    },
+    {
+      provide: TEXT_GENERATOR_PORT,
+      useExisting: OllamaAdapter,
+    },
   ],
-  exports: [AI_PROVIDER_PORT],
+  exports: [EMBEDDER_PORT, TEXT_GENERATOR_PORT],
 })
 export class AiModule {}

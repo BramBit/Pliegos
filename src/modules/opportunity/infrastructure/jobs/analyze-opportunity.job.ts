@@ -10,8 +10,10 @@ import {
   OpportunityRepositoryPort,
 } from '../../domain/ports/opportunity.repository.port';
 import {
-  AI_PROVIDER_PORT,
-  AIProviderPort,
+  EMBEDDER_PORT,
+  EmbedderPort,
+  TEXT_GENERATOR_PORT,
+  TextGeneratorPort,
 } from '../../../recommendation/domain/ports/ai-provider.port';
 import { SEARCH_INDEX_PORT, SearchIndexPort } from '../../domain/ports/search-index.port';
 import { Opportunity, withOpportunityAnalysis } from '../../domain/entities/opportunity.entity';
@@ -47,14 +49,17 @@ export class AnalyzeOpportunityJob extends WorkerHost {
   constructor(
     @Inject(OPPORTUNITY_REPOSITORY_PORT)
     private readonly opportunityRepository: OpportunityRepositoryPort,
-    @Inject(AI_PROVIDER_PORT) private readonly aiProvider: AIProviderPort,
+    @Inject(TEXT_GENERATOR_PORT) private readonly textGenerator: TextGeneratorPort,
     @Inject(SEARCH_INDEX_PORT) private readonly searchIndex: SearchIndexPort,
     @Optional() @Inject('ANALYSIS_JOB_LOGGER') logger?: LoggerService,
-    @Optional() @Inject('OLLAMA_EMBED_MODEL') embeddingModel?: string,
+    @Optional() @Inject(EMBEDDER_PORT) embedderOrModel?: Pick<EmbedderPort, 'model'> | string,
   ) {
     super();
     this.logger = logger ?? new Logger(AnalyzeOpportunityJob.name);
-    this.embeddingModel = embeddingModel ?? (process.env.OLLAMA_EMBED_MODEL || 'nomic-embed-text');
+    this.embeddingModel =
+      typeof embedderOrModel === 'string'
+        ? embedderOrModel
+        : embedderOrModel?.model ?? (process.env.OLLAMA_EMBED_MODEL || 'nomic-embed-text');
   }
 
   /**
@@ -103,7 +108,7 @@ export class AnalyzeOpportunityJob extends WorkerHost {
       const summary =
         process.env.ANALYSIS_SUMMARIZE === 'false'
           ? ''
-          : await this.aiProvider.summarize(textToAnalyze);
+          : await this.textGenerator.summarize(textToAnalyze);
 
       // 3. Extract baseline requirements
       const requirements: Requirement[] = [

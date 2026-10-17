@@ -4,7 +4,7 @@ import { Queue } from 'bullmq';
 import { Pool } from 'pg';
 import { DATABASE_POOL } from '../shared/infrastructure/persistence/database.module';
 import { AiModule } from '../shared/infrastructure/ai/ai.module';
-import { AI_PROVIDER_PORT, AIProviderPort } from '../recommendation/domain/ports/ai-provider.port';
+import { EMBEDDER_PORT, EmbedderPort } from '../recommendation/domain/ports/ai-provider.port';
 import { OPPORTUNITY_REPOSITORY_PORT } from './domain/ports/opportunity.repository.port';
 import { OPPORTUNITY_SOURCE_PORT } from './domain/ports/opportunity-source.port';
 import { SEARCH_INDEX_PORT } from './domain/ports/search-index.port';
@@ -36,10 +36,10 @@ import { OpportunityController } from './infrastructure/controllers/opportunity.
     },
     {
       provide: SEARCH_INDEX_PORT,
-      useFactory: (pool: Pool, aiProvider: AIProviderPort) => {
-        return new PgVectorAdapter({ pool, aiProvider });
+      useFactory: (pool: Pool, embedder: EmbedderPort) => {
+        return new PgVectorAdapter({ pool, embedder });
       },
-      inject: [DATABASE_POOL, AI_PROVIDER_PORT],
+      inject: [DATABASE_POOL, EMBEDDER_PORT],
     },
     {
       provide: ANALYSIS_QUEUE_PORT,
@@ -54,9 +54,9 @@ import { OpportunityController } from './infrastructure/controllers/opportunity.
     },
     {
       provide: SearchOpportunitiesUseCase,
-      useFactory: (repo, searchIndex, aiProvider) =>
-        new SearchOpportunitiesUseCase(repo, searchIndex, aiProvider),
-      inject: [OPPORTUNITY_REPOSITORY_PORT, SEARCH_INDEX_PORT, AI_PROVIDER_PORT],
+      useFactory: (repo, searchIndex, embedder: EmbedderPort) =>
+        new SearchOpportunitiesUseCase(repo, searchIndex, embedder),
+      inject: [OPPORTUNITY_REPOSITORY_PORT, SEARCH_INDEX_PORT, EMBEDDER_PORT],
     },
   ],
   exports: [

@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { AIProviderPort } from '../ports/ai-provider.port';
+import { cosine } from '../ports/ai-provider.port';
 import { Opportunity } from '../../../opportunity/domain/entities/opportunity.entity';
 import { Profile } from '../../../profile/domain/entities/profile.entity';
 import { Capability } from '../../../profile/domain/value-objects/profile.value-objects';
@@ -10,6 +10,8 @@ import {
 } from '../../../opportunity/domain/value-objects/opportunity.value-objects';
 import { RecommendationId, asRecommendationId } from '../../../shared/domain/typed-id';
 import { normalizeUnspsc } from '../../../opportunity/infrastructure/adapters/secop/normalizers';
+
+export { cosine };
 
 export interface ScoringWeights {
   readonly semanticSimilarity: number;
@@ -38,24 +40,22 @@ export interface ScoringBreakdown {
 }
 
 export class MatchingService {
-  constructor(
-    private readonly aiProvider: AIProviderPort,
-    private readonly weights: ScoringWeights = DEFAULT_SCORING_WEIGHTS,
-  ) {}
+  constructor(private readonly weights: ScoringWeights = DEFAULT_SCORING_WEIGHTS) {}
 
   /**
    * Computes the detailed scoring breakdown for an Opportunity against a Profile.
+   * Requires precomputed semanticSimilarity (0..1 or null).
    */
   async computeBreakdown(
     opportunity: Opportunity,
     profile: Profile,
-    precomputedSemanticSimilarity?: number,
+    semanticSimilarity: number | null,
   ): Promise<ScoringBreakdown> {
-    // A precomputed value (e.g. pgvector cosine similarity) skips the per-pair LLM call
-    const semanticSimilarity =
-      precomputedSemanticSimilarity !== undefined
-        ? Math.min(1, Math.max(0, precomputedSemanticSimilarity))
-        : await this.computeSemanticSimilarity(profile, opportunity);
+    const semanticScore =
+      semanticSimilarity === null
+        ? 0
+        : Math.min(1, Math.max(0, Number(semanticSimilarity.toFixed(4))));
+
     const categoryMatch = this.computeCategoryMatch(
       opportunity.categoryCode,
       profile.preferences.categoryCodes,
@@ -70,7 +70,7 @@ export class MatchingService {
     );
 
     const rawScore =
-      this.weights.semanticSimilarity * semanticSimilarity +
+      this.weights.semanticSimilarity * semanticScore +
       this.weights.categoryMatch * categoryMatch +
       this.weights.amountFit * amountFit +
       this.weights.locationMatch * locationMatch;
@@ -79,10 +79,10 @@ export class MatchingService {
 
     const matchedFactors: MatchedFactor[] = [];
 
-    if (semanticSimilarity >= FACTOR_MATCH_THRESHOLD) {
+    if (semanticScore >= FACTOR_MATCH_THRESHOLD) {
       matchedFactors.push({
         factor: 'semanticSimilarity',
-        score: Number(semanticSimilarity.toFixed(4)),
+        score: Number(semanticScore.toFixed(4)),
         description: 'Alta coincidencia semántica con las capacidades y palabras clave de tu perfil',
       });
     }
@@ -120,7 +120,7 @@ export class MatchingService {
     };
 
     return {
-      semanticSimilarity,
+      semanticSimilarity: semanticScore,
       categoryMatch,
       amountFit,
       locationMatch,
@@ -136,9 +136,10 @@ export class MatchingService {
   async score(
     opportunity: Opportunity,
     profile: Profile,
+    semanticSimilarity: number | null,
     recommendationId?: RecommendationId,
   ): Promise<Recommendation> {
-    const breakdown = await this.computeBreakdown(opportunity, profile);
+    const breakdown = await this.computeBreakdown(opportunity, profile, semanticSimilarity);
 
     return {
       id: recommendationId ?? asRecommendationId(randomUUID()),
@@ -152,7 +153,6 @@ export class MatchingService {
 
   /**
    * Builds the text that represents a profile for semantic matching.
-   * Shared so embeddings-based scoring uses the same text as the LLM-based path.
    */
   static buildProfileText(profile: Profile): string {
     const parts: string[] = [];
@@ -168,35 +168,8 @@ export class MatchingService {
    * Maps a raw embedding cosine similarity to 0..1. nomic-embed-text yields roughly
    * 0.40 (unrelated) to 0.75 (strongly related) for short Spanish texts.
    */
-  static normalizeCosine(cosine: number, low = 0.4, high = 0.75): number {
-    return Math.min(1, Math.max(0, (cosine - low) / (high - low)));
-  }
-
-  /**
-   * Factor 1: Semantic similarity via AIProviderPort (0..1)
-   */
-  private async computeSemanticSimilarity(
-    profile: Profile,
-    opportunity: Opportunity,
-  ): Promise<number> {
-    const profileParts: string[] = [];
-    if (profile.preferences.keywords.length > 0) {
-      profileParts.push(profile.preferences.keywords.join(', '));
-    }
-    if (profile.capabilities.length > 0) {
-      profileParts.push(profile.capabilities.map((c: Capability) => c.name).join(', '));
-    }
-    if (profile.sector) {
-      profileParts.push(profile.sector);
-    }
-    const profileText = profileParts.join('. ') || profile.sector;
-
-    const opportunityText = opportunity.analysis?.summary
-      ? `${opportunity.title}. ${opportunity.analysis.summary}`
-      : opportunity.title;
-
-    const rawSimilarity = await this.aiProvider.scoreSimilarity(profileText, opportunityText);
-    return Math.min(1, Math.max(0, Number(rawSimilarity.toFixed(4))));
+  static normalizeCosine(cosineValue: number, low = 0.4, high = 0.75): number {
+    return Math.min(1, Math.max(0, (cosineValue - low) / (high - low)));
   }
 
   /**
@@ -226,7 +199,6 @@ export class MatchingService {
         return 1.0;
       }
 
-      // UNSPSC segment (first 2 digits) and family (first 4 digits)
       if (
         (normOpp.length >= 4 && normPref.length >= 4 && normOpp.slice(0, 4) === normPref.slice(0, 4)) ||
         (normOpp.length >= 2 && normPref.length >= 2 && normOpp.slice(0, 2) === normPref.slice(0, 2))
@@ -240,7 +212,6 @@ export class MatchingService {
 
   /**
    * Factor 3: Amount fit with triangular falloff (0..1)
-   * 1.0 if inside range. Triangular linear falloff for amounts just outside range.
    */
   private computeAmountFit(
     opportunityAmount: number,
@@ -264,21 +235,19 @@ export class MatchingService {
       return Math.min(1, Math.max(0, Number((1 - diff / margin).toFixed(4))));
     }
 
-    // opportunityAmount < min
     const diff = min - opportunityAmount;
     return Math.min(1, Math.max(0, Number((1 - diff / margin).toFixed(4))));
   }
 
   /**
    * Factor 4: Location match (0..1)
-   * 1.0 if department matches or if profile has no department preferences ("any"); 0 otherwise.
    */
   private computeLocationMatch(
     opportunityDepartment: string | null,
     preferredDepartments: string[],
   ): number {
     if (!preferredDepartments || preferredDepartments.length === 0) {
-      return 1.0; // "any"
+      return 1.0;
     }
 
     if (!opportunityDepartment) {

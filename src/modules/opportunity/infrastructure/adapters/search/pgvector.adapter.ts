@@ -4,16 +4,17 @@ import { SearchIndexPort } from '../../../domain/ports/search-index.port';
 import { Opportunity } from '../../../domain/entities/opportunity.entity';
 import { OpportunityFilters } from '../../../domain/value-objects/opportunity-filters';
 import { OpportunityId, asOpportunityId } from '../../../../shared/domain/typed-id';
-import { AIProviderPort } from '../../../../recommendation/domain/ports/ai-provider.port';
+import { EmbedderPort } from '../../../../recommendation/domain/ports/ai-provider.port';
 
 export const PGVECTOR_DIMENSIONS = 768;
 export const DEFAULT_SEARCH_LIMIT = 20;
 export const DEFAULT_TABLE_NAME = 'opportunity_embeddings';
+export const DEFAULT_EMBEDDING_MODEL = 'nomic-embed-text';
 
 export interface PgVectorAdapterOptions {
   readonly pool: Pool;
   readonly tableName?: string;
-  readonly aiProvider?: AIProviderPort;
+  readonly embedder?: EmbedderPort;
   readonly logger?: LoggerService;
 }
 
@@ -21,13 +22,15 @@ export interface PgVectorAdapterOptions {
 export class PgVectorAdapter implements SearchIndexPort {
   private readonly pool: Pool;
   private readonly tableName: string;
-  private readonly aiProvider?: AIProviderPort;
+  private readonly embedder?: EmbedderPort;
+  private readonly embeddingModel: string;
   private readonly logger: LoggerService;
 
   constructor(options: PgVectorAdapterOptions) {
     this.pool = options.pool;
     this.tableName = options.tableName ?? DEFAULT_TABLE_NAME;
-    this.aiProvider = options.aiProvider;
+    this.embedder = options.embedder;
+    this.embeddingModel = options.embedder?.model ?? DEFAULT_EMBEDDING_MODEL;
     this.logger = options.logger ?? new Logger(PgVectorAdapter.name);
   }
 
@@ -44,6 +47,7 @@ export class PgVectorAdapter implements SearchIndexPort {
         department VARCHAR(100),
         contract_type VARCHAR(100),
         amount NUMERIC,
+        embedding_model TEXT NOT NULL DEFAULT '${DEFAULT_EMBEDDING_MODEL}',
         embedding vector(${PGVECTOR_DIMENSIONS}) NOT NULL,
         indexed_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
@@ -57,12 +61,12 @@ export class PgVectorAdapter implements SearchIndexPort {
 
   /**
    * Indexes an Opportunity by extracting relevant searchable text, generating
-   * a 768-dim embedding via AIProviderPort, and upserting into pgvector.
+   * a 768-dim embedding via EmbedderPort, and upserting into pgvector with embedding_model.
    */
   async indexOpportunity(opportunity: Opportunity): Promise<void> {
-    if (!this.aiProvider) {
+    if (!this.embedder) {
       throw new Error(
-        'PgVectorAdapter: AIProviderPort is required to generate embeddings for indexOpportunity(). Provide it in constructor options.',
+        'PgVectorAdapter: EmbedderPort is required to generate embeddings for indexOpportunity(). Provide it in constructor options.',
       );
     }
 
@@ -76,13 +80,14 @@ export class PgVectorAdapter implements SearchIndexPort {
     ].filter(Boolean);
 
     const fullText = textParts.join(' ');
-    const vector = await this.aiProvider.embed(fullText);
+    const [vector] = await this.embedder.embed([fullText]);
 
     await this.indexVector(opportunity.id, vector, {
       categoryCode: opportunity.categoryCode ?? undefined,
       department: opportunity.location.department ?? undefined,
       contractType: opportunity.contractType,
       amount: opportunity.amount.amount,
+      embeddingModel: this.embedder.model,
     });
   }
 
@@ -97,6 +102,7 @@ export class PgVectorAdapter implements SearchIndexPort {
       department?: string;
       contractType?: string;
       amount?: number;
+      embeddingModel?: string;
     },
   ): Promise<void> {
     if (!vector || vector.length !== PGVECTOR_DIMENSIONS) {
@@ -106,15 +112,17 @@ export class PgVectorAdapter implements SearchIndexPort {
     }
 
     const vectorString = `[${vector.join(',')}]`;
+    const model = metadata?.embeddingModel ?? this.embeddingModel;
     const query = `
       INSERT INTO ${this.tableName} (
-        opportunity_id, category_code, department, contract_type, amount, embedding, indexed_at
-      ) VALUES ($1, $2, $3, $4, $5, $6::vector, CURRENT_TIMESTAMP)
+        opportunity_id, category_code, department, contract_type, amount, embedding_model, embedding, indexed_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7::vector, CURRENT_TIMESTAMP)
       ON CONFLICT (opportunity_id) DO UPDATE SET
         category_code = EXCLUDED.category_code,
         department = EXCLUDED.department,
         contract_type = EXCLUDED.contract_type,
         amount = EXCLUDED.amount,
+        embedding_model = EXCLUDED.embedding_model,
         embedding = EXCLUDED.embedding,
         indexed_at = CURRENT_TIMESTAMP;
     `;
@@ -125,12 +133,13 @@ export class PgVectorAdapter implements SearchIndexPort {
       metadata?.department ?? null,
       metadata?.contractType ?? null,
       metadata?.amount ?? null,
+      model,
       vectorString,
     ]);
   }
 
   /**
-   * Performs semantic vector search with cosine distance (<=>) and structured filters.
+   * Performs semantic vector search with cosine distance (<=>), filtering by embedding_model and structured filters.
    */
   async semanticSearch(
     queryVector: number[],
@@ -144,8 +153,8 @@ export class PgVectorAdapter implements SearchIndexPort {
     }
 
     const vectorString = `[${queryVector.join(',')}]`;
-    const whereClauses: string[] = [];
-    const params: unknown[] = [vectorString];
+    const params: unknown[] = [vectorString, this.embeddingModel];
+    const whereClauses: string[] = ['embedding_model = $2'];
 
     if (filters.categoryCode && filters.categoryCode.trim() !== '') {
       params.push(`${filters.categoryCode.trim()}%`);
@@ -175,7 +184,7 @@ export class PgVectorAdapter implements SearchIndexPort {
     params.push(limit);
     const limitParamIndex = params.length;
 
-    const whereSql = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
+    const whereSql = `WHERE ${whereClauses.join(' AND ')}`;
     const sql = `
       SELECT opportunity_id
       FROM ${this.tableName}
@@ -187,5 +196,41 @@ export class PgVectorAdapter implements SearchIndexPort {
     const result: QueryResult<{ opportunity_id: string }> = await this.pool.query(sql, params);
 
     return result.rows.map((row) => asOpportunityId(row.opportunity_id));
+  }
+
+  /**
+   * Computes cosine similarity (1 - cosine_distance) for a list of opportunityIds in one SQL query,
+   * filtered by the configured embedding_model.
+   */
+  async similarities(
+    profileVector: number[],
+    opportunityIds: OpportunityId[],
+  ): Promise<Map<OpportunityId, number>> {
+    if (!profileVector || profileVector.length !== PGVECTOR_DIMENSIONS) {
+      throw new Error(
+        `PgVectorAdapter: query vector dimension mismatch. Expected ${PGVECTOR_DIMENSIONS} dimensions, received ${profileVector?.length ?? 0}.`,
+      );
+    }
+
+    if (opportunityIds.length === 0) {
+      return new Map();
+    }
+
+    const vectorString = `[${profileVector.join(',')}]`;
+    const sql = `
+      SELECT opportunity_id, 1 - (embedding <=> $1::vector) AS cosine
+      FROM ${this.tableName}
+      WHERE opportunity_id = ANY($2::text[])
+        AND embedding_model = $3;
+    `;
+
+    const result: QueryResult<{ opportunity_id: string; cosine: number | string }> =
+      await this.pool.query(sql, [vectorString, opportunityIds, this.embeddingModel]);
+
+    const out = new Map<OpportunityId, number>();
+    for (const row of result.rows) {
+      out.set(asOpportunityId(row.opportunity_id), Number(row.cosine));
+    }
+    return out;
   }
 }

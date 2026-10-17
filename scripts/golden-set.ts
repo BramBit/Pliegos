@@ -68,7 +68,7 @@ async function main() {
       embedModel: process.env.OLLAMA_EMBED_MODEL || 'nomic-embed-text',
       chatModel: process.env.OLLAMA_CHAT_MODEL || 'llama3.1',
     });
-    const matching = new MatchingService(ai);
+    const matching = new MatchingService();
 
     // Only processes that are actionable AND already embedded: semantic similarity is then
     // a single SQL cosine query per profile (no per-pair LLM calls).
@@ -95,7 +95,7 @@ async function main() {
     for (const profile of PROFILES) {
       console.log(`\nPuntuando perfil ${profile.id}...`);
       const t0 = Date.now();
-      const profileVec = await ai.embed(MatchingService.buildProfileText(profile));
+      const [profileVec] = await ai.embed([MatchingService.buildProfileText(profile)]);
       const sims = await pool.query<{ id: string; cos: number }>(
         `SELECT opportunity_id AS id, 1 - (embedding <=> $1::vector) AS cos
          FROM opportunity_embeddings WHERE opportunity_id = ANY($2)`,

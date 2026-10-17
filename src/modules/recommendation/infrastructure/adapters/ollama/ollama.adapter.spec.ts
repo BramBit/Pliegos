@@ -23,45 +23,103 @@ describe('OllamaAdapter', () => {
   });
 
   describe('embed (nomic-embed-text / 768 dimensions)', () => {
-    it('calls /api/embeddings with correct payload and returns 768-dim vector', async () => {
-      const mockVector = new Array(768).fill(0.05);
+    it('batches texts through /api/embed and returns 768-dim vectors', async () => {
+      const mockVectorA = new Array(768).fill(0.05);
+      const mockVectorB = new Array(768).fill(0.1);
       let capturedUrl = '';
       let capturedBody: any = null;
 
-      const mockFetch: typeof fetch = jest.fn(async (url: string | URL | Request, init?: RequestInit) => {
-        capturedUrl = url.toString();
-        capturedBody = JSON.parse(init?.body as string);
-        return {
-          ok: true,
-          status: 200,
-          json: async () => ({ embedding: mockVector }),
-        } as Response;
-      });
+      const mockFetch: typeof fetch = jest.fn(
+        async (url: string | URL | Request, init?: RequestInit) => {
+          capturedUrl = url.toString();
+          capturedBody = JSON.parse(init?.body as string);
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({ embeddings: [mockVectorA, mockVectorB] }),
+          } as Response;
+        },
+      );
 
       const adapter = new OllamaAdapter({
         fetchFn: mockFetch,
         logger: fakeLogger,
       });
 
-      const result = await adapter.embed('Pliego para construccion vial en Cundinamarca');
+      expect(adapter.model).toBe(DEFAULT_EMBED_MODEL);
+      expect(adapter.dimensions).toBe(EXPECTED_EMBEDDING_DIMENSIONS);
 
-      expect(capturedUrl).toBe(`${DEFAULT_OLLAMA_BASE_URL}/api/embeddings`);
+      const result = await adapter.embed([
+        'Pliego para construccion vial en Cundinamarca',
+        'Suministro de licencias de software',
+      ]);
+
+      expect(capturedUrl).toBe(`${DEFAULT_OLLAMA_BASE_URL}/api/embed`);
       expect(capturedBody).toEqual({
         model: DEFAULT_EMBED_MODEL,
-        prompt: 'Pliego para construccion vial en Cundinamarca',
+        input: [
+          'Pliego para construccion vial en Cundinamarca',
+          'Suministro de licencias de software',
+        ],
       });
-      expect(result).toHaveLength(EXPECTED_EMBEDDING_DIMENSIONS);
-      expect(result).toEqual(mockVector);
+      expect(result).toHaveLength(2);
+      expect(result[0]).toHaveLength(EXPECTED_EMBEDDING_DIMENSIONS);
+      expect(result[1]).toHaveLength(EXPECTED_EMBEDDING_DIMENSIONS);
     });
 
-    it('throws error when text is empty or blank (never returns a zero vector)', async () => {
+    it('falls back to sequential /api/embeddings calls when /api/embed returns 404', async () => {
+      const mockVector1 = new Array(768).fill(0.02);
+      const mockVector2 = new Array(768).fill(0.04);
+      const calledUrls: string[] = [];
+
+      const mockFetch: typeof fetch = jest.fn(
+        async (url: string | URL | Request, init?: RequestInit) => {
+          const urlStr = url.toString();
+          calledUrls.push(urlStr);
+          if (urlStr.endsWith('/api/embed')) {
+            return {
+              ok: false,
+              status: 404,
+              statusText: 'Not Found',
+            } as Response;
+          }
+          const body = JSON.parse(init?.body as string);
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({
+              embedding: body.prompt === 'Texto 1' ? mockVector1 : mockVector2,
+            }),
+          } as Response;
+        },
+      );
+
+      const adapter = new OllamaAdapter({
+        fetchFn: mockFetch,
+        logger: fakeLogger,
+      });
+
+      const result = await adapter.embed(['Texto 1', 'Texto 2']);
+
+      expect(calledUrls).toEqual([
+        `${DEFAULT_OLLAMA_BASE_URL}/api/embed`,
+        `${DEFAULT_OLLAMA_BASE_URL}/api/embeddings`,
+        `${DEFAULT_OLLAMA_BASE_URL}/api/embeddings`,
+      ]);
+      expect(result).toEqual([mockVector1, mockVector2]);
+    });
+
+    it('throws error when texts array is empty or contains blank text (never returns a zero vector)', async () => {
       const mockFetch: typeof fetch = jest.fn();
       const adapter = new OllamaAdapter({ fetchFn: mockFetch });
 
-      await expect(adapter.embed('')).rejects.toThrow(
+      await expect(adapter.embed([])).rejects.toThrow(
         'Ollama embed error: cannot generate embedding for empty text',
       );
-      await expect(adapter.embed('   ')).rejects.toThrow(
+      await expect(adapter.embed([''])).rejects.toThrow(
+        'Ollama embed error: cannot generate embedding for empty text',
+      );
+      await expect(adapter.embed(['texto valido', '   '])).rejects.toThrow(
         'Ollama embed error: cannot generate embedding for empty text',
       );
       expect(mockFetch).not.toHaveBeenCalled();
@@ -82,40 +140,46 @@ describe('OllamaAdapter', () => {
         embedTimeoutMs: 20,
       });
 
-      await expect(adapter.embed('texto lento')).rejects.toThrow('This operation was aborted');
-    });
-
-    it('throws error when Ollama endpoint returns HTTP error', async () => {
-      const mockFetch: typeof fetch = jest.fn(async () => ({
-        ok: false,
-        status: 500,
-        statusText: 'Internal Server Error',
-      } as Response));
-
-      const adapter = new OllamaAdapter({ fetchFn: mockFetch });
-
-      await expect(adapter.embed('test')).rejects.toThrow(
-        'Ollama embed error (http://localhost:11434/api/embeddings): HTTP 500 Internal Server Error',
+      await expect(adapter.embed(['texto lento'])).rejects.toThrow(
+        'This operation was aborted',
       );
     });
 
-    it('logs warning if model returns vector with unexpected dimension', async () => {
+    it('throws error when Ollama endpoint returns HTTP error', async () => {
+      const mockFetch: typeof fetch = jest.fn(
+        async () =>
+          ({
+            ok: false,
+            status: 500,
+            statusText: 'Internal Server Error',
+          }) as Response,
+      );
+
+      const adapter = new OllamaAdapter({ fetchFn: mockFetch });
+
+      await expect(adapter.embed(['test'])).rejects.toThrow(
+        'Ollama embed error (http://localhost:11434/api/embed): HTTP 500 Internal Server Error',
+      );
+    });
+
+    it('throws error when any returned vector does not have 768 dimensions', async () => {
       const shortVector = [0.1, 0.2, 0.3];
-      const mockFetch: typeof fetch = jest.fn(async () => ({
-        ok: true,
-        status: 200,
-        json: async () => ({ embedding: shortVector }),
-      } as Response));
+      const mockFetch: typeof fetch = jest.fn(
+        async () =>
+          ({
+            ok: true,
+            status: 200,
+            json: async () => ({ embeddings: [shortVector] }),
+          }) as Response,
+      );
 
       const adapter = new OllamaAdapter({
         fetchFn: mockFetch,
         logger: fakeLogger,
       });
 
-      const res = await adapter.embed('test');
-      expect(res).toEqual(shortVector);
-      expect(fakeLogger.warn).toHaveBeenCalledWith(
-        expect.stringContaining('Ollama embedding dimension mismatch: expected 768, received 3'),
+      await expect(adapter.embed(['test'])).rejects.toThrow(
+        'Ollama embedding dimension mismatch: expected 768, received 3',
       );
     });
   });
@@ -125,17 +189,19 @@ describe('OllamaAdapter', () => {
       let capturedUrl = '';
       let capturedBody: any = null;
 
-      const mockFetch: typeof fetch = jest.fn(async (url: string | URL | Request, init?: RequestInit) => {
-        capturedUrl = url.toString();
-        capturedBody = JSON.parse(init?.body as string);
-        return {
-          ok: true,
-          status: 200,
-          json: async () => ({
-            response: '  Licitacion publica convocada por INVIAS para mantenimiento vial.  ',
-          }),
-        } as Response;
-      });
+      const mockFetch: typeof fetch = jest.fn(
+        async (url: string | URL | Request, init?: RequestInit) => {
+          capturedUrl = url.toString();
+          capturedBody = JSON.parse(init?.body as string);
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({
+              response: '  Licitacion publica convocada por INVIAS para mantenimiento vial.  ',
+            }),
+          } as Response;
+        },
+      );
 
       const adapter = new OllamaAdapter({
         fetchFn: mockFetch,
@@ -161,94 +227,20 @@ describe('OllamaAdapter', () => {
     });
 
     it('throws error when Ollama endpoint returns error on summarize', async () => {
-      const mockFetch: typeof fetch = jest.fn(async () => ({
-        ok: false,
-        status: 503,
-        statusText: 'Service Unavailable',
-      } as Response));
+      const mockFetch: typeof fetch = jest.fn(
+        async () =>
+          ({
+            ok: false,
+            status: 503,
+            statusText: 'Service Unavailable',
+          }) as Response,
+      );
 
       const adapter = new OllamaAdapter({ fetchFn: mockFetch });
 
       await expect(adapter.summarize('valid text')).rejects.toThrow(
         'Ollama summarize error (http://localhost:11434/api/generate): HTTP 503 Service Unavailable',
       );
-    });
-  });
-
-  describe('scoreSimilarity (local chat model with fallback)', () => {
-    it('evaluates semantic similarity via chat model and parses float', async () => {
-      const mockFetch: typeof fetch = jest.fn(async (url: string | URL | Request, init?: RequestInit) => {
-        const body = JSON.parse(init?.body as string);
-        if (url.toString().includes('/api/generate')) {
-          return {
-            ok: true,
-            status: 200,
-            json: async () => ({ response: 'Puntaje: 0.88' }),
-          } as Response;
-        }
-        return { ok: false, status: 404 } as Response;
-      });
-
-      const adapter = new OllamaAdapter({
-        fetchFn: mockFetch,
-        logger: fakeLogger,
-      });
-
-      const score = await adapter.scoreSimilarity('Servicios de ingenieria vial', 'Mantenimiento de carreteras');
-      expect(score).toBeCloseTo(0.88, 2);
-    });
-
-    it('returns 0.0 when either input string is empty', async () => {
-      const mockFetch: typeof fetch = jest.fn();
-      const adapter = new OllamaAdapter({ fetchFn: mockFetch });
-
-      expect(await adapter.scoreSimilarity('', 'test')).toBe(0.0);
-      expect(await adapter.scoreSimilarity('test', '  ')).toBe(0.0);
-      expect(mockFetch).not.toHaveBeenCalled();
-    });
-
-    it('falls back to cosine similarity when chat generation returns unparseable text', async () => {
-      // Mock vector A and vector B
-      const vecA = new Array(768).fill(1);
-      const vecB = new Array(768).fill(1); // identical -> cosine similarity 1.0
-
-      const mockFetch: typeof fetch = jest.fn(async (url: string | URL | Request) => {
-        if (url.toString().includes('/api/generate')) {
-          return {
-            ok: true,
-            status: 200,
-            json: async () => ({ response: 'No puedo evaluar esto.' }), // unparseable
-          } as Response;
-        }
-        if (url.toString().includes('/api/embeddings')) {
-          return {
-            ok: true,
-            status: 200,
-            json: async () => ({ embedding: vecA }),
-          } as Response;
-        }
-        return { ok: false, status: 404 } as Response;
-      });
-
-      const adapter = new OllamaAdapter({
-        fetchFn: mockFetch,
-        logger: fakeLogger,
-      });
-
-      const score = await adapter.scoreSimilarity('Texto A', 'Texto B');
-      expect(score).toBeCloseTo(1.0, 2);
-    });
-
-    it('clamps parsed score between 0.0 and 1.0', async () => {
-      const mockFetch: typeof fetch = jest.fn(async () => ({
-        ok: true,
-        status: 200,
-        json: async () => ({ response: '1.0' }),
-      } as Response));
-
-      const adapter = new OllamaAdapter({ fetchFn: mockFetch });
-      const score = await adapter.scoreSimilarity('A', 'B');
-      expect(score).toBe(1.0);
     });
   });
 });

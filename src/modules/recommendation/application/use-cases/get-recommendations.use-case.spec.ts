@@ -1,9 +1,9 @@
 import { GetRecommendationsUseCase } from './get-recommendations.use-case';
 import { ProfileRepositoryPort } from '../../../profile/domain/ports/profile.repository.port';
 import { OpportunityRepositoryPort } from '../../../opportunity/domain/ports/opportunity.repository.port';
+import { SearchIndexPort } from '../../../opportunity/domain/ports/search-index.port';
 import { RecommendationRepositoryPort } from '../../domain/ports/recommendation.repository.port';
-import { MatchingService } from '../../domain/services/matching.service';
-import { AIProviderPort } from '../../domain/ports/ai-provider.port';
+import { MatchingService, cosine } from '../../domain/services/matching.service';
 import { Profile } from '../../../profile/domain/entities/profile.entity';
 import { Opportunity } from '../../../opportunity/domain/entities/opportunity.entity';
 import { Recommendation } from '../../domain/entities/recommendation.entity';
@@ -17,6 +17,7 @@ import {
   asUserId,
 } from '../../../shared/domain/typed-id';
 import { createMoney } from '../../../opportunity/domain/value-objects/money.vo';
+import { HashEmbedder } from '../../../shared/testing/hash-embedder';
 
 class FakeProfileRepo implements ProfileRepositoryPort {
   public profiles: Map<string, Profile> = new Map();
@@ -81,16 +82,37 @@ class FakeRecommendationRepo implements RecommendationRepositoryPort {
   }
 }
 
-class FakeAI implements AIProviderPort {
-  async embed(_text: string): Promise<number[]> {
+class FakeSearchIndex implements SearchIndexPort {
+  public vectorsByOppId: Map<OpportunityId, number[]> = new Map();
+  public similaritiesCalls = 0;
+
+  constructor(private readonly embedder: HashEmbedder) {}
+
+  async indexOpportunity(opportunity: Opportunity): Promise<void> {
+    const [vec] = await this.embedder.embed([`${opportunity.title} ${opportunity.description}`]);
+    this.vectorsByOppId.set(opportunity.id, vec);
+  }
+
+  async semanticSearch(
+    _queryVector: number[],
+    _filters: OpportunityFilters,
+  ): Promise<OpportunityId[]> {
     return [];
   }
-  async scoreSimilarity(textA: string, textB: string): Promise<number> {
-    if (textB.includes('Software')) return 0.9;
-    return 0.2;
-  }
-  async summarize(_text: string): Promise<string> {
-    return '';
+
+  async similarities(
+    profileVector: number[],
+    opportunityIds: OpportunityId[],
+  ): Promise<Map<OpportunityId, number>> {
+    this.similaritiesCalls += 1;
+    const result = new Map<OpportunityId, number>();
+    for (const id of opportunityIds) {
+      const vec = this.vectorsByOppId.get(id);
+      if (vec) {
+        result.set(id, cosine(profileVector, vec));
+      }
+    }
+    return result;
   }
 }
 
@@ -104,6 +126,8 @@ describe('GetRecommendationsUseCase', () => {
   let profileRepo: FakeProfileRepo;
   let oppRepo: FakeOpportunityRepo;
   let recRepo: FakeRecommendationRepo;
+  let embedder: HashEmbedder;
+  let searchIndex: FakeSearchIndex;
   let matchingService: MatchingService;
   let useCase: GetRecommendationsUseCase;
 
@@ -123,7 +147,7 @@ describe('GetRecommendationsUseCase', () => {
   const oppHigh: Opportunity = {
     id: asOpportunityId('opp-high'),
     title: 'Desarrollo de Software a la medida',
-    description: 'Servicios de desarrollo de software',
+    description: 'Servicios de desarrollo de software web',
     contractingEntity: { name: 'Ministerio de TIC', taxId: '800' },
     location: { city: 'Bogotá', department: 'Bogotá D.C.' },
     amount: mustCreateMoney(100_000_000),
@@ -151,21 +175,26 @@ describe('GetRecommendationsUseCase', () => {
     ...oppHigh,
     id: asOpportunityId('opp-low'),
     title: 'Construcción de puente vehicular',
+    description: 'Obras civiles estructurales de puente',
     categoryCode: 'V1.72141100',
     amount: mustCreateMoney(900_000_000),
     location: { city: 'Cali', department: 'Valle del Cauca' },
   };
 
-  beforeEach(() => {
+  beforeEach(async () => {
     profileRepo = new FakeProfileRepo();
     oppRepo = new FakeOpportunityRepo();
     recRepo = new FakeRecommendationRepo();
-    matchingService = new MatchingService(new FakeAI());
+    embedder = new HashEmbedder();
+    searchIndex = new FakeSearchIndex(embedder);
+    matchingService = new MatchingService();
     useCase = new GetRecommendationsUseCase(
       profileRepo,
       oppRepo,
       recRepo,
       matchingService,
+      embedder,
+      searchIndex,
     );
   });
 
@@ -181,25 +210,28 @@ describe('GetRecommendationsUseCase', () => {
     }
   });
 
-  it('retrieves candidate opportunities, scores them, ranks them descending by score, and saves to repository', async () => {
+  it('embeds profile text once, calls similarities once, scores and ranks descending', async () => {
     await profileRepo.save(testProfile);
     await oppRepo.save(oppLow);
     await oppRepo.save(oppHigh);
+    await searchIndex.indexOpportunity(oppLow);
+    await searchIndex.indexOpportunity(oppHigh);
+    embedder.calls = 0;
 
     const result = await useCase.execute({
       profileId: testProfile.id,
     });
 
+    expect(embedder.calls).toBe(1);
+    expect(searchIndex.similaritiesCalls).toBe(1);
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.value).toHaveLength(2);
-      // High match should be first
       expect(result.value[0].opportunityId).toBe('opp-high');
       expect(result.value[1].opportunityId).toBe('opp-low');
       expect(result.value[0].score).toBeGreaterThan(result.value[1].score);
     }
 
-    // Verified saved in repository
     expect(recRepo.recommendations).toHaveLength(2);
   });
 
@@ -215,7 +247,8 @@ describe('GetRecommendationsUseCase', () => {
   it('reuses recommendation id and feedback on repeated calls (no duplicates)', async () => {
     await profileRepo.save(testProfile);
     await oppRepo.save(oppHigh);
-    // Upsert-aware save, like the Postgres repository
+    await searchIndex.indexOpportunity(oppHigh);
+
     recRepo.save = async (rec: Recommendation) => {
       const idx = recRepo.recommendations.findIndex((r) => r.id === rec.id);
       if (idx >= 0) recRepo.recommendations[idx] = rec;
@@ -241,6 +274,8 @@ describe('GetRecommendationsUseCase', () => {
     await profileRepo.save(testProfile);
     await oppRepo.save(oppLow);
     await oppRepo.save(oppHigh);
+    await searchIndex.indexOpportunity(oppLow);
+    await searchIndex.indexOpportunity(oppHigh);
 
     const result = await useCase.execute({ profileId: testProfile.id, limit: 1 });
 

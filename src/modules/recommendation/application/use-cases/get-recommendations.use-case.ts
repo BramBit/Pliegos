@@ -3,10 +3,12 @@ import {
   ProfileNotFoundError,
   createProfileNotFoundError,
 } from '../../../shared/domain/errors';
-import { ProfileId } from '../../../shared/domain/typed-id';
+import { OpportunityId, ProfileId } from '../../../shared/domain/typed-id';
 import { ProfileRepositoryPort } from '../../../profile/domain/ports/profile.repository.port';
 import { OpportunityRepositoryPort } from '../../../opportunity/domain/ports/opportunity.repository.port';
+import { SearchIndexPort } from '../../../opportunity/domain/ports/search-index.port';
 import { RecommendationRepositoryPort } from '../../domain/ports/recommendation.repository.port';
+import { EmbedderPort } from '../../domain/ports/ai-provider.port';
 import { Recommendation } from '../../domain/entities/recommendation.entity';
 import { MatchingService } from '../../domain/services/matching.service';
 
@@ -26,6 +28,8 @@ export class GetRecommendationsUseCase implements IGetRecommendationsUseCase {
     private readonly opportunityRepository: OpportunityRepositoryPort,
     private readonly recommendationRepository: RecommendationRepositoryPort,
     private readonly matchingService: MatchingService,
+    private readonly embedder: EmbedderPort,
+    private readonly searchIndex: SearchIndexPort,
   ) {}
 
   async execute(input: {
@@ -43,6 +47,16 @@ export class GetRecommendationsUseCase implements IGetRecommendationsUseCase {
       limit: CANDIDATE_POOL_SIZE,
     });
 
+    let cosinesById = new Map<OpportunityId, number>();
+    if (candidates.length > 0) {
+      const profileText = MatchingService.buildProfileText(profile);
+      const [profileVector] = await this.embedder.embed([profileText]);
+      cosinesById = await this.searchIndex.similarities(
+        profileVector,
+        candidates.map((c) => c.id),
+      );
+    }
+
     // Reuse the existing recommendation (id + feedback) per opportunity to avoid duplicates
     const existing = await this.recommendationRepository.findByProfile(input.profileId);
     const existingByOpportunity = new Map(existing.map((r) => [r.opportunityId, r]));
@@ -50,7 +64,15 @@ export class GetRecommendationsUseCase implements IGetRecommendationsUseCase {
     const recommendations: Recommendation[] = [];
     for (const opportunity of candidates) {
       const previous = existingByOpportunity.get(opportunity.id);
-      const scored = await this.matchingService.score(opportunity, profile, previous?.id);
+      const rawCosine = cosinesById.get(opportunity.id);
+      const semanticSimilarity =
+        rawCosine !== undefined ? MatchingService.normalizeCosine(rawCosine) : null;
+      const scored = await this.matchingService.score(
+        opportunity,
+        profile,
+        semanticSimilarity,
+        previous?.id,
+      );
       const rec: Recommendation = previous ? { ...scored, feedback: previous.feedback } : scored;
       await this.recommendationRepository.save(rec);
       recommendations.push(rec);

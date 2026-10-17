@@ -1,11 +1,11 @@
 import { SearchOpportunitiesUseCase } from './search-opportunities.use-case';
 import { OpportunityRepositoryPort } from '../../domain/ports/opportunity.repository.port';
 import { SearchIndexPort } from '../../domain/ports/search-index.port';
-import { AIProviderPort } from '../../../recommendation/domain/ports/ai-provider.port';
 import { Opportunity } from '../../domain/entities/opportunity.entity';
 import { OpportunityFilters } from '../../domain/value-objects/opportunity-filters';
 import { OpportunityId, asOpportunityId } from '../../../shared/domain/typed-id';
 import { createMoney } from '../../domain/value-objects/money.vo';
+import { HashEmbedder } from '../../../shared/testing/hash-embedder';
 
 class FakeRepo implements OpportunityRepositoryPort {
   public data: Map<string, Opportunity> = new Map();
@@ -69,20 +69,12 @@ class FakeSearchIndex implements SearchIndexPort {
     this.lastFilters = filters;
     return this.returnIds;
   }
-}
 
-class FakeAI implements AIProviderPort {
-  async embed(text: string): Promise<number[]> {
-    // Generate dummy 768-dim vector
-    return new Array(768).fill(text.length);
-  }
-
-  async scoreSimilarity(_textA: string, _textB: string): Promise<number> {
-    return 1.0;
-  }
-
-  async summarize(_text: string): Promise<string> {
-    return '';
+  async similarities(
+    _profileVector: number[],
+    _opportunityIds: OpportunityId[],
+  ): Promise<Map<OpportunityId, number>> {
+    return new Map();
   }
 }
 
@@ -95,7 +87,7 @@ const mustCreateMoney = (amount: number) => {
 describe('SearchOpportunitiesUseCase', () => {
   let repo: FakeRepo;
   let searchIndex: FakeSearchIndex;
-  let ai: FakeAI;
+  let embedder: HashEmbedder;
   let useCase: SearchOpportunitiesUseCase;
 
   const opp1: Opportunity = {
@@ -138,8 +130,8 @@ describe('SearchOpportunitiesUseCase', () => {
     repo.save(opp1);
     repo.save(opp2);
     searchIndex = new FakeSearchIndex();
-    ai = new FakeAI();
-    useCase = new SearchOpportunitiesUseCase(repo, searchIndex, ai);
+    embedder = new HashEmbedder();
+    useCase = new SearchOpportunitiesUseCase(repo, searchIndex, embedder);
   });
 
   it('performs structured filter search when no semantic query is provided', async () => {
@@ -153,10 +145,10 @@ describe('SearchOpportunitiesUseCase', () => {
       expect(result.value[0].id).toBe('opp-1');
     }
     expect(searchIndex.lastVector).toHaveLength(0);
+    expect(embedder.calls).toBe(0);
   });
 
   it('performs semantic search when query is provided, returning ranked opportunities', async () => {
-    // Arrange semantic ranking order: opp2 before opp1
     searchIndex.returnIds = [asOpportunityId('opp-2'), asOpportunityId('opp-1')];
 
     const result = await useCase.execute({

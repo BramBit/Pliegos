@@ -45,7 +45,7 @@ async function main() {
       embedModel: 'nomic-embed-text',
       chatModel: 'llama3.1',
     });
-    const pgvectorAdapter = new PgVectorAdapter({ pool, aiProvider: ollamaAdapter });
+    const pgvectorAdapter = new PgVectorAdapter({ pool, embedder: ollamaAdapter });
     const emailAdapter = new EmailAdapter();
 
     const opportunityRepo = new PostgresOpportunityRepository(pool);
@@ -155,12 +155,14 @@ async function main() {
     console.log('─────────────────────────────────────────────────────────────────');
     console.log('PASO 4: Motor de Recomendacion Explicada (MatchingService)');
     console.log('─────────────────────────────────────────────────────────────────');
-    const matchingService = new MatchingService(ollamaAdapter);
+    const matchingService = new MatchingService();
     const getRecommendationsUseCase = new GetRecommendationsUseCase(
       profileRepo,
       opportunityRepo,
       recommendationRepo,
       matchingService,
+      ollamaAdapter,
+      pgvectorAdapter,
     );
 
     console.log('Calculando score ponderado (0.35 semantica + 0.35 categoria + 0.20 monto + 0.10 ubicacion)...');

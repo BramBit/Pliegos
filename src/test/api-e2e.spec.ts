@@ -10,7 +10,10 @@ import { setupSwaggerAndScalar } from '../setup-swagger';
 import { DATABASE_POOL } from '../modules/shared/infrastructure/persistence/database.module';
 import { migrateTestDatabase } from '../modules/shared/testing/migrate-test-database';
 import { OPPORTUNITY_SOURCE_PORT } from '../modules/opportunity/domain/ports/opportunity-source.port';
-import { AI_PROVIDER_PORT } from '../modules/recommendation/domain/ports/ai-provider.port';
+import {
+  EMBEDDER_PORT,
+  TEXT_GENERATOR_PORT,
+} from '../modules/recommendation/domain/ports/ai-provider.port';
 import { ANALYSIS_QUEUE_PORT } from '../modules/opportunity/domain/ports/analysis-queue.port';
 import { NOTIFICATION_PORT } from '../modules/alert/domain/ports/notification.port';
 import { RecommendationRepositoryPort, RECOMMENDATION_REPOSITORY_PORT } from '../modules/recommendation/domain/ports/recommendation.repository.port';
@@ -20,6 +23,7 @@ import { createAlert } from '../modules/alert/domain/entities/alert.entity';
 import { asAlertId, asOpportunityId, asProfileId, asRecommendationId } from '../modules/shared/domain/typed-id';
 import { createRecommendation } from '../modules/recommendation/domain/entities/recommendation.entity';
 import { createRelevanceScore } from '../modules/opportunity/domain/value-objects/relevance-score.vo';
+import { HashEmbedder } from '../modules/shared/testing/hash-embedder';
 
 describe('Pliegos Phase 1 REST Surface (E2E)', () => {
   let app: INestApplication;
@@ -34,9 +38,8 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
     pool = new Pool({ connectionString: testDbUrl });
     await migrateTestDatabase(pool);
 
-    const mockAiProvider = {
-      embed: jest.fn().mockResolvedValue(new Array(768).fill(0.05)),
-      scoreSimilarity: jest.fn().mockResolvedValue(0.85),
+    const mockEmbedder = new HashEmbedder('nomic-embed-text');
+    const mockTextGenerator = {
       summarize: jest.fn().mockResolvedValue('Resumen ejecutivo de prueba generado por IA'),
     };
 
@@ -83,8 +86,10 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
       .useValue(pool)
       .overrideProvider(OPPORTUNITY_SOURCE_PORT)
       .useValue(mockSource)
-      .overrideProvider(AI_PROVIDER_PORT)
-      .useValue(mockAiProvider)
+      .overrideProvider(EMBEDDER_PORT)
+      .useValue(mockEmbedder)
+      .overrideProvider(TEXT_GENERATOR_PORT)
+      .useValue(mockTextGenerator)
       .overrideProvider(ANALYSIS_QUEUE_PORT)
       .useValue(mockQueue)
       .overrideProvider(NOTIFICATION_PORT)

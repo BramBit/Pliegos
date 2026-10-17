@@ -1,5 +1,8 @@
 import { Injectable, Logger, LoggerService } from '@nestjs/common';
-import { AIProviderPort } from '../../../domain/ports/ai-provider.port';
+import {
+  EmbedderPort,
+  TextGeneratorPort,
+} from '../../../domain/ports/ai-provider.port';
 
 export interface OllamaAdapterOptions {
   readonly baseUrl?: string;
@@ -19,9 +22,10 @@ export const DEFAULT_CHAT_TIMEOUT_MS = 120_000;
 export const EXPECTED_EMBEDDING_DIMENSIONS = 768;
 
 @Injectable()
-export class OllamaAdapter implements AIProviderPort {
+export class OllamaAdapter implements EmbedderPort, TextGeneratorPort {
+  public readonly model: string;
+  public readonly dimensions: number = EXPECTED_EMBEDDING_DIMENSIONS;
   private readonly baseUrl: string;
-  private readonly embedModel: string;
   private readonly chatModel: string;
   private readonly embedTimeoutMs: number;
   private readonly chatTimeoutMs: number;
@@ -30,7 +34,7 @@ export class OllamaAdapter implements AIProviderPort {
 
   constructor(options?: OllamaAdapterOptions) {
     this.baseUrl = (options?.baseUrl ?? DEFAULT_OLLAMA_BASE_URL).replace(/\/+$/, '');
-    this.embedModel = options?.embedModel ?? DEFAULT_EMBED_MODEL;
+    this.model = options?.embedModel ?? DEFAULT_EMBED_MODEL;
     this.chatModel = options?.chatModel ?? DEFAULT_CHAT_MODEL;
     this.embedTimeoutMs =
       options?.embedTimeoutMs ??
@@ -43,46 +47,52 @@ export class OllamaAdapter implements AIProviderPort {
   }
 
   /**
-   * Generates a dense vector embedding using local Ollama model nomic-embed-text (768 dimensions).
-   * Throws when text is empty or blank (never returns a zero vector).
+   * Generates dense 768-dim vector embeddings in batch via Ollama `/api/embed`.
+   * Falls back to sequential `/api/embeddings` calls when `/api/embed` returns 404.
+   * Throws on empty input or when any returned vector does not have 768 dimensions.
    */
-  async embed(text: string): Promise<number[]> {
-    if (!text || text.trim() === '') {
+  async embed(texts: string[]): Promise<number[][]> {
+    if (!Array.isArray(texts) || texts.length === 0 || texts.some((t) => !t || t.trim() === '')) {
       throw new Error('Ollama embed error: cannot generate embedding for empty text');
     }
 
-    const url = `${this.baseUrl}/api/embeddings`;
+    const batchUrl = `${this.baseUrl}/api/embed`;
     const response = await this.fetchWithTimeout(
-      url,
+      batchUrl,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: this.embedModel,
-          prompt: text,
+          model: this.model,
+          input: texts,
         }),
       },
       this.embedTimeoutMs,
     );
 
+    if (response.status === 404) {
+      this.logger.warn(
+        `Ollama /api/embed returned 404; falling back to sequential /api/embeddings calls`,
+      );
+      return this.embedSequentialFallback(texts);
+    }
+
     if (!response.ok) {
       throw new Error(
-        `Ollama embed error (${url}): HTTP ${response.status} ${response.statusText}`,
+        `Ollama embed error (${batchUrl}): HTTP ${response.status} ${response.statusText}`,
       );
     }
 
-    const data = (await response.json()) as { embedding?: number[] };
-    if (!data || !Array.isArray(data.embedding)) {
-      throw new Error(`Ollama embed error: invalid response format from model ${this.embedModel}`);
+    const data = (await response.json()) as { embeddings?: number[][] };
+    if (!data || !Array.isArray(data.embeddings) || data.embeddings.length !== texts.length) {
+      throw new Error(`Ollama embed error: invalid response format from model ${this.model}`);
     }
 
-    if (data.embedding.length !== EXPECTED_EMBEDDING_DIMENSIONS) {
-      this.logger.warn(
-        `Ollama embedding dimension mismatch: expected ${EXPECTED_EMBEDDING_DIMENSIONS}, received ${data.embedding.length}`,
-      );
+    for (const vec of data.embeddings) {
+      this.assertValidDimensions(vec);
     }
 
-    return data.embedding;
+    return data.embeddings;
   }
 
   /**
@@ -124,56 +134,49 @@ Resumen:`;
     return (data?.response ?? '').trim();
   }
 
-  /**
-   * Evaluates semantic similarity between profile and opportunity descriptions using local chat model,
-   * returning a float between 0.0 and 1.0.
-   */
-  async scoreSimilarity(textA: string, textB: string): Promise<number> {
-    if (!textA.trim() || !textB.trim()) {
-      return 0.0;
-    }
+  private async embedSequentialFallback(texts: string[]): Promise<number[][]> {
+    const url = `${this.baseUrl}/api/embeddings`;
+    const results: number[][] = [];
 
-    const prompt = `Evalua la afinidad tematica y similitud semantica entre estos dos textos en el contexto de contratacion publica en una escala numerica de 0.0 a 1.0 (donde 1.0 es coincidencia ideal o identidad tematica, y 0.0 es ninguna relacion).
-Responde UNICAMENTE con el numero flotante, sin palabras ni explicaciones adicionales.
-
-Texto A: ${textA}
-Texto B: ${textB}
-
-Puntaje:`;
-
-    try {
-      const url = `${this.baseUrl}/api/generate`;
+    for (const text of texts) {
       const response = await this.fetchWithTimeout(
         url,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            model: this.chatModel,
-            prompt,
-            stream: false,
+            model: this.model,
+            prompt: text,
           }),
         },
-        this.chatTimeoutMs,
+        this.embedTimeoutMs,
       );
 
-      if (response.ok) {
-        const data = (await response.json()) as { response?: string };
-        const rawOutput = (data?.response ?? '').trim();
-        const score = this.parseScoreFromOutput(rawOutput);
-
-        if (score !== null) {
-          return score;
-        }
+      if (!response.ok) {
+        throw new Error(
+          `Ollama embed error (${url}): HTTP ${response.status} ${response.statusText}`,
+        );
       }
-    } catch (err) {
-      this.logger.warn(
-        `Ollama chat scoring failed: ${(err as Error).message}. Falling back to cosine similarity.`,
-      );
+
+      const data = (await response.json()) as { embedding?: number[] };
+      if (!data || !Array.isArray(data.embedding)) {
+        throw new Error(`Ollama embed error: invalid response format from model ${this.model}`);
+      }
+
+      this.assertValidDimensions(data.embedding);
+      results.push(data.embedding);
     }
 
-    // Fallback: cosine similarity between nomic-embed-text vectors
-    return this.cosineSimilarityFallback(textA, textB);
+    return results;
+  }
+
+  private assertValidDimensions(vector: unknown): asserts vector is number[] {
+    if (!Array.isArray(vector) || vector.length !== this.dimensions) {
+      const received = Array.isArray(vector) ? vector.length : 0;
+      throw new Error(
+        `Ollama embedding dimension mismatch: expected ${this.dimensions}, received ${received}`,
+      );
+    }
   }
 
   private async fetchWithTimeout(
@@ -191,34 +194,5 @@ Puntaje:`;
     } finally {
       clearTimeout(timer);
     }
-  }
-
-  private parseScoreFromOutput(output: string): number | null {
-    // Extract first valid float in range 0.0 to 1.0
-    const match = output.match(/\b(1(\.0+)?|0(\.\d+)?)\b/);
-    if (!match) return null;
-
-    const parsed = parseFloat(match[0]);
-    if (isNaN(parsed)) return null;
-
-    return Math.max(0.0, Math.min(1.0, parsed));
-  }
-
-  private async cosineSimilarityFallback(textA: string, textB: string): Promise<number> {
-    const [vecA, vecB] = await Promise.all([this.embed(textA), this.embed(textB)]);
-
-    let dotProduct = 0;
-    let normA = 0;
-    let normB = 0;
-
-    for (let i = 0; i < vecA.length; i++) {
-      dotProduct += vecA[i] * vecB[i];
-      normA += vecA[i] * vecA[i];
-      normB += vecB[i] * vecB[i];
-    }
-
-    if (normA === 0 || normB === 0) return 0;
-    const similarity = dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
-    return Math.max(0.0, Math.min(1.0, similarity));
   }
 }

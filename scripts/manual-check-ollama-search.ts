@@ -56,7 +56,7 @@ async function main() {
 
   console.log('2. [OLLAMA - nomic-embed-text] Generando embedding vectorial...');
   const textToIndex = `${opp.title}. Entidad: ${opp.contractingEntity.name}. Categoria: ${opp.categoryCode}. Modalidad: ${opp.procurementModality}.`;
-  const embedding = await ollama.embed(textToIndex);
+  const [embedding] = await ollama.embed([textToIndex]);
   console.log(`   ✓ Embedding generado con exito.`);
   console.log(`     - Longitud del vector: ${embedding.length} dimensiones (esperado: 768)`);
   console.log(`     - Primeras 5 componentes: [${embedding.slice(0, 5).map((n) => n.toFixed(5)).join(', ')}, ...]`);
@@ -68,15 +68,9 @@ async function main() {
   );
   console.log(`   ✓ Resumen generado por llama3.1:\n     "${summary}"\n`);
 
-  console.log('4. [OLLAMA - llama3.1] Evaluando similitud semantica (scoreSimilarity)...');
+  console.log('4. [SEMANTIC SEARCH] Simulacion de busqueda por distancia coseno (<=> en pgvector)...');
   const userProfileQuery = 'Suministro e instalacion de bombas hidraulicas y maquinaria electromecanica';
-  const similarityScore = await ollama.scoreSimilarity(userProfileQuery, opp.title);
-  console.log(`   - Perfil de prueba: "${userProfileQuery}"`);
-  console.log(`   - Oportunidad: "${opp.title}"`);
-  console.log(`   ✓ Similitud semantica calculada: ${(similarityScore * 100).toFixed(1)}% (score: ${similarityScore.toFixed(4)})\n`);
-
-  console.log('5. [SEMANTIC SEARCH] Simulacion de busqueda por distancia coseno (<=> en pgvector)...');
-  const queryEmbedding = await ollama.embed(userProfileQuery);
+  const [queryEmbedding] = await ollama.embed([userProfileQuery]);
 
   let dotProduct = 0;
   let normQuery = 0;
