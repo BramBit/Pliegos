@@ -37,12 +37,20 @@ class FakeOpportunityRepo implements OpportunityRepositoryPort {
     this.opportunities.push(opportunity);
   }
 
+  async saveMany(opportunities: Opportunity[]): Promise<void> {
+    this.opportunities.push(...opportunities);
+  }
+
   async findById(id: OpportunityId): Promise<Opportunity | null> {
     return this.opportunities.find((o) => o.id === id) ?? null;
   }
 
   async findByExternalId(_externalId: string): Promise<Opportunity | null> {
     return null;
+  }
+
+  async findByExternalIds(_externalIds: string[]): Promise<Opportunity[]> {
+    return [];
   }
 
   async findByFilters(_filters: OpportunityFilters): Promise<Opportunity[]> {

@@ -1,6 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { Pool, QueryResult } from 'pg';
-import { OpportunityRepositoryPort } from '../../../domain/ports/opportunity.repository.port';
+import { Pool, PoolClient, QueryResult } from 'pg';
+import {
+  OpportunityRepositoryPort,
+  SyncState,
+} from '../../../domain/ports/opportunity.repository.port';
 import { Opportunity } from '../../../domain/entities/opportunity.entity';
 import { OpportunityId, asOpportunityId } from '../../../../shared/domain/typed-id';
 import { OpportunityFilters } from '../../../domain/value-objects/opportunity-filters';
@@ -34,50 +37,72 @@ export interface OpportunityRow {
   change_history: any;
 }
 
+const UPSERT_OPPORTUNITY_SQL = `
+  INSERT INTO opportunities (
+    id, title, description, contracting_entity_name, contracting_entity_tax_id, city, department,
+    amount, amount_known, currency, contract_type, procurement_modality, is_competitive, category_code,
+    published_at, last_published_at, closing_date, is_open_for_submission, status,
+    source_name, source_external_id, source_human_reference, source_original_url,
+    analysis, change_history, updated_at
+  ) VALUES (
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, CURRENT_TIMESTAMP
+  )
+  ON CONFLICT (id) DO UPDATE SET
+    title = EXCLUDED.title,
+    description = EXCLUDED.description,
+    contracting_entity_name = EXCLUDED.contracting_entity_name,
+    contracting_entity_tax_id = EXCLUDED.contracting_entity_tax_id,
+    city = EXCLUDED.city,
+    department = EXCLUDED.department,
+    amount = EXCLUDED.amount,
+    amount_known = EXCLUDED.amount_known,
+    currency = EXCLUDED.currency,
+    contract_type = EXCLUDED.contract_type,
+    procurement_modality = EXCLUDED.procurement_modality,
+    is_competitive = EXCLUDED.is_competitive,
+    category_code = EXCLUDED.category_code,
+    published_at = EXCLUDED.published_at,
+    last_published_at = EXCLUDED.last_published_at,
+    closing_date = EXCLUDED.closing_date,
+    is_open_for_submission = EXCLUDED.is_open_for_submission,
+    status = EXCLUDED.status,
+    source_name = EXCLUDED.source_name,
+    source_external_id = EXCLUDED.source_external_id,
+    source_human_reference = EXCLUDED.source_human_reference,
+    source_original_url = EXCLUDED.source_original_url,
+    analysis = EXCLUDED.analysis,
+    change_history = EXCLUDED.change_history,
+    updated_at = CURRENT_TIMESTAMP;
+`;
+
 @Injectable()
 export class PostgresOpportunityRepository implements OpportunityRepositoryPort {
   constructor(private readonly pool: Pool) {}
 
   async save(opportunity: Opportunity): Promise<void> {
-    const query = `
-      INSERT INTO opportunities (
-        id, title, description, contracting_entity_name, contracting_entity_tax_id, city, department,
-        amount, amount_known, currency, contract_type, procurement_modality, is_competitive, category_code,
-        published_at, last_published_at, closing_date, is_open_for_submission, status,
-        source_name, source_external_id, source_human_reference, source_original_url,
-        analysis, change_history, updated_at
-      ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, CURRENT_TIMESTAMP
-      )
-      ON CONFLICT (id) DO UPDATE SET
-        title = EXCLUDED.title,
-        description = EXCLUDED.description,
-        contracting_entity_name = EXCLUDED.contracting_entity_name,
-        contracting_entity_tax_id = EXCLUDED.contracting_entity_tax_id,
-        city = EXCLUDED.city,
-        department = EXCLUDED.department,
-        amount = EXCLUDED.amount,
-        amount_known = EXCLUDED.amount_known,
-        currency = EXCLUDED.currency,
-        contract_type = EXCLUDED.contract_type,
-        procurement_modality = EXCLUDED.procurement_modality,
-        is_competitive = EXCLUDED.is_competitive,
-        category_code = EXCLUDED.category_code,
-        published_at = EXCLUDED.published_at,
-        last_published_at = EXCLUDED.last_published_at,
-        closing_date = EXCLUDED.closing_date,
-        is_open_for_submission = EXCLUDED.is_open_for_submission,
-        status = EXCLUDED.status,
-        source_name = EXCLUDED.source_name,
-        source_external_id = EXCLUDED.source_external_id,
-        source_human_reference = EXCLUDED.source_human_reference,
-        source_original_url = EXCLUDED.source_original_url,
-        analysis = EXCLUDED.analysis,
-        change_history = EXCLUDED.change_history,
-        updated_at = CURRENT_TIMESTAMP;
-    `;
+    await this.pool.query(UPSERT_OPPORTUNITY_SQL, this.toRowValues(opportunity));
+  }
 
-    const values = [
+  async saveMany(opportunities: Opportunity[]): Promise<void> {
+    if (opportunities.length === 0) return;
+
+    const client: PoolClient = await this.pool.connect();
+    try {
+      await client.query('BEGIN');
+      for (const opportunity of opportunities) {
+        await client.query(UPSERT_OPPORTUNITY_SQL, this.toRowValues(opportunity));
+      }
+      await client.query('COMMIT');
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
+  private toRowValues(opportunity: Opportunity): unknown[] {
+    return [
       opportunity.id,
       opportunity.title,
       opportunity.description,
@@ -104,8 +129,6 @@ export class PostgresOpportunityRepository implements OpportunityRepositoryPort 
       opportunity.analysis ? JSON.stringify(opportunity.analysis) : null,
       JSON.stringify(opportunity.changeHistory ?? []),
     ];
-
-    await this.pool.query(query, values);
   }
 
   async findById(id: OpportunityId): Promise<Opportunity | null> {
@@ -126,6 +149,53 @@ export class PostgresOpportunityRepository implements OpportunityRepositoryPort 
 
     if (res.rows.length === 0) return null;
     return this.mapRowToEntity(res.rows[0]);
+  }
+
+  async findByExternalIds(externalIds: string[]): Promise<Opportunity[]> {
+    if (externalIds.length === 0) return [];
+
+    const res: QueryResult<OpportunityRow> = await this.pool.query(
+      'SELECT * FROM opportunities WHERE source_external_id = ANY($1::text[])',
+      [externalIds],
+    );
+
+    return res.rows.map((row) => this.mapRowToEntity(row));
+  }
+
+  async getSyncState(source: string): Promise<SyncState | null> {
+    const res = await this.pool.query<{
+      source: string;
+      last_success_at: Date | null;
+      watermark: Date | null;
+    }>('SELECT source, last_success_at, watermark FROM sync_state WHERE source = $1', [source]);
+
+    if (res.rows.length === 0) return null;
+    const row = res.rows[0];
+    return {
+      source: row.source,
+      lastSuccessAt: row.last_success_at ? new Date(row.last_success_at) : null,
+      watermark: row.watermark ? new Date(row.watermark) : null,
+    };
+  }
+
+  async saveSyncState(
+    source: string,
+    state: { lastSuccessAt: Date; watermark: Date | null },
+  ): Promise<void> {
+    await this.pool.query(
+      `
+      INSERT INTO sync_state (source, last_success_at, watermark)
+      VALUES ($1, $2, $3)
+      ON CONFLICT (source) DO UPDATE SET
+        last_success_at = EXCLUDED.last_success_at,
+        watermark = COALESCE(
+          GREATEST(EXCLUDED.watermark, sync_state.watermark),
+          EXCLUDED.watermark,
+          sync_state.watermark
+        );
+      `,
+      [source, state.lastSuccessAt, state.watermark],
+    );
   }
 
   async findByFilters(filters: OpportunityFilters): Promise<Opportunity[]> {

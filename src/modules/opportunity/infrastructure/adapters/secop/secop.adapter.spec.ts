@@ -48,13 +48,13 @@ describe('SecopAdapter', () => {
 
       const parsedUrl = new URL(calledUrl);
       expect(parsedUrl.origin + parsedUrl.pathname).toBe(DEFAULT_SECOP_ENDPOINT);
-      expect(parsedUrl.searchParams.get('$order')).toBe('fecha_de_publicacion_del DESC, id_del_proceso ASC');
+      expect(parsedUrl.searchParams.get('$order')).toBe('fecha_de_ultima_publicaci ASC, id_del_proceso ASC');
       expect(parsedUrl.searchParams.get('$where')).toBeNull();
       expect(result).toHaveLength(sampleFixture.length);
       expect(result[0].externalId).toBe('CO1.REQ.7128715');
     });
 
-    it('adds SoQL $where clause when since Date is provided', async () => {
+    it('adds SoQL $where clause on fecha_de_ultima_publicaci when since Date is provided', async () => {
       let calledUrl = '';
       const mockFetch: typeof fetch = jest.fn(async (url: string | URL | Request) => {
         calledUrl = url.toString();
@@ -75,8 +75,34 @@ describe('SecopAdapter', () => {
 
       const parsedUrl = new URL(calledUrl);
       const expectedSoqlDate = since.toISOString().replace(/Z$/, '');
-      expect(parsedUrl.searchParams.get('$where')).toBe(`fecha_de_publicacion_del >= '${expectedSoqlDate}'`);
-      expect(parsedUrl.searchParams.get('$order')).toBe('fecha_de_publicacion_del DESC, id_del_proceso ASC');
+      expect(parsedUrl.searchParams.get('$where')).toBe(`fecha_de_ultima_publicaci >= '${expectedSoqlDate}'`);
+      expect(parsedUrl.searchParams.get('$order')).toBe('fecha_de_ultima_publicaci ASC, id_del_proceso ASC');
+    });
+
+    it('uses openCompetitive $where clause when mode is openCompetitive', async () => {
+      let calledUrl = '';
+      const mockFetch: typeof fetch = jest.fn(async (url: string | URL | Request) => {
+        calledUrl = url.toString();
+        return {
+          ok: true,
+          status: 200,
+          json: async () => [],
+        } as Response;
+      });
+
+      const adapter = new SecopAdapter({
+        fetchFn: mockFetch,
+        logger: fakeLogger,
+      });
+
+      const now = new Date('2026-10-17T12:00:00.000Z');
+      await adapter.fetchLatest(undefined, { mode: 'openCompetitive', now });
+
+      const parsedUrl = new URL(calledUrl);
+      expect(parsedUrl.searchParams.get('$where')).toBe(
+        `estado_del_procedimiento in ('Publicado','Abierto','Evaluación') AND fecha_de_recepcion_de > '2026-10-17T12:00:00.000'`,
+      );
+      expect(parsedUrl.searchParams.get('$order')).toBe('fecha_de_ultima_publicaci ASC, id_del_proceso ASC');
     });
 
     it('skips records without fecha_de_publicacion_del and invokes onSkipped', async () => {

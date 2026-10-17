@@ -22,10 +22,15 @@ export interface SourceOpportunity {
   readonly originalUrl: string;
 }
 
+export type SourceFetchMode = 'incremental' | 'openCompetitive';
+
 export interface SourceFetchOptions {
   readonly pageSize?: number;
   readonly maxRecords?: number;
+  readonly mode?: SourceFetchMode;
+  readonly now?: Date;
   readonly onSkipped?: () => void;
+  readonly onUnknownStatus?: (rawStatus: string) => void;
 }
 
 export interface OpportunitySourcePort {

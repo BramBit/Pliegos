@@ -107,8 +107,10 @@ describe('BullMQ Analysis Queue & Job Processing (In-Memory Setup)', () => {
     beforeEach(() => {
       mockOppRepo = {
         save: jest.fn().mockResolvedValue(undefined),
+        saveMany: jest.fn().mockResolvedValue(undefined),
         findById: jest.fn().mockResolvedValue(sampleOpportunity),
         findByExternalId: jest.fn().mockResolvedValue(null),
+        findByExternalIds: jest.fn().mockResolvedValue([]),
         findByFilters: jest.fn().mockResolvedValue([]),
       };
 

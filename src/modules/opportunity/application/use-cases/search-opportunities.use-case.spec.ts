@@ -14,12 +14,22 @@ class FakeRepo implements OpportunityRepositoryPort {
     this.data.set(opportunity.id, opportunity);
   }
 
+  async saveMany(opportunities: Opportunity[]): Promise<void> {
+    for (const opp of opportunities) {
+      this.data.set(opp.id, opp);
+    }
+  }
+
   async findById(id: OpportunityId): Promise<Opportunity | null> {
     return this.data.get(id) ?? null;
   }
 
   async findByExternalId(_externalId: string): Promise<Opportunity | null> {
     return null;
+  }
+
+  async findByExternalIds(_externalIds: string[]): Promise<Opportunity[]> {
+    return [];
   }
 
   async findByFilters(filters: OpportunityFilters): Promise<Opportunity[]> {

@@ -23,6 +23,7 @@ describe('PostgresOpportunityRepository (Real Test Database)', () => {
 
   beforeEach(async () => {
     await pool.query('DELETE FROM opportunities;');
+    await pool.query('DELETE FROM sync_state;');
   });
 
   const createSampleOpportunity = (overrides?: Partial<Opportunity>): Opportunity => ({
@@ -123,6 +124,7 @@ describe('PostgresOpportunityRepository (Real Test Database)', () => {
           previousValue: opp.closingDate!.toISOString(),
           newValue: '2026-03-25T17:00:00.000Z',
           detectedAt: new Date('2026-03-10T12:00:00.000Z'),
+          material: true,
         },
       ],
     };
@@ -134,6 +136,55 @@ describe('PostgresOpportunityRepository (Real Test Database)', () => {
     expect(found?.status).toBe('Amended');
     expect(found?.changeHistory).toHaveLength(1);
     expect(found?.changeHistory[0].field).toBe('closingDate');
+    expect(found?.changeHistory[0].material).toBe(true);
+  });
+
+  it('saves multiple opportunities in a single transaction with saveMany and retrieves with findByExternalIds', async () => {
+    const opp1 = createSampleOpportunity({
+      id: asOpportunityId('opp-batch-1'),
+      source: {
+        sourceName: 'SECOP',
+        externalId: 'EXT-BATCH-1',
+        humanReference: 'REF-B1',
+        originalUrl: 'https://secop.gov.co/b1',
+      },
+    });
+    const opp2 = createSampleOpportunity({
+      id: asOpportunityId('opp-batch-2'),
+      source: {
+        sourceName: 'SECOP',
+        externalId: 'EXT-BATCH-2',
+        humanReference: 'REF-B2',
+        originalUrl: 'https://secop.gov.co/b2',
+      },
+    });
+
+    await repo.saveMany([opp1, opp2]);
+
+    const found = await repo.findByExternalIds(['EXT-BATCH-1', 'EXT-BATCH-2', 'EXT-MISSING']);
+    expect(found).toHaveLength(2);
+    expect(found.map((o) => o.source.externalId).sort()).toEqual(['EXT-BATCH-1', 'EXT-BATCH-2']);
+  });
+
+  it('stores and advances sync_state watermark monotonically', async () => {
+    expect(await repo.getSyncState('SECOP')).toBeNull();
+
+    const w1 = new Date('2026-10-10T00:00:00.000Z');
+    const t1 = new Date('2026-10-15T10:00:00.000Z');
+    await repo.saveSyncState('SECOP', { lastSuccessAt: t1, watermark: w1 });
+
+    const state1 = await repo.getSyncState('SECOP');
+    expect(state1?.lastSuccessAt).toEqual(t1);
+    expect(state1?.watermark).toEqual(w1);
+
+    // Older watermark does not move watermark backwards
+    const wOlder = new Date('2026-10-05T00:00:00.000Z');
+    const t2 = new Date('2026-10-15T14:00:00.000Z');
+    await repo.saveSyncState('SECOP', { lastSuccessAt: t2, watermark: wOlder });
+
+    const state2 = await repo.getSyncState('SECOP');
+    expect(state2?.lastSuccessAt).toEqual(t2);
+    expect(state2?.watermark).toEqual(w1);
   });
 
   it('finds opportunity by external source ID (SECOP ID)', async () => {

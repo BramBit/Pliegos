@@ -108,15 +108,20 @@ export class SecopAdapter implements OpportunitySourcePort {
 
     while (offset < maxRecords) {
       const limit = Math.min(pageSize, maxRecords - offset);
-      const rawPage = await this.fetchPage(since, limit, offset);
+      const rawPage = await this.fetchPage(since, limit, offset, options);
       if (rawPage.length === 0) return;
 
       const mappedPage: SourceOpportunity[] = [];
       for (const raw of rawPage) {
-        const mapped = this.mapToSourceOpportunity(raw);
+        const mapped = this.mapToSourceOpportunity(raw, options?.now);
         if (!mapped) {
           options?.onSkipped?.();
           continue;
+        }
+        if (mapped.status === 'Unknown') {
+          const rawLabel =
+            (raw.estado_del_procedimiento ?? raw.estado_resumen ?? '').trim() || '(empty)';
+          options?.onUnknownStatus?.(rawLabel);
         }
         mappedPage.push(mapped);
       }
@@ -131,21 +136,27 @@ export class SecopAdapter implements OpportunitySourcePort {
     since: Date | undefined,
     limit: number,
     offset: number,
+    options?: FetchOptions,
   ): Promise<RawSecopProcess[]> {
     const url = new URL(this.endpointUrl);
 
     const clauses: string[] = [];
 
-    if (since && !isNaN(since.getTime())) {
+    if (options?.mode === 'openCompetitive') {
+      const refNow = options.now && !isNaN(options.now.getTime()) ? options.now : new Date();
+      const soqlNow = refNow.toISOString().replace(/Z$/, '');
+      clauses.push(`estado_del_procedimiento in ('Publicado','Abierto','Evaluación')`);
+      clauses.push(`fecha_de_recepcion_de > '${soqlNow}'`);
+    } else if (since && !isNaN(since.getTime())) {
       // Socrata's floating_timestamp SoQL type requires ISO format without timezone 'Z'
       const soqlDate = since.toISOString().replace(/Z$/, '');
-      clauses.push(`fecha_de_publicacion_del >= '${soqlDate}'`);
+      clauses.push(`fecha_de_ultima_publicaci >= '${soqlDate}'`);
     }
 
     if (clauses.length > 0) {
       url.searchParams.set('$where', clauses.join(' AND '));
     }
-    url.searchParams.set('$order', 'fecha_de_publicacion_del DESC, id_del_proceso ASC');
+    url.searchParams.set('$order', 'fecha_de_ultima_publicaci ASC, id_del_proceso ASC');
     url.searchParams.set('$limit', String(limit));
     url.searchParams.set('$offset', String(offset));
 

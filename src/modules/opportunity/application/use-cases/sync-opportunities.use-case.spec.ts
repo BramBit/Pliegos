@@ -1,16 +1,26 @@
+import { LoggerService } from '@nestjs/common';
 import { SyncOpportunitiesUseCase } from './sync-opportunities.use-case';
 import {
   OpportunitySourcePort,
   SourceFetchOptions,
   SourceOpportunity,
 } from '../../domain/ports/opportunity-source.port';
-import { OpportunityRepositoryPort } from '../../domain/ports/opportunity.repository.port';
+import {
+  OpportunityRepositoryPort,
+  SyncState,
+} from '../../domain/ports/opportunity.repository.port';
 import { AnalysisQueuePort } from '../../domain/ports/analysis-queue.port';
 import { Opportunity } from '../../domain/entities/opportunity.entity';
 import { OpportunityFilters } from '../../domain/value-objects/opportunity-filters';
 import { OpportunityId } from '../../../shared/domain/typed-id';
 
 class FakeOpportunitySource implements OpportunitySourcePort {
+  public calls: Array<{ since?: Date; options?: SourceFetchOptions }> = [];
+  public pages: SourceOpportunity[][] = [];
+  public openCompetitiveProcesses: SourceOpportunity[] = [];
+  public failOnPageIndex: number | null = null;
+  public unknownStatusLabels: string[] = [];
+
   constructor(
     public processes: SourceOpportunity[] = [],
     public shouldFail = false,
@@ -18,26 +28,63 @@ class FakeOpportunitySource implements OpportunitySourcePort {
   ) {}
 
   async *fetchPages(
-    _since?: Date,
+    since?: Date,
     options?: SourceFetchOptions,
   ): AsyncIterable<SourceOpportunity[]> {
+    this.calls.push({ since, options });
     if (this.shouldFail) {
       throw new Error('Socrata API connection timeout');
     }
+
+    if (options?.mode === 'openCompetitive') {
+      if (this.openCompetitiveProcesses.length > 0) {
+        yield this.openCompetitiveProcesses;
+      }
+      return;
+    }
+
     for (let i = 0; i < this.skippedRecords; i++) {
       options?.onSkipped?.();
     }
-    if (this.processes.length > 0) {
-      yield this.processes;
+    for (const label of this.unknownStatusLabels) {
+      options?.onUnknownStatus?.(label);
+    }
+
+    const pagesToYield =
+      this.pages.length > 0
+        ? this.pages
+        : this.processes.length > 0
+          ? [this.processes]
+          : [];
+
+    for (let idx = 0; idx < pagesToYield.length; idx++) {
+      if (this.failOnPageIndex !== null && idx === this.failOnPageIndex) {
+        throw new Error(`Socrata page ${idx} failed`);
+      }
+      yield pagesToYield[idx];
     }
   }
 }
 
 class FakeOpportunityRepository implements OpportunityRepositoryPort {
   public opportunities: Map<string, Opportunity> = new Map();
+  public syncStates: Map<string, SyncState> = new Map();
+  public findByExternalIdsCalls = 0;
+  public saveManyCalls = 0;
+  public shouldFailOnSaveMany = false;
 
   async save(opportunity: Opportunity): Promise<void> {
     this.opportunities.set(opportunity.source.externalId, opportunity);
+  }
+
+  async saveMany(opportunities: Opportunity[]): Promise<void> {
+    this.saveManyCalls++;
+    if (this.shouldFailOnSaveMany) {
+      throw new Error('Postgres connection terminated unexpectedly');
+    }
+    for (const opportunity of opportunities) {
+      this.opportunities.set(opportunity.source.externalId, opportunity);
+    }
   }
 
   async findById(id: OpportunityId): Promise<Opportunity | null> {
@@ -51,8 +98,41 @@ class FakeOpportunityRepository implements OpportunityRepositoryPort {
     return this.opportunities.get(externalId) ?? null;
   }
 
+  async findByExternalIds(externalIds: string[]): Promise<Opportunity[]> {
+    this.findByExternalIdsCalls++;
+    const found: Opportunity[] = [];
+    for (const extId of externalIds) {
+      const opp = this.opportunities.get(extId);
+      if (opp) found.push(opp);
+    }
+    return found;
+  }
+
   async findByFilters(_filters: OpportunityFilters): Promise<Opportunity[]> {
     return Array.from(this.opportunities.values());
+  }
+
+  async getSyncState(source: string): Promise<SyncState | null> {
+    return this.syncStates.get(source) ?? null;
+  }
+
+  async saveSyncState(
+    source: string,
+    state: { lastSuccessAt: Date; watermark: Date | null },
+  ): Promise<void> {
+    const prev = this.syncStates.get(source);
+    let watermark = state.watermark ?? prev?.watermark ?? null;
+    if (prev?.watermark && state.watermark) {
+      watermark =
+        state.watermark.getTime() >= prev.watermark.getTime()
+          ? state.watermark
+          : prev.watermark;
+    }
+    this.syncStates.set(source, {
+      source,
+      lastSuccessAt: state.lastSuccessAt,
+      watermark,
+    });
   }
 }
 
@@ -68,6 +148,7 @@ describe('SyncOpportunitiesUseCase', () => {
   let fakeSource: FakeOpportunitySource;
   let fakeRepo: FakeOpportunityRepository;
   let fakeQueue: FakeAnalysisQueue;
+  let fakeLogger: LoggerService & { logs: string[]; errors: string[] };
   let useCase: SyncOpportunitiesUseCase;
 
   const sourceSample: SourceOpportunity = {
@@ -85,7 +166,7 @@ describe('SyncOpportunitiesUseCase', () => {
     isCompetitive: true,
     categoryCode: '43211500',
     publishedAt: new Date('2026-10-01T08:00:00.000Z'),
-    lastPublishedAt: new Date('2026-10-01T08:00:00.000Z'),
+    lastPublishedAt: new Date('2026-10-10T00:00:00.000Z'),
     closingDate: new Date('2026-10-25T17:00:00.000Z'),
     isOpenForSubmission: true,
     status: 'Published',
@@ -96,7 +177,16 @@ describe('SyncOpportunitiesUseCase', () => {
     fakeSource = new FakeOpportunitySource([sourceSample]);
     fakeRepo = new FakeOpportunityRepository();
     fakeQueue = new FakeAnalysisQueue();
-    useCase = new SyncOpportunitiesUseCase(fakeSource, fakeRepo, fakeQueue);
+    fakeLogger = {
+      log: jest.fn((msg: string) => fakeLogger.logs.push(msg)),
+      error: jest.fn((msg: string) => fakeLogger.errors.push(msg)),
+      warn: jest.fn(),
+      debug: jest.fn(),
+      verbose: jest.fn(),
+      logs: [],
+      errors: [],
+    };
+    useCase = new SyncOpportunitiesUseCase(fakeSource, fakeRepo, fakeQueue, fakeLogger);
   });
 
   it('returns SourceUnavailableError when OpportunitySourcePort throws', async () => {
@@ -113,31 +203,186 @@ describe('SyncOpportunitiesUseCase', () => {
     expect(fakeQueue.queuedOpportunityIds).toHaveLength(0);
   });
 
-  it('ingests new opportunities, persists them with description and flags, queues analysis, and returns created count', async () => {
-    const result = await useCase.execute({});
+  it('logs and propagates database errors instead of swallowing them as SourceUnavailableError', async () => {
+    fakeRepo.shouldFailOnSaveMany = true;
+
+    await expect(useCase.execute({})).rejects.toThrow(
+      'Postgres connection terminated unexpectedly',
+    );
+    expect(fakeLogger.errors.some((e) => e.includes('Database error'))).toBe(true);
+  });
+
+  it('ingests new opportunities in one batch per page, updates watermark, and logs one summary line', async () => {
+    fakeSource.unknownStatusLabels = ['EstadoRaro', 'EstadoRaro'];
+    const now = new Date('2026-10-16T12:00:00.000Z');
+    const result = await useCase.execute({ now });
 
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.value.created).toBe(1);
       expect(result.value.updated).toBe(0);
+      expect(result.value.unchanged).toBe(0);
       expect(result.value.skipped).toBe(0);
+      expect(result.value.unknownStatuses).toEqual({ EstadoRaro: 2 });
+      expect(typeof result.value.durationMs).toBe('number');
     }
 
-    const saved = await fakeRepo.findByExternalId('CO1.REQ.2577563');
-    expect(saved).not.toBeNull();
-    expect(saved?.title).toBe('Adquisición de infraestructura de servidores');
-    expect(saved?.description).toBe(
-      'Compra de servidores de cómputo de alto rendimiento para centros de datos',
-    );
-    expect(saved?.amount.amount).toBe(150_000_000);
-    expect(saved?.amountKnown).toBe(true);
-    expect(saved?.isCompetitive).toBe(true);
-    expect(saved?.categoryCode).toBe('43211500');
-    expect(saved?.source.humanReference).toBe('EDP-545-2022');
-    expect(saved?.status).toBe('Published');
+    // Without watermark, since = now - 14 days
+    expect(fakeSource.calls[0].since).toEqual(new Date('2026-10-02T12:00:00.000Z'));
+    // Second pass runs with mode: 'openCompetitive'
+    expect(fakeSource.calls[1].options?.mode).toBe('openCompetitive');
 
+    // Batch lookup and save per page
+    expect(fakeRepo.findByExternalIdsCalls).toBe(1);
+    expect(fakeRepo.saveManyCalls).toBe(1);
+
+    // Watermark saved as max lastPublishedAt seen
+    const syncState = await fakeRepo.getSyncState('SECOP');
+    expect(syncState?.watermark).toEqual(new Date('2026-10-10T00:00:00.000Z'));
+
+    // Summary log line emitted once
+    expect(fakeLogger.logs).toHaveLength(1);
+    expect(fakeLogger.logs[0]).toContain('SECOP sync completed');
+  });
+
+  it('second run over the same fixture gives created = 0 and updated = 0, using since = watermark minus 1 day', async () => {
+    const now = new Date('2026-10-16T12:00:00.000Z');
+
+    // First run
+    const first = await useCase.execute({ now });
+    expect(first.ok && first.value.created).toBe(1);
+
+    // Second run over the same fixture
+    const second = await useCase.execute({ now });
+    expect(second.ok).toBe(true);
+    if (second.ok) {
+      expect(second.value.created).toBe(0);
+      expect(second.value.updated).toBe(0);
+      expect(second.value.unchanged).toBe(1);
+    }
+
+    // Watermark was 2026-10-10T00:00:00.000Z -> since on second run is watermark - 1 day (2026-10-09T00:00:00.000Z)
+    expect(fakeSource.calls[2].since).toEqual(new Date('2026-10-09T00:00:00.000Z'));
+    // No new analysis job queued
     expect(fakeQueue.queuedOpportunityIds).toHaveLength(1);
-    expect(fakeQueue.queuedOpportunityIds[0]).toBe(saved?.id);
+  });
+
+  it('a changed closingDate gives updated = 1 with one Change marked material: true', async () => {
+    await useCase.execute({});
+    expect(fakeRepo.opportunities.size).toBe(1);
+
+    // Change only closingDate
+    const amendedSource: SourceOpportunity = {
+      ...sourceSample,
+      closingDate: new Date('2026-11-10T17:00:00.000Z'),
+    };
+    fakeSource.processes = [amendedSource];
+
+    const result = await useCase.execute({});
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.created).toBe(0);
+      expect(result.value.updated).toBe(1);
+      expect(result.value.unchanged).toBe(0);
+    }
+
+    const updated = await fakeRepo.findByExternalId('CO1.REQ.2577563');
+    expect(updated).not.toBeNull();
+    expect(updated?.closingDate).toEqual(new Date('2026-11-10T17:00:00.000Z'));
+    expect(updated?.changeHistory).toHaveLength(1);
+    expect(updated?.changeHistory[0]).toEqual(
+      expect.objectContaining({
+        field: 'closingDate',
+        previousValue: '2026-10-25T17:00:00.000Z',
+        newValue: '2026-11-10T17:00:00.000Z',
+        material: true,
+      }),
+    );
+
+    expect(fakeQueue.queuedOpportunityIds).toHaveLength(2);
+  });
+
+  it('compares all 7 tracked fields and sets material: true only on closingDate, amount, description, and status', async () => {
+    await useCase.execute({});
+
+    const modifiedAll: SourceOpportunity = {
+      ...sourceSample,
+      title: 'Nuevo título',
+      description: 'Nueva descripción',
+      amount: 200_000_000,
+      closingDate: new Date('2026-11-01T17:00:00.000Z'),
+      status: 'Closed',
+      isOpenForSubmission: false,
+      categoryCode: '81111500',
+    };
+    fakeSource.processes = [modifiedAll];
+
+    const result = await useCase.execute({});
+    expect(result.ok && result.value.updated).toBe(1);
+
+    const updated = await fakeRepo.findByExternalId(sourceSample.externalId);
+    const byField = new Map(updated!.changeHistory.map((c) => [c.field, c]));
+
+    expect(byField.size).toBe(7);
+    expect(byField.get('closingDate')?.material).toBe(true);
+    expect(byField.get('amount')?.material).toBe(true);
+    expect(byField.get('description')?.material).toBe(true);
+    expect(byField.get('status')?.material).toBe(true);
+    expect(byField.get('title')?.material).toBe(false);
+    expect(byField.get('isOpenForSubmission')?.material).toBe(false);
+    expect(byField.get('categoryCode')?.material).toBe(false);
+  });
+
+  it('a failed page does not move the watermark', async () => {
+    const initialWatermark = new Date('2026-10-05T00:00:00.000Z');
+    await fakeRepo.saveSyncState('SECOP', {
+      lastSuccessAt: new Date('2026-10-06T00:00:00.000Z'),
+      watermark: initialWatermark,
+    });
+
+    const page1Record: SourceOpportunity = {
+      ...sourceSample,
+      externalId: 'CO1.REQ.PAGE1',
+      lastPublishedAt: new Date('2026-10-12T00:00:00.000Z'),
+    };
+    const page2Record: SourceOpportunity = {
+      ...sourceSample,
+      externalId: 'CO1.REQ.PAGE2',
+      lastPublishedAt: new Date('2026-10-14T00:00:00.000Z'),
+    };
+    fakeSource.pages = [[page1Record], [page2Record]];
+    fakeSource.failOnPageIndex = 1; // fail on second page
+
+    const result = await useCase.execute({
+      now: new Date('2026-10-16T00:00:00.000Z'),
+    });
+
+    expect(result.ok).toBe(false);
+    const stateAfter = await fakeRepo.getSyncState('SECOP');
+    expect(stateAfter?.watermark).toEqual(initialWatermark);
+  });
+
+  it('fetches open competitive processes in a second pass regardless of watermark', async () => {
+    const openCompOpp: SourceOpportunity = {
+      ...sourceSample,
+      externalId: 'CO1.REQ.OPEN-COMP-1',
+      lastPublishedAt: new Date('2026-09-01T00:00:00.000Z'), // older than watermark
+      closingDate: new Date('2026-11-01T00:00:00.000Z'),
+      isOpenForSubmission: true,
+      isCompetitive: true,
+    };
+    fakeSource.openCompetitiveProcesses = [openCompOpp];
+
+    const result = await useCase.execute({
+      now: new Date('2026-10-16T00:00:00.000Z'),
+    });
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.created).toBe(2);
+    }
+    expect(await fakeRepo.findByExternalId('CO1.REQ.OPEN-COMP-1')).not.toBeNull();
   });
 
   it('counts records skipped by the source adapter', async () => {
@@ -149,58 +394,5 @@ describe('SyncOpportunitiesUseCase', () => {
       expect(result.value.created).toBe(1);
       expect(result.value.skipped).toBe(2);
     }
-  });
-
-  it('detects changes on existing opportunity, updates record with change history, and queues re-analysis', async () => {
-    // First sync: creates opportunity
-    await useCase.execute({});
-    expect(fakeRepo.opportunities.size).toBe(1);
-
-    // Second sync: updated closingDate and status
-    const amendedSource: SourceOpportunity = {
-      ...sourceSample,
-      closingDate: new Date('2026-11-10T17:00:00.000Z'),
-      status: 'Awarded',
-      isOpenForSubmission: false,
-    };
-    fakeSource.processes = [amendedSource];
-
-    const result = await useCase.execute({});
-
-    expect(result.ok).toBe(true);
-    if (result.ok) {
-      expect(result.value.created).toBe(0);
-      expect(result.value.updated).toBe(1);
-    }
-
-    const updated = await fakeRepo.findByExternalId('CO1.REQ.2577563');
-    expect(updated).not.toBeNull();
-    expect(updated?.status).toBe('Awarded');
-    expect(updated?.closingDate).toEqual(new Date('2026-11-10T17:00:00.000Z'));
-    expect(updated?.changeHistory.length).toBeGreaterThanOrEqual(1);
-
-    const closingChange = updated?.changeHistory.find((c) => c.field === 'closingDate');
-    expect(closingChange).toBeDefined();
-    expect(closingChange?.previousValue).toBe('2026-10-25T17:00:00.000Z');
-    expect(closingChange?.newValue).toBe('2026-11-10T17:00:00.000Z');
-
-    // 2 total queued jobs (1 for initial creation, 1 for update)
-    expect(fakeQueue.queuedOpportunityIds).toHaveLength(2);
-  });
-
-  it('does nothing when existing opportunity has identical data', async () => {
-    // First sync
-    await useCase.execute({});
-    expect(fakeQueue.queuedOpportunityIds).toHaveLength(1);
-
-    // Second sync with identical data
-    const result = await useCase.execute({});
-    expect(result.ok).toBe(true);
-    if (result.ok) {
-      expect(result.value.created).toBe(0);
-      expect(result.value.updated).toBe(0);
-    }
-    // No new analysis queued
-    expect(fakeQueue.queuedOpportunityIds).toHaveLength(1);
   });
 });

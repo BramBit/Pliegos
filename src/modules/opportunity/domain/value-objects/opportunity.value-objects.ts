@@ -49,6 +49,7 @@ export interface Change {
   readonly previousValue: string;
   readonly newValue: string;
   readonly detectedAt: Date;
+  readonly material?: boolean;
 }
 
 export type FeedbackDecision = 'Participate' | 'Discard';

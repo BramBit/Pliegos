@@ -1,12 +1,14 @@
 import { randomUUID } from 'node:crypto';
+import { Logger, LoggerService } from '@nestjs/common';
 import { Result, ok, err } from '../../../shared/domain/result';
 import {
   SourceUnavailableError,
   createSourceUnavailableError,
 } from '../../../shared/domain/errors';
-import { asOpportunityId } from '../../../shared/domain/typed-id';
+import { asOpportunityId, OpportunityId } from '../../../shared/domain/typed-id';
 import {
   OpportunitySourcePort,
+  SourceFetchOptions,
   SourceOpportunity,
 } from '../../domain/ports/opportunity-source.port';
 import { OpportunityRepositoryPort } from '../../domain/ports/opportunity.repository.port';
@@ -19,59 +21,237 @@ import {
 import { Change } from '../../domain/value-objects/opportunity.value-objects';
 import { createMoney } from '../../domain/value-objects/money.vo';
 
+export interface SyncOpportunitiesResult {
+  created: number;
+  updated: number;
+  unchanged: number;
+  skipped: number;
+  unknownStatuses: Record<string, number>;
+  durationMs: number;
+}
+
 export interface ISyncOpportunitiesUseCase {
   execute(input: {
     since?: Date;
     maxRecords?: number;
-  }): Promise<
-    Result<{ created: number; updated: number; skipped: number }, SourceUnavailableError>
-  >;
+    now?: Date;
+  }): Promise<Result<SyncOpportunitiesResult, SourceUnavailableError>>;
 }
 
+const ONE_DAY_MS = 86_400_000;
+const MATERIAL_CHANGE_FIELDS = new Set(['closingDate', 'amount', 'description', 'status']);
+
 export class SyncOpportunitiesUseCase implements ISyncOpportunitiesUseCase {
+  private readonly logger: LoggerService;
+
   constructor(
     private readonly source: OpportunitySourcePort,
     private readonly repository: OpportunityRepositoryPort,
     private readonly analysisQueue?: AnalysisQueuePort,
-  ) {}
+    logger?: LoggerService,
+  ) {
+    this.logger = logger ?? new Logger(SyncOpportunitiesUseCase.name);
+  }
 
   async execute(input: {
     since?: Date;
     maxRecords?: number;
-  }): Promise<
-    Result<{ created: number; updated: number; skipped: number }, SourceUnavailableError>
-  > {
-    const counters = { created: 0, updated: 0, skipped: 0 };
-    const fetchOptions = {
-      maxRecords: input.maxRecords,
-      onSkipped: () => {
-        counters.skipped++;
-      },
-    };
+    now?: Date;
+  }): Promise<Result<SyncOpportunitiesResult, SourceUnavailableError>> {
+    const startMs = Date.now();
+    const now = input.now ?? new Date();
+    const counters = { created: 0, updated: 0, unchanged: 0, skipped: 0 };
+    const unknownStatuses: Record<string, number> = {};
+    const seenInRun = new Set<string>();
 
-    try {
-      for await (const page of this.source.fetchPages(input.since, fetchOptions)) {
-        await this.processPage(page, counters);
+    let existingWatermark: Date | null = null;
+    if (this.repository.getSyncState) {
+      try {
+        const state = await this.repository.getSyncState('SECOP');
+        existingWatermark = state?.watermark ?? null;
+      } catch (dbError) {
+        const msg = dbError instanceof Error ? dbError.message : String(dbError);
+        this.logger.error(`Failed to read sync_state for SECOP: ${msg}`);
+        throw dbError;
       }
-    } catch {
-      return err(createSourceUnavailableError('SECOP'));
     }
 
-    return ok(counters);
+    const windowDays = Number(process.env.SECOP_SYNC_WINDOW_DAYS) || 14;
+    const windowStart = new Date(now.getTime() - windowDays * ONE_DAY_MS);
+
+    let since: Date;
+    if (input.since) {
+      since = input.since;
+    } else if (existingWatermark) {
+      const overlapSince = new Date(existingWatermark.getTime() - ONE_DAY_MS);
+      // If watermark is within the first day of the current window (e.g. capped by maxRecords),
+      // keep windowStart so consecutive bounded runs do not walk backwards before the window.
+      if (
+        existingWatermark.getTime() >= windowStart.getTime() &&
+        overlapSince.getTime() < windowStart.getTime()
+      ) {
+        since = windowStart;
+      } else {
+        since = overlapSince;
+      }
+    } else {
+      since = windowStart;
+    }
+
+    let maxLastPublishedAt: Date | null = existingWatermark;
+    const trackPublishedDate = (date: Date) => {
+      if (!isNaN(date.getTime())) {
+        if (!maxLastPublishedAt || date.getTime() > maxLastPublishedAt.getTime()) {
+          maxLastPublishedAt = date;
+        }
+      }
+    };
+
+    // Pass 1: Incremental sync by fecha_de_ultima_publicaci ASC
+    const incrementalResult = await this.runPass(
+      since,
+      {
+        maxRecords: input.maxRecords,
+        mode: 'incremental',
+        now,
+        onSkipped: () => {
+          counters.skipped++;
+        },
+        onUnknownStatus: (rawStatus: string) => {
+          unknownStatuses[rawStatus] = (unknownStatuses[rawStatus] ?? 0) + 1;
+        },
+      },
+      counters,
+      seenInRun,
+      trackPublishedDate,
+    );
+    if (!incrementalResult.ok) {
+      return incrementalResult;
+    }
+
+    // Pass 2: Currently open competitive processes regardless of watermark
+    const openCompetitiveResult = await this.runPass(
+       undefined,
+      {
+        maxRecords: input.maxRecords,
+        mode: 'openCompetitive',
+        now,
+        onSkipped: () => {
+          counters.skipped++;
+        },
+        onUnknownStatus: (rawStatus: string) => {
+          unknownStatuses[rawStatus] = (unknownStatuses[rawStatus] ?? 0) + 1;
+        },
+      },
+      counters,
+      seenInRun,
+      undefined,
+    );
+    if (!openCompetitiveResult.ok) {
+      return openCompetitiveResult;
+    }
+
+    if (this.repository.saveSyncState) {
+      try {
+        await this.repository.saveSyncState('SECOP', {
+          lastSuccessAt: new Date(),
+          watermark: maxLastPublishedAt,
+        });
+      } catch (dbError) {
+        const msg = dbError instanceof Error ? dbError.message : String(dbError);
+        this.logger.error(`Failed to update sync_state for SECOP: ${msg}`);
+        throw dbError;
+      }
+    }
+
+    const durationMs = Date.now() - startMs;
+    const summary: SyncOpportunitiesResult = {
+      created: counters.created,
+      updated: counters.updated,
+      unchanged: counters.unchanged,
+      skipped: counters.skipped,
+      unknownStatuses,
+      durationMs,
+    };
+
+    this.logger.log(
+      `SECOP sync completed in ${durationMs}ms: created=${summary.created} updated=${summary.updated} unchanged=${summary.unchanged} skipped=${summary.skipped} unknownStatuses=${JSON.stringify(summary.unknownStatuses)}`,
+    );
+
+    return ok(summary);
+  }
+
+  private async runPass(
+    since: Date | undefined,
+    fetchOptions: SourceFetchOptions,
+    counters: { created: number; updated: number; unchanged: number; skipped: number },
+    seenInRun: Set<string>,
+    onLastPublishedAt?: (date: Date) => void,
+  ): Promise<Result<void, SourceUnavailableError>> {
+    const iterator = this.source.fetchPages(since, fetchOptions)[Symbol.asyncIterator]();
+
+    while (true) {
+      let nextResult: IteratorResult<SourceOpportunity[]>;
+      try {
+        nextResult = await iterator.next();
+      } catch (sourceError) {
+        const msg = sourceError instanceof Error ? sourceError.message : String(sourceError);
+        this.logger.warn(`SECOP source unavailable during ${fetchOptions.mode ?? 'sync'}: ${msg}`);
+        return err(createSourceUnavailableError('SECOP'));
+      }
+
+      if (nextResult.done) break;
+
+      try {
+        await this.processPage(nextResult.value, counters, seenInRun, onLastPublishedAt);
+      } catch (dbError) {
+        const msg = dbError instanceof Error ? dbError.message : String(dbError);
+        this.logger.error(`Database error while persisting SECOP page: ${msg}`);
+        throw dbError;
+      }
+    }
+
+    return ok(undefined);
   }
 
   private async processPage(
     sourceOpportunities: SourceOpportunity[],
-    counters: { created: number; updated: number; skipped: number },
+    counters: { created: number; updated: number; unchanged: number; skipped: number },
+    seenInRun: Set<string>,
+    onLastPublishedAt?: (date: Date) => void,
   ): Promise<void> {
+    const validItems: SourceOpportunity[] = [];
     for (const src of sourceOpportunities) {
+      if (seenInRun.has(src.externalId)) {
+        continue;
+      }
       if (!src.publishedAt || isNaN(src.publishedAt.getTime())) {
         counters.skipped++;
         continue;
       }
+      seenInRun.add(src.externalId);
+      validItems.push(src);
+    }
 
-      const existing = await this.repository.findByExternalId(src.externalId);
+    if (validItems.length === 0) return;
 
+    const externalIds = validItems.map((item) => item.externalId);
+    const existingRecords = await this.repository.findByExternalIds(externalIds);
+    const existingByExternalId = new Map<string, Opportunity>(
+      existingRecords.map((opp) => [opp.source.externalId, opp]),
+    );
+
+    const toSave: Opportunity[] = [];
+    const toEnqueue: OpportunityId[] = [];
+    let pageCreated = 0;
+    let pageUpdated = 0;
+    let pageUnchanged = 0;
+    let pageSkipped = 0;
+
+    for (const src of validItems) {
+      onLastPublishedAt?.(src.lastPublishedAt);
+
+      const existing = existingByExternalId.get(src.externalId);
       if (!existing) {
         const moneyResult = createMoney(
           src.amount !== null && src.amount >= 0 ? src.amount : 0,
@@ -112,13 +292,11 @@ export class SyncOpportunitiesUseCase implements ISyncOpportunitiesUseCase {
         });
 
         if (newOppResult.ok) {
-          await this.repository.save(newOppResult.value);
-          if (this.analysisQueue) {
-            await this.analysisQueue.enqueueAnalysis(newOppResult.value.id);
-          }
-          counters.created++;
+          toSave.push(newOppResult.value);
+          toEnqueue.push(newOppResult.value.id);
+          pageCreated++;
         } else {
-          counters.skipped++;
+          pageSkipped++;
         }
       } else {
         const changes = this.compareSourceWithStored(existing, src);
@@ -142,17 +320,32 @@ export class SyncOpportunitiesUseCase implements ISyncOpportunitiesUseCase {
             isCompetitive: src.isCompetitive,
             categoryCode: src.categoryCode,
             lastPublishedAt: src.lastPublishedAt,
-            status: src.status !== 'Unknown' ? src.status : 'Amended',
+            status: src.status !== 'Unknown' ? src.status : existing.status,
             closingDate: src.closingDate,
             isOpenForSubmission: src.isOpenForSubmission,
           };
 
-          await this.repository.save(updatedOpp);
-          if (this.analysisQueue) {
-            await this.analysisQueue.enqueueAnalysis(updatedOpp.id);
-          }
-          counters.updated++;
+          toSave.push(updatedOpp);
+          toEnqueue.push(updatedOpp.id);
+          pageUpdated++;
+        } else {
+          pageUnchanged++;
         }
+      }
+    }
+
+    if (toSave.length > 0) {
+      await this.repository.saveMany(toSave);
+    }
+
+    counters.created += pageCreated;
+    counters.updated += pageUpdated;
+    counters.unchanged += pageUnchanged;
+    counters.skipped += pageSkipped;
+
+    if (this.analysisQueue) {
+      for (const id of toEnqueue) {
+        await this.analysisQueue.enqueueAnalysis(id);
       }
     }
   }
@@ -161,54 +354,52 @@ export class SyncOpportunitiesUseCase implements ISyncOpportunitiesUseCase {
     const changes: Change[] = [];
     const now = new Date();
 
-    const newClosing = src.closingDate ? src.closingDate.toISOString() : 'null';
-    const oldClosing = existing.closingDate ? existing.closingDate.toISOString() : 'null';
-
-    if (newClosing !== oldClosing) {
+    const pushChange = (field: string, previousValue: string, newValue: string) => {
       changes.push({
-        field: 'closingDate',
-        previousValue: oldClosing,
-        newValue: newClosing,
+        field,
+        previousValue,
+        newValue,
         detectedAt: now,
+        material: MATERIAL_CHANGE_FIELDS.has(field),
       });
+    };
+
+    if (existing.title !== src.title) {
+      pushChange('title', existing.title, src.title);
     }
 
-    if (src.status !== 'Unknown' && src.status !== existing.status) {
-      changes.push({
-        field: 'status',
-        previousValue: existing.status,
-        newValue: src.status,
-        detectedAt: now,
-      });
-    }
-
-    if (src.title !== existing.title) {
-      changes.push({
-        field: 'title',
-        previousValue: existing.title,
-        newValue: src.title,
-        detectedAt: now,
-      });
-    }
-
-    if (src.description !== existing.description) {
-      changes.push({
-        field: 'description',
-        previousValue: existing.description,
-        newValue: src.description,
-        detectedAt: now,
-      });
+    if (existing.description !== src.description) {
+      pushChange('description', existing.description, src.description);
     }
 
     const oldAmount = existing.amountKnown ? String(existing.amount.amount) : 'null';
     const newAmount = src.amount !== null ? String(src.amount) : 'null';
     if (oldAmount !== newAmount) {
-      changes.push({
-        field: 'amount',
-        previousValue: oldAmount,
-        newValue: newAmount,
-        detectedAt: now,
-      });
+      pushChange('amount', oldAmount, newAmount);
+    }
+
+    const oldClosing = existing.closingDate ? existing.closingDate.toISOString() : 'null';
+    const newClosing = src.closingDate ? src.closingDate.toISOString() : 'null';
+    if (oldClosing !== newClosing) {
+      pushChange('closingDate', oldClosing, newClosing);
+    }
+
+    if (src.status !== 'Unknown' && existing.status !== src.status) {
+      pushChange('status', existing.status, src.status);
+    }
+
+    if (existing.isOpenForSubmission !== src.isOpenForSubmission) {
+      pushChange(
+        'isOpenForSubmission',
+        String(existing.isOpenForSubmission),
+        String(src.isOpenForSubmission),
+      );
+    }
+
+    const oldCategory = existing.categoryCode ?? 'null';
+    const newCategory = src.categoryCode ?? 'null';
+    if (oldCategory !== newCategory) {
+      pushChange('categoryCode', oldCategory, newCategory);
     }
 
     return changes;

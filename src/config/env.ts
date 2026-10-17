@@ -28,6 +28,7 @@ const envSchema = z.object({
   SECOP_APP_TOKEN: z.string().optional(),
   SECOP_PAGE_SIZE: positiveInt.default(1000),
   SECOP_SYNC_MAX_RECORDS: positiveInt.default(5000),
+  SECOP_SYNC_WINDOW_DAYS: positiveInt.default(14),
 
   ANALYSIS_CONCURRENCY: positiveInt.default(2),
   ANALYSIS_SUMMARIZE: z
