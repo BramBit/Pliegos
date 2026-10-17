@@ -7,7 +7,7 @@ import {
 import { asOpportunityId } from '../../../shared/domain/typed-id';
 import {
   OpportunitySourcePort,
-  RawSecopProcess,
+  SourceOpportunity,
 } from '../../domain/ports/opportunity-source.port';
 import { OpportunityRepositoryPort } from '../../domain/ports/opportunity.repository.port';
 import { AnalysisQueuePort } from '../../domain/ports/analysis-queue.port';
@@ -16,17 +16,16 @@ import {
   withOpportunityChange,
   Opportunity,
 } from '../../domain/entities/opportunity.entity';
-import {
-  OpportunityStatus,
-  Change,
-} from '../../domain/value-objects/opportunity.value-objects';
+import { Change } from '../../domain/value-objects/opportunity.value-objects';
 import { createMoney } from '../../domain/value-objects/money.vo';
 
 export interface ISyncOpportunitiesUseCase {
   execute(input: {
     since?: Date;
     maxRecords?: number;
-  }): Promise<Result<{ created: number; updated: number }, SourceUnavailableError>>;
+  }): Promise<
+    Result<{ created: number; updated: number; skipped: number }, SourceUnavailableError>
+  >;
 }
 
 export class SyncOpportunitiesUseCase implements ISyncOpportunitiesUseCase {
@@ -39,21 +38,20 @@ export class SyncOpportunitiesUseCase implements ISyncOpportunitiesUseCase {
   async execute(input: {
     since?: Date;
     maxRecords?: number;
-  }): Promise<Result<{ created: number; updated: number }, SourceUnavailableError>> {
-    const counters = { created: 0, updated: 0 };
-    const fetchOptions = { maxRecords: input.maxRecords };
+  }): Promise<
+    Result<{ created: number; updated: number; skipped: number }, SourceUnavailableError>
+  > {
+    const counters = { created: 0, updated: 0, skipped: 0 };
+    const fetchOptions = {
+      maxRecords: input.maxRecords,
+      onSkipped: () => {
+        counters.skipped++;
+      },
+    };
 
     try {
-      if (this.source.fetchPages) {
-        for await (const page of this.source.fetchPages(input.since, fetchOptions)) {
-          await this.processPage(page, counters);
-        }
-      } else {
-        const rawProcesses: RawSecopProcess[] = await this.source.fetchLatest(
-          input.since,
-          fetchOptions,
-        );
-        await this.processPage(rawProcesses, counters);
+      for await (const page of this.source.fetchPages(input.since, fetchOptions)) {
+        await this.processPage(page, counters);
       }
     } catch {
       return err(createSourceUnavailableError('SECOP'));
@@ -63,40 +61,90 @@ export class SyncOpportunitiesUseCase implements ISyncOpportunitiesUseCase {
   }
 
   private async processPage(
-    rawProcesses: RawSecopProcess[],
-    counters: { created: number; updated: number },
+    sourceOpportunities: SourceOpportunity[],
+    counters: { created: number; updated: number; skipped: number },
   ): Promise<void> {
-    for (const raw of rawProcesses) {
-      const existing = await this.repository.findByExternalId(raw.id_del_proceso);
+    for (const src of sourceOpportunities) {
+      if (!src.publishedAt || isNaN(src.publishedAt.getTime())) {
+        counters.skipped++;
+        continue;
+      }
+
+      const existing = await this.repository.findByExternalId(src.externalId);
 
       if (!existing) {
-        const newOppResult = this.mapToOpportunity(raw);
+        const moneyResult = createMoney(
+          src.amount !== null && src.amount >= 0 ? src.amount : 0,
+        );
+        const amount = moneyResult.ok
+          ? moneyResult.value
+          : { amount: 0, currency: 'COP' as const };
+
+        const newOppResult = createOpportunity({
+          id: asOpportunityId(randomUUID()),
+          title: src.title,
+          description: src.description,
+          contractingEntity: {
+            name: src.entityName,
+            taxId: src.entityTaxId,
+          },
+          location: {
+            city: src.city,
+            department: src.department,
+          },
+          amount,
+          amountKnown: src.amount !== null,
+          contractType: src.contractType,
+          procurementModality: src.procurementModality,
+          isCompetitive: src.isCompetitive,
+          categoryCode: src.categoryCode,
+          publishedAt: src.publishedAt,
+          lastPublishedAt: src.lastPublishedAt,
+          closingDate: src.closingDate,
+          isOpenForSubmission: src.isOpenForSubmission,
+          status: src.status,
+          source: {
+            sourceName: 'SECOP',
+            externalId: src.externalId,
+            humanReference: src.humanReference,
+            originalUrl: src.originalUrl,
+          },
+        });
+
         if (newOppResult.ok) {
           await this.repository.save(newOppResult.value);
           if (this.analysisQueue) {
             await this.analysisQueue.enqueueAnalysis(newOppResult.value.id);
           }
           counters.created++;
+        } else {
+          counters.skipped++;
         }
       } else {
-        const changes = this.detectDiff(existing, raw);
+        const changes = this.compareSourceWithStored(existing, src);
         if (changes.length > 0) {
           let updatedOpp: Opportunity = existing;
           for (const change of changes) {
             updatedOpp = withOpportunityChange(updatedOpp, change);
           }
 
-          // Apply latest status or closingDate updates
-          const mappedStatus = this.mapStatus(raw.estado_del_procedimiento);
-          const mappedClosingDate = raw.fecha_de_recepcion_de
-            ? new Date(raw.fecha_de_recepcion_de)
-            : null;
+          const moneyResult = createMoney(
+            src.amount !== null && src.amount >= 0 ? src.amount : 0,
+          );
+          const amount = moneyResult.ok ? moneyResult.value : updatedOpp.amount;
 
           updatedOpp = {
             ...updatedOpp,
-            status: mappedStatus !== 'Unknown' ? mappedStatus : 'Amended',
-            closingDate: mappedClosingDate,
-            isOpenForSubmission: raw.estado_de_apertura_del_proceso === 'Abierto',
+            title: src.title,
+            description: src.description,
+            amount,
+            amountKnown: src.amount !== null,
+            isCompetitive: src.isCompetitive,
+            categoryCode: src.categoryCode,
+            lastPublishedAt: src.lastPublishedAt,
+            status: src.status !== 'Unknown' ? src.status : 'Amended',
+            closingDate: src.closingDate,
+            isOpenForSubmission: src.isOpenForSubmission,
           };
 
           await this.repository.save(updatedOpp);
@@ -109,54 +157,11 @@ export class SyncOpportunitiesUseCase implements ISyncOpportunitiesUseCase {
     }
   }
 
-  private mapToOpportunity(raw: RawSecopProcess): Result<Opportunity, unknown> {
-    const rawAmount = raw.precio_base ? parseFloat(raw.precio_base) : 0;
-    const moneyResult = createMoney(Number.isFinite(rawAmount) && rawAmount >= 0 ? rawAmount : 0);
-    const amount = moneyResult.ok ? moneyResult.value : { amount: 0, currency: 'COP' as const };
-
-    const publishedAt = raw.fecha_de_publicacion_del
-      ? new Date(raw.fecha_de_publicacion_del)
-      : new Date();
-
-    const closingDate = raw.fecha_de_recepcion_de
-      ? new Date(raw.fecha_de_recepcion_de)
-      : null;
-
-    return createOpportunity({
-      id: asOpportunityId(randomUUID()),
-      title: raw.nombre_del_procedimiento || 'Sin título',
-      contractingEntity: {
-        name: raw.entidad || 'Entidad no especificada',
-        taxId: raw.nit_entidad || 'N/A',
-      },
-      location: {
-        city: raw.ciudad_entidad ?? null,
-        department: raw.departamento_entidad ?? null,
-      },
-      amount,
-      contractType: raw.tipo_de_contrato || 'Otros',
-      procurementModality: raw.modalidad_de_contratacion || 'Otros',
-      categoryCode: raw.codigo_principal_de_categoria || 'V1.00000000',
-      publishedAt: isNaN(publishedAt.getTime()) ? new Date() : publishedAt,
-      closingDate: closingDate && !isNaN(closingDate.getTime()) ? closingDate : null,
-      isOpenForSubmission: raw.estado_de_apertura_del_proceso === 'Abierto',
-      status: this.mapStatus(raw.estado_del_procedimiento),
-      source: {
-        sourceName: 'SECOP',
-        externalId: raw.id_del_proceso,
-        humanReference: raw.referencia_del_proceso || raw.id_del_proceso,
-        originalUrl: raw.urlproceso?.url || '',
-      },
-    });
-  }
-
-  private detectDiff(existing: Opportunity, raw: RawSecopProcess): Change[] {
+  private compareSourceWithStored(existing: Opportunity, src: SourceOpportunity): Change[] {
     const changes: Change[] = [];
     const now = new Date();
 
-    const newClosing = raw.fecha_de_recepcion_de
-      ? new Date(raw.fecha_de_recepcion_de).toISOString()
-      : 'null';
+    const newClosing = src.closingDate ? src.closingDate.toISOString() : 'null';
     const oldClosing = existing.closingDate ? existing.closingDate.toISOString() : 'null';
 
     if (newClosing !== oldClosing) {
@@ -168,29 +173,44 @@ export class SyncOpportunitiesUseCase implements ISyncOpportunitiesUseCase {
       });
     }
 
-    const newStatus = this.mapStatus(raw.estado_del_procedimiento);
-    if (newStatus !== 'Unknown' && newStatus !== existing.status) {
+    if (src.status !== 'Unknown' && src.status !== existing.status) {
       changes.push({
         field: 'status',
         previousValue: existing.status,
-        newValue: newStatus,
+        newValue: src.status,
+        detectedAt: now,
+      });
+    }
+
+    if (src.title !== existing.title) {
+      changes.push({
+        field: 'title',
+        previousValue: existing.title,
+        newValue: src.title,
+        detectedAt: now,
+      });
+    }
+
+    if (src.description !== existing.description) {
+      changes.push({
+        field: 'description',
+        previousValue: existing.description,
+        newValue: src.description,
+        detectedAt: now,
+      });
+    }
+
+    const oldAmount = existing.amountKnown ? String(existing.amount.amount) : 'null';
+    const newAmount = src.amount !== null ? String(src.amount) : 'null';
+    if (oldAmount !== newAmount) {
+      changes.push({
+        field: 'amount',
+        previousValue: oldAmount,
+        newValue: newAmount,
         detectedAt: now,
       });
     }
 
     return changes;
-  }
-
-  private mapStatus(rawStatus?: string): OpportunityStatus {
-    if (!rawStatus) return 'Unknown';
-    const normalized = rawStatus.trim().toLowerCase();
-
-    if (normalized.includes('publicad') || normalized.includes('evaluaci')) return 'Published';
-    if (normalized.includes('modificad') || normalized.includes('adenda')) return 'Amended';
-    if (normalized.includes('cerrad')) return 'Closed';
-    if (normalized.includes('adjudicad') || normalized.includes('seleccionad')) return 'Awarded';
-    if (normalized.includes('cancelad') || normalized.includes('desiert')) return 'Cancelled';
-
-    return 'Unknown';
   }
 }

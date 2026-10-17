@@ -9,6 +9,7 @@ import {
   MatchedFactor,
 } from '../../../opportunity/domain/value-objects/opportunity.value-objects';
 import { RecommendationId, asRecommendationId } from '../../../shared/domain/typed-id';
+import { normalizeUnspsc } from '../../../opportunity/infrastructure/adapters/secop/normalizers';
 
 export interface ScoringWeights {
   readonly semanticSimilarity: number;
@@ -203,18 +204,23 @@ export class MatchingService {
    * Exact match = 1.0; same segment/family (shared prefix) = 0.6; no relation = 0.
    */
   private computeCategoryMatch(
-    opportunityCategory: string,
+    opportunityCategory: string | null,
     preferredCategories: string[],
   ): number {
     if (!preferredCategories || preferredCategories.length === 0) {
       return 0.0;
     }
 
-    const normOpp = this.normalizeUnspsc(opportunityCategory);
+    const normOpp = normalizeUnspsc(opportunityCategory);
+    if (!normOpp) {
+      return 0.0;
+    }
+
     let bestMatch = 0.0;
 
     for (const pref of preferredCategories) {
-      const normPref = this.normalizeUnspsc(pref);
+      const normPref = normalizeUnspsc(pref);
+      if (!normPref) continue;
 
       if (normOpp === normPref) {
         return 1.0;
@@ -285,9 +291,5 @@ export class MatchingService {
     );
 
     return hasMatch ? 1.0 : 0.0;
-  }
-
-  private normalizeUnspsc(code: string): string {
-    return code.replace(/^[vV]\d+\./, '').trim();
   }
 }

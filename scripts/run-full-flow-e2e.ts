@@ -128,7 +128,11 @@ async function main() {
           { name: 'Gestion y consultoria administrativa', yearsOfExperience: 4 },
         ],
         preferences: {
-          categoryCodes: [sampleOpp.categoryCode, 'V1.80111600', 'V1.43230000'],
+          categoryCodes: [
+            ...(sampleOpp.categoryCode ? [sampleOpp.categoryCode] : []),
+            'V1.80111600',
+            'V1.43230000',
+          ],
           keywords: [sampleOpp.title.split(' ')[0], 'servicios', 'gestion', 'tecnologia'],
           amountRange: { min: 5_000_000, max: 200_000_000 },
           departments: sampleOpp.location.department ? [sampleOpp.location.department] : [],

@@ -2,7 +2,8 @@ import { randomUUID } from 'node:crypto';
 import { Injectable, Logger, LoggerService } from '@nestjs/common';
 import {
   OpportunitySourcePort,
-  RawSecopProcess,
+  SourceFetchOptions,
+  SourceOpportunity,
 } from '../../../domain/ports/opportunity-source.port';
 import {
   createOpportunity,
@@ -13,6 +14,37 @@ import { createMoney } from '../../../domain/value-objects/money.vo';
 import { asOpportunityId, OpportunityId } from '../../../../shared/domain/typed-id';
 import { Result } from '../../../../shared/domain/result';
 import { ValidationError } from '../../../../shared/domain/errors';
+import {
+  isCompetitive,
+  normalizeUnspsc,
+  nullIfPlaceholder,
+  parseAmount,
+} from './normalizers';
+
+export interface RawSecopProcess {
+  readonly id_del_proceso: string;
+  readonly referencia_del_proceso?: string;
+  readonly nombre_del_procedimiento: string;
+  readonly descripci_n_del_procedimiento?: string;
+  readonly entidad: string;
+  readonly nit_entidad?: string;
+  readonly ciudad_entidad?: string;
+  readonly departamento_entidad?: string;
+  readonly precio_base?: string | number;
+  readonly tipo_de_contrato?: string;
+  readonly modalidad_de_contratacion?: string;
+  readonly estado_del_procedimiento?: string;
+  readonly estado_resumen?: string;
+  readonly estado_de_apertura_del_proceso?: 'Abierto' | 'Cerrado';
+  readonly fecha_de_publicacion_del?: string;
+  readonly fecha_de_ultima_publicaci?: string;
+  readonly fecha_de_recepcion_de?: string;
+  readonly fecha_de_apertura_de_respuesta?: string;
+  readonly codigo_principal_de_categoria?: string;
+  readonly urlproceso?: { url?: string };
+  readonly proveedores_invitados?: string;
+  readonly respuestas_al_procedimiento?: string;
+}
 
 export interface SecopAdapterOptions {
   readonly endpointUrl?: string;
@@ -27,10 +59,7 @@ export interface SecopAdapterOptions {
   readonly sleepFn?: (ms: number) => Promise<void>;
 }
 
-export interface FetchOptions {
-  readonly pageSize?: number;
-  readonly maxRecords?: number;
-}
+export type FetchOptions = SourceFetchOptions;
 
 export const DEFAULT_SECOP_ENDPOINT = 'https://www.datos.gov.co/resource/p6dx-8zbt.json';
 
@@ -57,12 +86,11 @@ export class SecopAdapter implements OpportunitySourcePort {
   }
 
   /**
-   * Fetches latest opportunities from the SECOP II dataset, paginating through Socrata
-   * until `maxRecords` is reached (default: all pages). Prefer `fetchPages` for large loads
-   * to avoid holding every record in memory.
+   * Fetches latest mapped opportunities from the SECOP II dataset, paginating through Socrata
+   * until `maxRecords` is reached (default: all pages).
    */
-  async fetchLatest(since?: Date, options?: FetchOptions): Promise<RawSecopProcess[]> {
-    const all: RawSecopProcess[] = [];
+  async fetchLatest(since?: Date, options?: FetchOptions): Promise<SourceOpportunity[]> {
+    const all: SourceOpportunity[] = [];
     for await (const page of this.fetchPages(since, options)) {
       all.push(...page);
     }
@@ -70,23 +98,32 @@ export class SecopAdapter implements OpportunitySourcePort {
   }
 
   /**
-   * Streams SECOP II records page by page using Socrata `$limit`/`$offset` with a
-   * deterministic ordering (publication date + process id) so pages never overlap.
-   * Each page request is retried with exponential backoff on HTTP 429/5xx and network errors.
+   * Streams normalized SourceOpportunity pages from SECOP II using Socrata `$limit`/`$offset`.
+   * Records without a valid `fecha_de_publicacion_del` are skipped and counted via `options.onSkipped`.
    */
-  async *fetchPages(since?: Date, options?: FetchOptions): AsyncGenerator<RawSecopProcess[]> {
+  async *fetchPages(since?: Date, options?: FetchOptions): AsyncGenerator<SourceOpportunity[]> {
     const pageSize = options?.pageSize ?? this.pageSize;
     const maxRecords = options?.maxRecords ?? Number.POSITIVE_INFINITY;
     let offset = 0;
 
     while (offset < maxRecords) {
       const limit = Math.min(pageSize, maxRecords - offset);
-      const page = await this.fetchPage(since, limit, offset);
-      if (page.length === 0) return;
+      const rawPage = await this.fetchPage(since, limit, offset);
+      if (rawPage.length === 0) return;
 
-      yield page;
-      offset += page.length;
-      if (page.length < limit) return;
+      const mappedPage: SourceOpportunity[] = [];
+      for (const raw of rawPage) {
+        const mapped = this.mapToSourceOpportunity(raw);
+        if (!mapped) {
+          options?.onSkipped?.();
+          continue;
+        }
+        mappedPage.push(mapped);
+      }
+
+      yield mappedPage;
+      offset += rawPage.length;
+      if (rawPage.length < limit) return;
     }
   }
 
@@ -156,56 +193,161 @@ export class SecopAdapter implements OpportunitySourcePort {
   }
 
   /**
-   * Maps a RawSecopProcess record to the domain Opportunity aggregate,
-   * strictly adhering to technical design §1.2.
+   * Maps a RawSecopProcess to a normalized SourceOpportunity.
+   * Returns null if `fecha_de_publicacion_del` is absent or invalid (never invents `new Date()`).
    */
-  mapToOpportunity(raw: RawSecopProcess, id?: OpportunityId): Result<Opportunity, ValidationError> {
-    const rawAmount = raw.precio_base ? parseFloat(raw.precio_base) : 0;
-    const moneyResult = createMoney(Number.isFinite(rawAmount) && rawAmount >= 0 ? rawAmount : 0);
-    const amount = moneyResult.ok ? moneyResult.value : { amount: 0, currency: 'COP' as const };
+  mapToSourceOpportunity(raw: RawSecopProcess, now: Date = new Date()): SourceOpportunity | null {
+    if (!raw.fecha_de_publicacion_del || raw.fecha_de_publicacion_del.trim() === '') {
+      this.logger.warn(
+        `Skipping SECOP record "${raw.id_del_proceso ?? ''}": missing fecha_de_publicacion_del.`,
+      );
+      return null;
+    }
 
-    const publishedAt = raw.fecha_de_publicacion_del
-      ? new Date(raw.fecha_de_publicacion_del)
-      : new Date();
+    const publishedAt = new Date(raw.fecha_de_publicacion_del);
+    if (isNaN(publishedAt.getTime())) {
+      this.logger.warn(
+        `Skipping SECOP record "${raw.id_del_proceso ?? ''}": invalid fecha_de_publicacion_del "${raw.fecha_de_publicacion_del}".`,
+      );
+      return null;
+    }
 
-    const closingDate = raw.fecha_de_recepcion_de
-      ? new Date(raw.fecha_de_recepcion_de)
-      : null;
+    let lastPublishedAt = publishedAt;
+    if (raw.fecha_de_ultima_publicaci && raw.fecha_de_ultima_publicaci.trim() !== '') {
+      const parsedLast = new Date(raw.fecha_de_ultima_publicaci);
+      if (!isNaN(parsedLast.getTime())) {
+        lastPublishedAt = parsedLast;
+      }
+    }
 
-    // Nested urlproceso.url unwrapping per technical design §1.2
+    let closingDate: Date | null = null;
+    if (raw.fecha_de_recepcion_de && raw.fecha_de_recepcion_de.trim() !== '') {
+      const parsedClosing = new Date(raw.fecha_de_recepcion_de);
+      if (!isNaN(parsedClosing.getTime())) {
+        closingDate = parsedClosing;
+      }
+    }
+
+    const parsedAmount = parseAmount(raw.precio_base);
+    const amount = parsedAmount !== null && parsedAmount >= 0 ? parsedAmount : null;
+
     let originalUrl = '';
     if (raw.urlproceso && typeof raw.urlproceso === 'object' && typeof raw.urlproceso.url === 'string') {
       originalUrl = raw.urlproceso.url;
     }
 
     const status = this.mapStatus(raw.estado_del_procedimiento, raw.estado_resumen);
+    const isOpenForSubmission = SecopAdapter.computeIsOpenForSubmission(status, closingDate, now);
+
+    const externalId = (raw.id_del_proceso ?? '').trim();
+    const humanReference = nullIfPlaceholder(raw.referencia_del_proceso) ?? externalId;
+
+    return {
+      externalId,
+      humanReference,
+      title: (raw.nombre_del_procedimiento ?? '').trim(),
+      description: nullIfPlaceholder(raw.descripci_n_del_procedimiento) ?? '',
+      entityName: (raw.entidad ?? '').trim(),
+      entityTaxId: nullIfPlaceholder(raw.nit_entidad) ?? '',
+      city: nullIfPlaceholder(raw.ciudad_entidad),
+      department: nullIfPlaceholder(raw.departamento_entidad),
+      amount,
+      contractType: nullIfPlaceholder(raw.tipo_de_contrato) ?? 'Otros',
+      procurementModality: nullIfPlaceholder(raw.modalidad_de_contratacion) ?? 'Otros',
+      isCompetitive: isCompetitive(raw.modalidad_de_contratacion),
+      categoryCode: normalizeUnspsc(raw.codigo_principal_de_categoria),
+      publishedAt,
+      lastPublishedAt,
+      closingDate,
+      isOpenForSubmission,
+      status,
+      originalUrl,
+    };
+  }
+
+  /**
+   * Maps a RawSecopProcess record to the domain Opportunity aggregate using the P1.2 normalizers.
+   * Never invents `new Date()`: if `fecha_de_publicacion_del` is missing, validation fails on `publishedAt`.
+   */
+  mapToOpportunity(
+    raw: RawSecopProcess,
+    id?: OpportunityId,
+    now: Date = new Date(),
+  ): Result<Opportunity, ValidationError> {
+    const sourceOpp = this.mapToSourceOpportunity(raw, now);
+
+    const publishedAt = sourceOpp ? sourceOpp.publishedAt : new Date(NaN);
+    const lastPublishedAt = sourceOpp ? sourceOpp.lastPublishedAt : publishedAt;
+
+    let closingDate: Date | null = null;
+    if (sourceOpp) {
+      closingDate = sourceOpp.closingDate;
+    } else if (raw.fecha_de_recepcion_de && raw.fecha_de_recepcion_de.trim() !== '') {
+      const parsed = new Date(raw.fecha_de_recepcion_de);
+      closingDate = !isNaN(parsed.getTime()) ? parsed : null;
+    }
+
+    const parsedAmount = sourceOpp ? sourceOpp.amount : parseAmount(raw.precio_base);
+    const validAmount = parsedAmount !== null && parsedAmount >= 0 ? parsedAmount : null;
+    const moneyResult = createMoney(validAmount ?? 0);
+    const amount = moneyResult.ok ? moneyResult.value : { amount: 0, currency: 'COP' as const };
+
+    let originalUrl = '';
+    if (raw.urlproceso && typeof raw.urlproceso === 'object' && typeof raw.urlproceso.url === 'string') {
+      originalUrl = raw.urlproceso.url;
+    }
+
+    const status = sourceOpp
+      ? sourceOpp.status
+      : this.mapStatus(raw.estado_del_procedimiento, raw.estado_resumen);
+    const isOpenForSubmission = SecopAdapter.computeIsOpenForSubmission(status, closingDate, now);
+    const externalId = (raw.id_del_proceso ?? '').trim();
 
     return createOpportunity({
       id: id ?? asOpportunityId(randomUUID()),
-      title: raw.nombre_del_procedimiento,
+      title: (raw.nombre_del_procedimiento ?? '').trim(),
+      description: nullIfPlaceholder(raw.descripci_n_del_procedimiento) ?? '',
       contractingEntity: {
-        name: raw.entidad,
-        taxId: raw.nit_entidad,
+        name: (raw.entidad ?? '').trim(),
+        taxId: nullIfPlaceholder(raw.nit_entidad) ?? '',
       },
       location: {
-        city: raw.ciudad_entidad ?? null,
-        department: raw.departamento_entidad ?? null,
+        city: nullIfPlaceholder(raw.ciudad_entidad),
+        department: nullIfPlaceholder(raw.departamento_entidad),
       },
       amount,
-      contractType: raw.tipo_de_contrato || 'Otros',
-      procurementModality: raw.modalidad_de_contratacion || 'Otros',
-      categoryCode: raw.codigo_principal_de_categoria || 'V1.00000000',
-      publishedAt: isNaN(publishedAt.getTime()) ? new Date() : publishedAt,
-      closingDate: closingDate && !isNaN(closingDate.getTime()) ? closingDate : null,
-      isOpenForSubmission: raw.estado_de_apertura_del_proceso === 'Abierto',
+      amountKnown: validAmount !== null,
+      contractType: nullIfPlaceholder(raw.tipo_de_contrato) ?? 'Otros',
+      procurementModality: nullIfPlaceholder(raw.modalidad_de_contratacion) ?? 'Otros',
+      isCompetitive: isCompetitive(raw.modalidad_de_contratacion),
+      categoryCode: normalizeUnspsc(raw.codigo_principal_de_categoria),
+      publishedAt,
+      lastPublishedAt,
+      closingDate,
+      isOpenForSubmission,
       status,
       source: {
         sourceName: 'SECOP',
-        externalId: raw.id_del_proceso,
-        humanReference: raw.referencia_del_proceso || raw.id_del_proceso,
+        externalId,
+        humanReference: nullIfPlaceholder(raw.referencia_del_proceso) ?? externalId,
         originalUrl,
       },
     });
+  }
+
+  /**
+   * Derives `isOpenForSubmission` from `status` and `closingDate` instead of
+   * `estado_de_apertura_del_proceso`.
+   */
+  static computeIsOpenForSubmission(
+    status: OpportunityStatus,
+    closingDate: Date | null,
+    now: Date = new Date(),
+  ): boolean {
+    if (status !== 'Published' && status !== 'Amended') {
+      return false;
+    }
+    return closingDate === null || closingDate.getTime() >= now.getTime();
   }
 
   /**
@@ -222,16 +364,37 @@ export class SecopAdapter implements OpportunitySourcePort {
     }
 
     // 1. Evaluate primary procedure status (estado_del_procedimiento)
+    if (s.includes('borrador') || s.includes('en aprobaci') || s.includes('suspendid')) {
+      return 'Draft';
+    }
     if (s.includes('seleccionad') || s.includes('adjudicad')) return 'Awarded';
-    if (s.includes('publicad') || s.includes('evaluaci')) return 'Published';
+    if (
+      s.includes('publicad') ||
+      s.includes('evaluaci') ||
+      s.includes('abiert') ||
+      s.includes('aprobad')
+    ) {
+      return 'Published';
+    }
     if (s.includes('modificad') || s.includes('adenda')) return 'Amended';
     if (s.includes('cerrad')) return 'Closed';
     if (s.includes('cancelad') || s.includes('desiert')) return 'Cancelled';
 
     // 2. Evaluate summary status fallback (estado_resumen)
+    if (r.includes('borrador') || r.includes('en aprobaci') || r.includes('suspendid')) {
+      return 'Draft';
+    }
     if (r.includes('seleccionad') || r.includes('adjudicad')) return 'Awarded';
-    if (r.includes('presentación de oferta') || r.includes('presentacion de oferta')) return 'Published';
-    if (r.includes('modificad')) return 'Amended';
+    if (
+      r.includes('presentación de oferta') ||
+      r.includes('presentacion de oferta') ||
+      r.includes('publicad') ||
+      r.includes('abiert') ||
+      r.includes('aprobad')
+    ) {
+      return 'Published';
+    }
+    if (r.includes('modificad') || r.includes('adenda')) return 'Amended';
     if (r.includes('cerrad')) return 'Closed';
     if (r.includes('cancelad') || r.includes('desiert')) return 'Cancelled';
 

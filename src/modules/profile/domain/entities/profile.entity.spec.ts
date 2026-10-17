@@ -30,6 +30,20 @@ describe('Profile Entity & Value Objects', () => {
     });
   });
 
+  describe('ProfilePreferences VO', () => {
+    it('normalizes UNSPSC categoryCodes with normalizeUnspsc and drops invalid placeholders', () => {
+      const prefs = createProfilePreferences({
+        categoryCodes: ['V1.43230000', '81111500', 'UNSPECIFIED', 'V1.00000000', ''],
+        keywords: ['software'],
+      });
+
+      expect(prefs.ok).toBe(true);
+      if (prefs.ok) {
+        expect(prefs.value.categoryCodes).toEqual(['43230000', '81111500']);
+      }
+    });
+  });
+
   describe('Profile Entity', () => {
     it('creates a valid Profile aggregate root', () => {
       const range = createAmountRange(10000000, 200000000);
@@ -56,6 +70,7 @@ describe('Profile Entity & Value Objects', () => {
         expect(profile.value.id).toBe('profile-001');
         expect(profile.value.ownerId).toBe('user-001');
         expect(profile.value.capabilities).toHaveLength(1);
+        expect(profile.value.preferences.categoryCodes).toEqual(['43230000', '81111500']);
         expect(profile.value.preferences.departments).toContain('Bogotá D.C.');
       }
     });

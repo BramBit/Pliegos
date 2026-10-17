@@ -14,13 +14,17 @@ import {
 export interface Opportunity {
   readonly id: OpportunityId;
   readonly title: string;
+  readonly description: string;
   readonly contractingEntity: ContractingEntity;
   readonly location: Location;
   readonly amount: Money;
+  readonly amountKnown: boolean;
   readonly contractType: string;
   readonly procurementModality: string;
-  readonly categoryCode: string; // UNSPSC
+  readonly isCompetitive: boolean;
+  readonly categoryCode: string | null; // UNSPSC
   readonly publishedAt: Date;
+  readonly lastPublishedAt: Date;
   readonly closingDate: Date | null;
   readonly isOpenForSubmission: boolean;
   readonly status: OpportunityStatus;
@@ -32,13 +36,17 @@ export interface Opportunity {
 export interface CreateOpportunityProps {
   readonly id: OpportunityId;
   readonly title: string;
+  readonly description?: string;
   readonly contractingEntity: ContractingEntity;
   readonly location: Location;
   readonly amount: Money;
+  readonly amountKnown?: boolean;
   readonly contractType: string;
   readonly procurementModality: string;
-  readonly categoryCode: string;
+  readonly isCompetitive?: boolean;
+  readonly categoryCode: string | null;
   readonly publishedAt: Date;
+  readonly lastPublishedAt?: Date;
   readonly closingDate?: Date | null;
   readonly isOpenForSubmission: boolean;
   readonly status: OpportunityStatus;
@@ -61,9 +69,6 @@ export const createOpportunity = (
   if (!props.contractingEntity || !props.contractingEntity.name || props.contractingEntity.name.trim() === '') {
     missingFields.push('contractingEntity.name');
   }
-  if (!props.categoryCode || props.categoryCode.trim() === '') {
-    missingFields.push('categoryCode');
-  }
   if (!props.source || !props.source.externalId || props.source.externalId.trim() === '') {
     missingFields.push('source.externalId');
   }
@@ -83,13 +88,17 @@ export const createOpportunity = (
   return ok({
     id: props.id,
     title: props.title,
+    description: props.description ?? '',
     contractingEntity: props.contractingEntity,
     location: props.location,
     amount: props.amount,
+    amountKnown: props.amountKnown ?? true,
     contractType: props.contractType,
     procurementModality: props.procurementModality,
-    categoryCode: props.categoryCode,
+    isCompetitive: props.isCompetitive ?? true,
+    categoryCode: props.categoryCode && props.categoryCode.trim() !== '' ? props.categoryCode.trim() : null,
     publishedAt: props.publishedAt,
+    lastPublishedAt: props.lastPublishedAt ?? props.publishedAt,
     closingDate: props.closingDate ?? null,
     isOpenForSubmission: props.isOpenForSubmission,
     status: props.status,

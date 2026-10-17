@@ -1,26 +1,35 @@
 import { SyncOpportunitiesUseCase } from './sync-opportunities.use-case';
 import {
   OpportunitySourcePort,
-  RawSecopProcess,
+  SourceFetchOptions,
+  SourceOpportunity,
 } from '../../domain/ports/opportunity-source.port';
 import { OpportunityRepositoryPort } from '../../domain/ports/opportunity.repository.port';
 import { AnalysisQueuePort } from '../../domain/ports/analysis-queue.port';
 import { Opportunity } from '../../domain/entities/opportunity.entity';
 import { OpportunityFilters } from '../../domain/value-objects/opportunity-filters';
-import { OpportunityId, asOpportunityId } from '../../../shared/domain/typed-id';
-import { createMoney } from '../../domain/value-objects/money.vo';
+import { OpportunityId } from '../../../shared/domain/typed-id';
 
 class FakeOpportunitySource implements OpportunitySourcePort {
   constructor(
-    public processes: RawSecopProcess[] = [],
+    public processes: SourceOpportunity[] = [],
     public shouldFail = false,
+    public skippedRecords = 0,
   ) {}
 
-  async fetchLatest(_since?: Date): Promise<RawSecopProcess[]> {
+  async *fetchPages(
+    _since?: Date,
+    options?: SourceFetchOptions,
+  ): AsyncIterable<SourceOpportunity[]> {
     if (this.shouldFail) {
       throw new Error('Socrata API connection timeout');
     }
-    return this.processes;
+    for (let i = 0; i < this.skippedRecords; i++) {
+      options?.onSkipped?.();
+    }
+    if (this.processes.length > 0) {
+      yield this.processes;
+    }
   }
 }
 
@@ -61,27 +70,30 @@ describe('SyncOpportunitiesUseCase', () => {
   let fakeQueue: FakeAnalysisQueue;
   let useCase: SyncOpportunitiesUseCase;
 
-  const rawSample: RawSecopProcess = {
-    id_del_proceso: 'CO1.REQ.2577563',
-    referencia_del_proceso: 'EDP-545-2022',
-    nombre_del_procedimiento: 'Adquisición de infraestructura de servidores',
-    entidad: 'Secretaría de Educación',
-    nit_entidad: '899999061-9',
-    ciudad_entidad: 'Bogotá',
-    departamento_entidad: 'Bogotá D.C.',
-    precio_base: '150000000',
-    tipo_de_contrato: 'Suministro',
-    modalidad_de_contratacion: 'Licitación pública',
-    estado_del_procedimiento: 'Evaluación',
-    estado_de_apertura_del_proceso: 'Abierto',
-    fecha_de_publicacion_del: '2026-10-01T08:00:00.000Z',
-    fecha_de_recepcion_de: '2026-10-25T17:00:00.000Z',
-    codigo_principal_de_categoria: 'V1.43211500',
-    urlproceso: { url: 'https://community.secop.gov.co/process/2577563' },
+  const sourceSample: SourceOpportunity = {
+    externalId: 'CO1.REQ.2577563',
+    humanReference: 'EDP-545-2022',
+    title: 'Adquisición de infraestructura de servidores',
+    description: 'Compra de servidores de cómputo de alto rendimiento para centros de datos',
+    entityName: 'Secretaría de Educación',
+    entityTaxId: '899999061-9',
+    city: 'Bogotá',
+    department: 'Bogotá D.C.',
+    amount: 150_000_000,
+    contractType: 'Suministro',
+    procurementModality: 'Licitación pública',
+    isCompetitive: true,
+    categoryCode: '43211500',
+    publishedAt: new Date('2026-10-01T08:00:00.000Z'),
+    lastPublishedAt: new Date('2026-10-01T08:00:00.000Z'),
+    closingDate: new Date('2026-10-25T17:00:00.000Z'),
+    isOpenForSubmission: true,
+    status: 'Published',
+    originalUrl: 'https://community.secop.gov.co/process/2577563',
   };
 
   beforeEach(() => {
-    fakeSource = new FakeOpportunitySource([rawSample]);
+    fakeSource = new FakeOpportunitySource([sourceSample]);
     fakeRepo = new FakeOpportunityRepository();
     fakeQueue = new FakeAnalysisQueue();
     useCase = new SyncOpportunitiesUseCase(fakeSource, fakeRepo, fakeQueue);
@@ -101,24 +113,42 @@ describe('SyncOpportunitiesUseCase', () => {
     expect(fakeQueue.queuedOpportunityIds).toHaveLength(0);
   });
 
-  it('ingests new opportunities, persists them, queues analysis, and returns created count', async () => {
+  it('ingests new opportunities, persists them with description and flags, queues analysis, and returns created count', async () => {
     const result = await useCase.execute({});
 
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.value.created).toBe(1);
       expect(result.value.updated).toBe(0);
+      expect(result.value.skipped).toBe(0);
     }
 
     const saved = await fakeRepo.findByExternalId('CO1.REQ.2577563');
     expect(saved).not.toBeNull();
     expect(saved?.title).toBe('Adquisición de infraestructura de servidores');
+    expect(saved?.description).toBe(
+      'Compra de servidores de cómputo de alto rendimiento para centros de datos',
+    );
     expect(saved?.amount.amount).toBe(150_000_000);
+    expect(saved?.amountKnown).toBe(true);
+    expect(saved?.isCompetitive).toBe(true);
+    expect(saved?.categoryCode).toBe('43211500');
     expect(saved?.source.humanReference).toBe('EDP-545-2022');
     expect(saved?.status).toBe('Published');
 
     expect(fakeQueue.queuedOpportunityIds).toHaveLength(1);
     expect(fakeQueue.queuedOpportunityIds[0]).toBe(saved?.id);
+  });
+
+  it('counts records skipped by the source adapter', async () => {
+    fakeSource.skippedRecords = 2;
+    const result = await useCase.execute({});
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.created).toBe(1);
+      expect(result.value.skipped).toBe(2);
+    }
   });
 
   it('detects changes on existing opportunity, updates record with change history, and queues re-analysis', async () => {
@@ -127,12 +157,13 @@ describe('SyncOpportunitiesUseCase', () => {
     expect(fakeRepo.opportunities.size).toBe(1);
 
     // Second sync: updated closingDate and status
-    const amendedRaw: RawSecopProcess = {
-      ...rawSample,
-      fecha_de_recepcion_de: '2026-11-10T17:00:00.000Z', // changed closingDate
-      estado_del_procedimiento: 'Adjudicado', // changed status
+    const amendedSource: SourceOpportunity = {
+      ...sourceSample,
+      closingDate: new Date('2026-11-10T17:00:00.000Z'),
+      status: 'Awarded',
+      isOpenForSubmission: false,
     };
-    fakeSource.processes = [amendedRaw];
+    fakeSource.processes = [amendedSource];
 
     const result = await useCase.execute({});
 

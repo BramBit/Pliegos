@@ -3,7 +3,6 @@ import {
   createOpportunity,
   withOpportunityChange,
   withOpportunityAnalysis,
-  Opportunity,
 } from './opportunity.entity';
 import { createMoney } from '../value-objects/money.vo';
 
@@ -14,6 +13,7 @@ describe('Opportunity Entity', () => {
   const baseProps = {
     id: asOpportunityId('opp-001'),
     title: 'Adquisición de licencias de software',
+    description: 'Licenciamiento anual para servidores institucionales',
     contractingEntity: {
       name: 'Ministerio de Tecnologías de la Información',
       taxId: '899999034-1',
@@ -23,10 +23,13 @@ describe('Opportunity Entity', () => {
       department: 'Bogotá D.C.',
     },
     amount: validMoney.value,
+    amountKnown: true,
     contractType: 'Prestación de servicios',
     procurementModality: 'Licitación pública',
-    categoryCode: 'V1.43230000',
+    isCompetitive: true,
+    categoryCode: '43230000',
     publishedAt: new Date('2026-10-01T10:00:00.000Z'),
+    lastPublishedAt: new Date('2026-10-02T10:00:00.000Z'),
     closingDate: new Date('2026-10-31T17:00:00.000Z'),
     isOpenForSubmission: true,
     status: 'Published' as const,
@@ -45,8 +48,13 @@ describe('Opportunity Entity', () => {
       const opp = result.value;
       expect(opp.id).toBe('opp-001');
       expect(opp.title).toBe('Adquisición de licencias de software');
+      expect(opp.description).toBe('Licenciamiento anual para servidores institucionales');
       expect(opp.amount.amount).toBe(50000000);
       expect(opp.amount.currency).toBe('COP');
+      expect(opp.amountKnown).toBe(true);
+      expect(opp.isCompetitive).toBe(true);
+      expect(opp.categoryCode).toBe('43230000');
+      expect(opp.lastPublishedAt).toEqual(new Date('2026-10-02T10:00:00.000Z'));
       expect(opp.closingDate).toEqual(new Date('2026-10-31T17:00:00.000Z'));
       expect(opp.isOpenForSubmission).toBe(true);
       expect(opp.status).toBe('Published');
@@ -55,10 +63,12 @@ describe('Opportunity Entity', () => {
     }
   });
 
-  it('permits null closingDate (valid for direct contracting processes)', () => {
+  it('permits null closingDate and null categoryCode', () => {
     const directContractProps = {
       ...baseProps,
       procurementModality: 'Contratación directa',
+      isCompetitive: false,
+      categoryCode: null,
       closingDate: null,
     };
 
@@ -66,6 +76,8 @@ describe('Opportunity Entity', () => {
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.value.closingDate).toBeNull();
+      expect(result.value.categoryCode).toBeNull();
+      expect(result.value.isCompetitive).toBe(false);
     }
   });
 
@@ -75,7 +87,6 @@ describe('Opportunity Entity', () => {
       id: asOpportunityId(''),
       title: '',
       contractingEntity: { name: '', taxId: '' },
-      categoryCode: '',
       source: { sourceName: 'SECOP' as const, externalId: '', humanReference: '', originalUrl: '' },
       publishedAt: new Date('invalid-date'),
     };
@@ -86,7 +97,6 @@ describe('Opportunity Entity', () => {
       expect(result.error.fields).toContain('id');
       expect(result.error.fields).toContain('title');
       expect(result.error.fields).toContain('contractingEntity.name');
-      expect(result.error.fields).toContain('categoryCode');
       expect(result.error.fields).toContain('source.externalId');
       expect(result.error.fields).toContain('publishedAt');
     }
@@ -107,7 +117,6 @@ describe('Opportunity Entity', () => {
     expect(amended.status).toBe('Amended');
     expect(amended.changeHistory).toHaveLength(1);
     expect(amended.changeHistory[0]).toEqual(change);
-    // Preserves original immutable object
     expect(created.value.status).toBe('Published');
   });
 

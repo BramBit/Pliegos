@@ -39,6 +39,7 @@ describe('MatchingService', () => {
     return {
       id: asOpportunityId('opp-100'),
       title: 'Desarrollo de plataforma cloud',
+      description: 'Implementación y despliegue de servicios cloud',
       contractingEntity: {
         name: 'Ministerio de Hacienda',
         taxId: '899999090-2',
@@ -48,10 +49,13 @@ describe('MatchingService', () => {
         department: 'Bogotá D.C.',
       },
       amount: overrides?.amount ?? mustCreateMoney(100_000_000),
+      amountKnown: true,
       contractType: 'Servicios',
       procurementModality: 'Licitación pública',
+      isCompetitive: true,
       categoryCode: 'V1.43230000',
       publishedAt: new Date('2026-10-01'),
+      lastPublishedAt: new Date('2026-10-01'),
       closingDate: new Date('2026-11-01'),
       isOpenForSubmission: true,
       status: 'Published',

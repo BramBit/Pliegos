@@ -79,7 +79,7 @@ export class PgVectorAdapter implements SearchIndexPort {
     const vector = await this.aiProvider.embed(fullText);
 
     await this.indexVector(opportunity.id, vector, {
-      categoryCode: opportunity.categoryCode,
+      categoryCode: opportunity.categoryCode ?? undefined,
       department: opportunity.location.department ?? undefined,
       contractType: opportunity.contractType,
       amount: opportunity.amount.amount,

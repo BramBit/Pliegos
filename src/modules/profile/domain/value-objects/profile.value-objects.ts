@@ -1,5 +1,6 @@
 import { Result, ok, err } from '../../../shared/domain/result';
 import { ValidationError, createValidationError } from '../../../shared/domain/errors';
+import { normalizeUnspsc } from '../../../opportunity/infrastructure/adapters/secop/normalizers';
 
 export interface AmountRange {
   readonly min: number;
@@ -47,8 +48,12 @@ export const createProfilePreferences = (props: {
   amountRange?: AmountRange | null;
   departments?: string[];
 }): Result<ProfilePreferences, ValidationError> => {
+  const categoryCodes = (props.categoryCodes ?? [])
+    .map((code) => normalizeUnspsc(code))
+    .filter((code): code is string => code !== null);
+
   return ok({
-    categoryCodes: props.categoryCodes ?? [],
+    categoryCodes,
     keywords: props.keywords ?? [],
     amountRange: props.amountRange ?? null,
     departments: props.departments ?? [],

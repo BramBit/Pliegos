@@ -20,6 +20,7 @@ export interface SourceReference {
 }
 
 export type OpportunityStatus =
+  | 'Draft'
   | 'Published'
   | 'Amended'
   | 'Closed'

@@ -28,6 +28,7 @@ describe('PostgresOpportunityRepository (Real Test Database)', () => {
   const createSampleOpportunity = (overrides?: Partial<Opportunity>): Opportunity => ({
     id: asOpportunityId('opp-test-1'),
     title: 'Suministro de equipos de computo',
+    description: 'Adquisicion de portatiles corporativos de alto desempeno',
     contractingEntity: {
       name: 'Alcaldia de Medellin',
       taxId: '890905211',
@@ -40,10 +41,13 @@ describe('PostgresOpportunityRepository (Real Test Database)', () => {
       amount: 150_000_000,
       currency: 'COP',
     },
+    amountKnown: true,
     contractType: 'Suministro',
     procurementModality: 'Seleccion abreviada',
-    categoryCode: 'V1.43211500',
+    isCompetitive: true,
+    categoryCode: '43211500',
     publishedAt: new Date('2026-03-01T10:00:00.000Z'),
+    lastPublishedAt: new Date('2026-03-02T10:00:00.000Z'),
     closingDate: new Date('2026-03-20T17:00:00.000Z'),
     isOpenForSubmission: true,
     status: 'Published',
@@ -70,12 +74,39 @@ describe('PostgresOpportunityRepository (Real Test Database)', () => {
     expect(found).not.toBeNull();
     expect(found?.id).toBe(opp.id);
     expect(found?.title).toBe(opp.title);
+    expect(found?.description).toBe(opp.description);
     expect(found?.contractingEntity).toEqual(opp.contractingEntity);
     expect(found?.location).toEqual(opp.location);
     expect(found?.amount).toEqual(opp.amount);
-    expect(found?.categoryCode).toBe('V1.43211500');
+    expect(found?.amountKnown).toBe(true);
+    expect(found?.isCompetitive).toBe(true);
+    expect(found?.categoryCode).toBe('43211500');
+    expect(found?.lastPublishedAt).toEqual(opp.lastPublishedAt);
     expect(found?.closingDate).toEqual(opp.closingDate);
     expect(found?.analysis?.summary).toBe('Compra de 100 computadores portatiles para colegios');
+  });
+
+  it('persists null categoryCode, isCompetitive=false and amountKnown=false', async () => {
+    const opp = createSampleOpportunity({
+      id: asOpportunityId('opp-nullable'),
+      source: {
+        sourceName: 'SECOP',
+        externalId: 'CO1.REQ.NULLABLE',
+        humanReference: 'REF-NULL',
+        originalUrl: 'https://secop.gov.co/null',
+      },
+      categoryCode: null,
+      isCompetitive: false,
+      amountKnown: false,
+      amount: { amount: 0, currency: 'COP' },
+    });
+
+    await repo.save(opp);
+
+    const found = await repo.findById(opp.id);
+    expect(found?.categoryCode).toBeNull();
+    expect(found?.isCompetitive).toBe(false);
+    expect(found?.amountKnown).toBe(false);
   });
 
   it('updates an existing opportunity on conflict (upsert)', async () => {
@@ -129,7 +160,7 @@ describe('PostgresOpportunityRepository (Real Test Database)', () => {
         humanReference: 'REF-1',
         originalUrl: 'https://secop.gov.co/1',
       },
-      categoryCode: 'V1.43211500',
+      categoryCode: '43211500',
       location: { city: 'Medellin', department: 'Antioquia' },
       amount: { amount: 100_000_000, currency: 'COP' },
     });
@@ -142,7 +173,7 @@ describe('PostgresOpportunityRepository (Real Test Database)', () => {
         humanReference: 'REF-2',
         originalUrl: 'https://secop.gov.co/2',
       },
-      categoryCode: 'V1.72121400',
+      categoryCode: '72121400',
       location: { city: 'Bogota', department: 'Cundinamarca' },
       amount: { amount: 500_000_000, currency: 'COP' },
     });

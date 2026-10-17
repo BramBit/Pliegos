@@ -17,11 +17,11 @@ async function main() {
   const secop = new SecopAdapter();
 
   console.log('1. [SECOP] Obteniendo oportunidad...');
-  let rawProcess;
+  let sourceOpp;
   try {
     const list = await secop.fetchLatest();
-    rawProcess = list[0];
-    console.log(`   ✓ Obtenido desde API en vivo: ID ${rawProcess.id_del_proceso}`);
+    sourceOpp = list[0];
+    console.log(`   ✓ Obtenido desde API en vivo: ID ${sourceOpp.externalId}`);
   } catch (err) {
     console.log(`   ℹ Fallback a fixture local (red no disponible): ${(err as Error).message}`);
     const fixturePath = path.join(
@@ -29,15 +29,23 @@ async function main() {
       '../src/modules/opportunity/infrastructure/adapters/secop/fixtures/secop-sample.fixture.json',
     );
     const fixture = JSON.parse(fs.readFileSync(fixturePath, 'utf8'));
-    rawProcess = fixture[0];
+    sourceOpp = secop.mapToSourceOpportunity(fixture[0]);
+    if (!sourceOpp) {
+      console.error('   ✗ Error mapeando oportunidad desde fixture');
+      process.exit(1);
+    }
   }
 
-  const oppResult = secop.mapToOpportunity(rawProcess);
-  if (!oppResult.ok) {
-    console.error('   ✗ Error mapeando oportunidad:', oppResult.error);
-    process.exit(1);
-  }
-  const opp = oppResult.value;
+  const opp = {
+    title: sourceOpp.title,
+    contractingEntity: { name: sourceOpp.entityName, taxId: sourceOpp.entityTaxId },
+    location: { city: sourceOpp.city, department: sourceOpp.department },
+    amount: { amount: sourceOpp.amount ?? 0, currency: 'COP' as const },
+    procurementModality: sourceOpp.procurementModality,
+    categoryCode: sourceOpp.categoryCode,
+    status: sourceOpp.status,
+    source: { originalUrl: sourceOpp.originalUrl },
+  };
   console.log(`   ✓ Mapeado a Opportunity: "${opp.title}"`);
   console.log(`     - Entidad: ${opp.contractingEntity.name} (NIT: ${opp.contractingEntity.taxId})`);
   console.log(`     - Monto: $${opp.amount.amount.toLocaleString()} ${opp.amount.currency}`);

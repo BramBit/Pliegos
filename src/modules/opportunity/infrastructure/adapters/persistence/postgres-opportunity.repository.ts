@@ -9,16 +9,20 @@ import { OpportunityStatus } from '../../../domain/value-objects/opportunity.val
 export interface OpportunityRow {
   id: string;
   title: string;
+  description: string;
   contracting_entity_name: string;
   contracting_entity_tax_id: string;
   city: string | null;
   department: string | null;
   amount: string | number;
+  amount_known: boolean;
   currency: string;
   contract_type: string;
   procurement_modality: string;
-  category_code: string;
+  is_competitive: boolean;
+  category_code: string | null;
   published_at: Date;
+  last_published_at: Date | null;
   closing_date: Date | null;
   is_open_for_submission: boolean;
   status: string;
@@ -37,26 +41,30 @@ export class PostgresOpportunityRepository implements OpportunityRepositoryPort 
   async save(opportunity: Opportunity): Promise<void> {
     const query = `
       INSERT INTO opportunities (
-        id, title, contracting_entity_name, contracting_entity_tax_id, city, department,
-        amount, currency, contract_type, procurement_modality, category_code,
-        published_at, closing_date, is_open_for_submission, status,
+        id, title, description, contracting_entity_name, contracting_entity_tax_id, city, department,
+        amount, amount_known, currency, contract_type, procurement_modality, is_competitive, category_code,
+        published_at, last_published_at, closing_date, is_open_for_submission, status,
         source_name, source_external_id, source_human_reference, source_original_url,
         analysis, change_history, updated_at
       ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, CURRENT_TIMESTAMP
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, CURRENT_TIMESTAMP
       )
       ON CONFLICT (id) DO UPDATE SET
         title = EXCLUDED.title,
+        description = EXCLUDED.description,
         contracting_entity_name = EXCLUDED.contracting_entity_name,
         contracting_entity_tax_id = EXCLUDED.contracting_entity_tax_id,
         city = EXCLUDED.city,
         department = EXCLUDED.department,
         amount = EXCLUDED.amount,
+        amount_known = EXCLUDED.amount_known,
         currency = EXCLUDED.currency,
         contract_type = EXCLUDED.contract_type,
         procurement_modality = EXCLUDED.procurement_modality,
+        is_competitive = EXCLUDED.is_competitive,
         category_code = EXCLUDED.category_code,
         published_at = EXCLUDED.published_at,
+        last_published_at = EXCLUDED.last_published_at,
         closing_date = EXCLUDED.closing_date,
         is_open_for_submission = EXCLUDED.is_open_for_submission,
         status = EXCLUDED.status,
@@ -72,16 +80,20 @@ export class PostgresOpportunityRepository implements OpportunityRepositoryPort 
     const values = [
       opportunity.id,
       opportunity.title,
+      opportunity.description,
       opportunity.contractingEntity.name,
       opportunity.contractingEntity.taxId,
       opportunity.location.city,
       opportunity.location.department,
       opportunity.amount.amount,
+      opportunity.amountKnown,
       opportunity.amount.currency,
       opportunity.contractType,
       opportunity.procurementModality,
+      opportunity.isCompetitive,
       opportunity.categoryCode,
       opportunity.publishedAt,
+      opportunity.lastPublishedAt,
       opportunity.closingDate,
       opportunity.isOpenForSubmission,
       opportunity.status,
@@ -121,8 +133,10 @@ export class PostgresOpportunityRepository implements OpportunityRepositoryPort 
     const params: unknown[] = [];
 
     if (filters.categoryCode && filters.categoryCode.trim() !== '') {
-      params.push(`${filters.categoryCode.trim()}%`);
-      where.push(`category_code LIKE $${params.length}`);
+      const rawPrefix = filters.categoryCode.trim();
+      const strippedPrefix = rawPrefix.replace(/^v1\./i, '');
+      params.push(`${rawPrefix}%`, `${strippedPrefix}%`);
+      where.push(`(category_code LIKE $${params.length - 1} OR category_code LIKE $${params.length})`);
     }
 
     if (filters.department && filters.department.trim() !== '') {
@@ -164,12 +178,14 @@ export class PostgresOpportunityRepository implements OpportunityRepositoryPort 
       typeof row.analysis === 'string' ? JSON.parse(row.analysis) : row.analysis;
     const changeHistoryRaw =
       typeof row.change_history === 'string'
-        ? JSON.parse(row.change_history)
+        ? JSON.parse(change_history_string(row.change_history))
         : row.change_history;
+    const publishedAt = new Date(row.published_at);
 
     return {
       id: asOpportunityId(row.id),
       title: row.title,
+      description: row.description ?? '',
       contractingEntity: {
         name: row.contracting_entity_name,
         taxId: row.contracting_entity_tax_id,
@@ -182,10 +198,13 @@ export class PostgresOpportunityRepository implements OpportunityRepositoryPort 
         amount: parseFloat(row.amount.toString()),
         currency: 'COP',
       },
+      amountKnown: row.amount_known ?? true,
       contractType: row.contract_type,
       procurementModality: row.procurement_modality,
-      categoryCode: row.category_code,
-      publishedAt: new Date(row.published_at),
+      isCompetitive: row.is_competitive ?? true,
+      categoryCode: row.category_code ?? null,
+      publishedAt,
+      lastPublishedAt: row.last_published_at ? new Date(row.last_published_at) : publishedAt,
       closingDate: row.closing_date ? new Date(row.closing_date) : null,
       isOpenForSubmission: row.is_open_for_submission,
       status: row.status as OpportunityStatus,
@@ -204,4 +223,8 @@ export class PostgresOpportunityRepository implements OpportunityRepositoryPort 
         : [],
     };
   }
+}
+
+function change_history_string(v: string): string {
+  return v;
 }

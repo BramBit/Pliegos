@@ -41,28 +41,31 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
     };
 
     const mockSource = {
-      fetchLatest: jest.fn().mockResolvedValue([
-        {
-          id_del_proceso: 'CO1.REQ.E2E.999',
-          referencia_del_proceso: 'E2E-REF-01',
-          nombre_del_procedimiento: 'Servicio de desarrollo de software para plataforma de contratacion',
-          descripci_n_del_procedimiento: 'Desarrollo web e integracion de APIs de inteligencia artificial',
-          entidad: 'MinTIC',
-          nit_entidad: '899999001-1',
-          ciudad_entidad: 'Bogotá',
-          departamento_entidad: 'Cundinamarca',
-          precio_base: '150000000',
-          tipo_de_contrato: 'Prestación de servicios',
-          modalidad_de_contratacion: 'Contratación directa',
-          estado_del_procedimiento: 'Seleccionado',
-          estado_de_apertura_del_proceso: 'Abierto',
-          fecha_de_publicacion_del: '2026-01-15T08:00:00.000',
-          fecha_de_recepcion_de: null,
-          urlproceso: { url: 'https://community.secop.gov.co/Process/E2E-01' },
-          codigo_principal_de_categoria: 'V1.80111600',
-        },
-      ]),
-      fetchDetail: jest.fn(),
+      async *fetchPages() {
+        yield [
+          {
+            externalId: 'CO1.REQ.E2E.999',
+            humanReference: 'E2E-REF-01',
+            title: 'Servicio de desarrollo de software para plataforma de contratacion',
+            description: 'Desarrollo web e integracion de APIs de inteligencia artificial',
+            entityName: 'MinTIC',
+            entityTaxId: '899999001-1',
+            city: 'Bogotá',
+            department: 'Cundinamarca',
+            amount: 150000000,
+            contractType: 'Prestación de servicios',
+            procurementModality: 'Contratación directa',
+            isCompetitive: false,
+            categoryCode: '80111600',
+            publishedAt: new Date('2026-01-15T08:00:00.000Z'),
+            lastPublishedAt: new Date('2026-01-15T08:00:00.000Z'),
+            closingDate: null,
+            isOpenForSubmission: false,
+            status: 'Awarded' as const,
+            originalUrl: 'https://community.secop.gov.co/Process/E2E-01',
+          },
+        ];
+      },
     };
 
     const mockQueue = {

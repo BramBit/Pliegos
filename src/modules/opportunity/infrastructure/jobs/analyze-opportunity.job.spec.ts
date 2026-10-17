@@ -71,6 +71,7 @@ describe('BullMQ Analysis Queue & Job Processing (In-Memory Setup)', () => {
     const sampleOpportunity: Opportunity = {
       id: asOpportunityId('opp-job-1'),
       title: 'Mantenimiento preventivo de vias urbanas',
+      description: 'Rehabilitacion vial en comunas urbanas',
       contractingEntity: {
         name: 'Secretaria de Infraestructura',
         taxId: '800100200',
@@ -83,10 +84,13 @@ describe('BullMQ Analysis Queue & Job Processing (In-Memory Setup)', () => {
         amount: 250_000_000,
         currency: 'COP',
       },
+      amountKnown: true,
       contractType: 'Obra publica',
       procurementModality: 'Licitacion publica',
+      isCompetitive: true,
       categoryCode: 'V1.72121400',
       publishedAt: new Date('2026-03-01T00:00:00.000Z'),
+      lastPublishedAt: new Date('2026-03-01T00:00:00.000Z'),
       closingDate: new Date('2026-03-30T00:00:00.000Z'),
       isOpenForSubmission: true,
       status: 'Published',
