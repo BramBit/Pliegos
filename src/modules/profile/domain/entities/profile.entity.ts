@@ -52,3 +52,30 @@ export const createProfile = (props: CreateProfileProps): Result<Profile, Valida
     preferences: props.preferences,
   });
 };
+
+/**
+ * Pure domain function that builds the query text representing a Profile:
+ * "{sector}. {capability names joined by ', '}. {keywords joined by ', '}"
+ */
+export function buildProfileQuery(profile: Profile): string {
+  const parts: string[] = [];
+  if (profile.sector && profile.sector.trim() !== '') {
+    parts.push(profile.sector.trim());
+  }
+  const capabilityNames = profile.capabilities
+    .map((c: Capability) => c.name.trim())
+    .filter(Boolean)
+    .join(', ');
+  if (capabilityNames) {
+    parts.push(capabilityNames);
+  }
+  const keywords = profile.preferences.keywords
+    .map((k: string) => k.trim())
+    .filter(Boolean)
+    .join(', ');
+  if (keywords) {
+    parts.push(keywords);
+  }
+  return parts.join('. ');
+}
+

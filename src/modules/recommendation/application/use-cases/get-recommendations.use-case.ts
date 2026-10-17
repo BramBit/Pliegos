@@ -10,7 +10,7 @@ import { SearchIndexPort } from '../../../opportunity/domain/ports/search-index.
 import { RecommendationRepositoryPort } from '../../domain/ports/recommendation.repository.port';
 import { EmbedderPort } from '../../domain/ports/ai-provider.port';
 import { Recommendation } from '../../domain/entities/recommendation.entity';
-import { MatchingService } from '../../domain/services/matching.service';
+import { MatchingService, buildProfileQuery } from '../../domain/services/matching.service';
 
 export const CANDIDATE_POOL_SIZE = 100;
 export const DEFAULT_RECOMMENDATION_LIMIT = 20;
@@ -49,7 +49,7 @@ export class GetRecommendationsUseCase implements IGetRecommendationsUseCase {
 
     let cosinesById = new Map<OpportunityId, number>();
     if (candidates.length > 0) {
-      const profileText = MatchingService.buildProfileText(profile);
+      const profileText = buildProfileQuery(profile);
       const [profileVector] = await this.embedder.embed([profileText]);
       cosinesById = await this.searchIndex.similarities(
         profileVector,

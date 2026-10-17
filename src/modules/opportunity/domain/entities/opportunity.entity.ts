@@ -124,3 +124,27 @@ export const withOpportunityAnalysis = (
   ...opportunity,
   analysis,
 });
+
+export const MAX_INDEX_DESCRIPTION_LENGTH = 1500;
+
+/**
+ * Pure domain function that builds the text to embed for an Opportunity:
+ * "{title}. {description truncated to 1500 chars}. Entidad: {entityName}. Tipo: {contractType}."
+ * Does NOT include category code, amount, city, department, modality, or LLM summary.
+ * If description is empty or equals title (case-insensitive), uses the title only.
+ */
+export function buildIndexText(
+  opportunity: Pick<Opportunity, 'title' | 'description' | 'contractingEntity' | 'contractType'>,
+): string {
+  const title = (opportunity.title ?? '').trim();
+  const description = (opportunity.description ?? '').trim();
+  const includeDescription =
+    description.length > 0 && description.toLowerCase() !== title.toLowerCase();
+  const truncatedDescription = includeDescription
+    ? description.slice(0, MAX_INDEX_DESCRIPTION_LENGTH)
+    : '';
+
+  const lead = truncatedDescription ? `${title}. ${truncatedDescription}` : title;
+  return `${lead}. Entidad: ${opportunity.contractingEntity.name}. Tipo: ${opportunity.contractType}.`;
+}
+

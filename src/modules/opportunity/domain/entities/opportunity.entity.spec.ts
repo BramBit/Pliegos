@@ -3,6 +3,8 @@ import {
   createOpportunity,
   withOpportunityChange,
   withOpportunityAnalysis,
+  buildIndexText,
+  MAX_INDEX_DESCRIPTION_LENGTH,
 } from './opportunity.entity';
 import { createMoney } from '../value-objects/money.vo';
 
@@ -134,4 +136,59 @@ describe('Opportunity Entity', () => {
     expect(analyzed.analysis).toEqual(analysis);
     expect(created.value.analysis).toBeNull();
   });
+
+  describe('buildIndexText', () => {
+    it('includes title, description, entityName and contractType and excludes categoryCode, amount, city, department and modality', () => {
+      const created = createOpportunity(baseProps);
+      if (!created.ok) throw new Error('Setup failed');
+
+      const text = buildIndexText(created.value);
+      expect(text).toBe(
+        'Adquisición de licencias de software. Licenciamiento anual para servidores institucionales. Entidad: Ministerio de Tecnologías de la Información. Tipo: Prestación de servicios.',
+      );
+      expect(text).not.toContain('43230000');
+      expect(text).not.toContain('50000000');
+      expect(text).not.toContain('Bogotá');
+      expect(text).not.toContain('Licitación pública');
+    });
+
+    it('uses title only when description is empty', () => {
+      const created = createOpportunity({ ...baseProps, description: '   ' });
+      if (!created.ok) throw new Error('Setup failed');
+
+      const text = buildIndexText(created.value);
+      expect(text).toBe(
+        'Adquisición de licencias de software. Entidad: Ministerio de Tecnologías de la Información. Tipo: Prestación de servicios.',
+      );
+    });
+
+    it('uses title only when description equals the title (case-insensitive)', () => {
+      const created = createOpportunity({
+        ...baseProps,
+        description: 'ADQUISICIÓN DE LICENCIAS DE SOFTWARE',
+      });
+      if (!created.ok) throw new Error('Setup failed');
+
+      const text = buildIndexText(created.value);
+      expect(text).toBe(
+        'Adquisición de licencias de software. Entidad: Ministerio de Tecnologías de la Información. Tipo: Prestación de servicios.',
+      );
+    });
+
+    it('truncates long descriptions to 1500 characters', () => {
+      const longDesc = 'A'.repeat(2200);
+      const created = createOpportunity({
+        ...baseProps,
+        description: longDesc,
+      });
+      if (!created.ok) throw new Error('Setup failed');
+
+      const text = buildIndexText(created.value);
+      const expectedTruncated = 'A'.repeat(MAX_INDEX_DESCRIPTION_LENGTH);
+      expect(text).toBe(
+        `Adquisición de licencias de software. ${expectedTruncated}. Entidad: Ministerio de Tecnologías de la Información. Tipo: Prestación de servicios.`,
+      );
+    });
+  });
 });
+

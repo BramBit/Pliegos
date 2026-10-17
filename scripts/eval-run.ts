@@ -9,6 +9,7 @@ import { OllamaAdapter } from '../src/modules/recommendation/infrastructure/adap
 import {
   MatchingService,
   ScoringBreakdown,
+  buildProfileQuery,
 } from '../src/modules/recommendation/domain/services/matching.service';
 import { Opportunity } from '../src/modules/opportunity/domain/entities/opportunity.entity';
 
@@ -122,7 +123,7 @@ async function main() {
       );
       const opportunities = loaded.filter((o): o is Opportunity => o !== null);
 
-      const [profileVec] = await ai.embed([MatchingService.buildProfileText(profile)]);
+      const [profileVec] = await ai.embed([buildProfileQuery(profile)]);
       const sims = await pool.query<{ id: string; cos: number }>(
         `SELECT opportunity_id AS id, 1 - (embedding <=> $1::vector) AS cos
          FROM opportunity_embeddings

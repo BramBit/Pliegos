@@ -6,7 +6,7 @@ import { Profile } from '../src/modules/profile/domain/entities/profile.entity';
 import { asProfileId, asUserId, OpportunityId } from '../src/modules/shared/domain/typed-id';
 import { PostgresOpportunityRepository } from '../src/modules/opportunity/infrastructure/adapters/persistence/postgres-opportunity.repository';
 import { OllamaAdapter } from '../src/modules/recommendation/infrastructure/adapters/ollama/ollama.adapter';
-import { MatchingService } from '../src/modules/recommendation/domain/services/matching.service';
+import { MatchingService, buildProfileQuery } from '../src/modules/recommendation/domain/services/matching.service';
 import { Opportunity } from '../src/modules/opportunity/domain/entities/opportunity.entity';
 
 export interface EvalCandidate {
@@ -127,7 +127,7 @@ async function main() {
 
     for (let idx = 0; idx < profiles.length; idx++) {
       const profile = profiles[idx];
-      const [profileVec] = await ai.embed([MatchingService.buildProfileText(profile)]);
+      const [profileVec] = await ai.embed([buildProfileQuery(profile)]);
       const sims = await pool.query<{ id: string; cos: number }>(
         `SELECT opportunity_id AS id, 1 - (embedding <=> $1::vector) AS cos
          FROM opportunity_embeddings

@@ -1,8 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { cosine } from '../ports/ai-provider.port';
 import { Opportunity } from '../../../opportunity/domain/entities/opportunity.entity';
-import { Profile } from '../../../profile/domain/entities/profile.entity';
-import { Capability } from '../../../profile/domain/value-objects/profile.value-objects';
+import { Profile, buildProfileQuery } from '../../../profile/domain/entities/profile.entity';
 import { Recommendation } from '../entities/recommendation.entity';
 import {
   Explanation,
@@ -11,7 +10,7 @@ import {
 import { RecommendationId, asRecommendationId } from '../../../shared/domain/typed-id';
 import { normalizeUnspsc } from '../../../opportunity/infrastructure/adapters/secop/normalizers';
 
-export { cosine };
+export { cosine, buildProfileQuery };
 
 export interface ScoringWeights {
   readonly semanticSimilarity: number;
@@ -149,19 +148,6 @@ export class MatchingService {
       explanation: breakdown.explanation,
       feedback: null,
     };
-  }
-
-  /**
-   * Builds the text that represents a profile for semantic matching.
-   */
-  static buildProfileText(profile: Profile): string {
-    const parts: string[] = [];
-    if (profile.preferences.keywords.length > 0) parts.push(profile.preferences.keywords.join(', '));
-    if (profile.capabilities.length > 0) {
-      parts.push(profile.capabilities.map((c: Capability) => c.name).join(', '));
-    }
-    if (profile.sector) parts.push(profile.sector);
-    return parts.join('. ') || profile.sector;
   }
 
   /**

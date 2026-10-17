@@ -1,5 +1,5 @@
 import { asProfileId, asUserId } from '../../../shared/domain/typed-id';
-import { createProfile } from './profile.entity';
+import { createProfile, buildProfileQuery } from './profile.entity';
 import {
   createAmountRange,
   createProfilePreferences,
@@ -45,7 +45,7 @@ describe('Profile Entity & Value Objects', () => {
   });
 
   describe('Profile Entity', () => {
-    it('creates a valid Profile aggregate root', () => {
+    it('creates a valid Profile aggregate root and builds profile query text', () => {
       const range = createAmountRange(10000000, 200000000);
       if (!range.ok) throw new Error('Range failed');
 
@@ -61,7 +61,10 @@ describe('Profile Entity & Value Objects', () => {
         id: asProfileId('profile-001'),
         ownerId: asUserId('user-001'),
         sector: 'Tecnología e Informática',
-        capabilities: [{ name: 'Desarrollo Web', yearsOfExperience: 5 }],
+        capabilities: [
+          { name: 'Desarrollo Web', yearsOfExperience: 5 },
+          { name: 'Ciberseguridad', yearsOfExperience: 3 },
+        ],
         preferences: preferences.value,
       });
 
@@ -69,9 +72,12 @@ describe('Profile Entity & Value Objects', () => {
       if (profile.ok) {
         expect(profile.value.id).toBe('profile-001');
         expect(profile.value.ownerId).toBe('user-001');
-        expect(profile.value.capabilities).toHaveLength(1);
+        expect(profile.value.capabilities).toHaveLength(2);
         expect(profile.value.preferences.categoryCodes).toEqual(['43230000', '81111500']);
         expect(profile.value.preferences.departments).toContain('Bogotá D.C.');
+        expect(buildProfileQuery(profile.value)).toBe(
+          'Tecnología e Informática. Desarrollo Web, Ciberseguridad. inteligencia artificial, software',
+        );
       }
     });
 

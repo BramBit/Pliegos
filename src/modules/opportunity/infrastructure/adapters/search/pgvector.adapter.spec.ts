@@ -70,7 +70,7 @@ describe('PgVectorAdapter', () => {
       changeHistory: [],
     };
 
-    it('generates embedding via EmbedderPort and upserts into Postgres with embedding_model', async () => {
+    it('generates embedding via buildIndexText (excluding LLM summary) and upserts with embedding_model and text_hash', async () => {
       const customEmbedder = new HashEmbedder('custom-embed-v1');
       const adapter = new PgVectorAdapter({
         pool: mockPool,
@@ -80,14 +80,16 @@ describe('PgVectorAdapter', () => {
       await adapter.indexOpportunity(testOpportunity);
 
       expect(customEmbedder.calls).toBe(1);
-      expect(customEmbedder.embeddedBatches[0][0]).toContain(
-        'Mantenimiento de infraestructura hospitalaria',
+      const embeddedText = customEmbedder.embeddedBatches[0][0];
+      expect(embeddedText).toBe(
+        'Mantenimiento de infraestructura hospitalaria. Obras de remodelacion y mantenimiento hospitalario. Entidad: Hospital Central. Tipo: Obra.',
       );
+      expect(embeddedText).not.toContain('salas de cirugia'); // LLM summary excluded
       expect(mockPool.query).toHaveBeenCalledTimes(1);
 
       const [sql, params] = (mockPool.query as jest.Mock).mock.calls[0];
       expect(sql).toContain(`INSERT INTO ${DEFAULT_TABLE_NAME}`);
-      expect(sql).toContain('embedding_model');
+      expect(sql).toContain('embedding_model, text_hash');
       expect(sql).toContain('ON CONFLICT (opportunity_id) DO UPDATE SET');
       expect(params[0]).toBe('opp-101');
       expect(params[1]).toBe('V1.72121400');
@@ -95,8 +97,10 @@ describe('PgVectorAdapter', () => {
       expect(params[3]).toBe('Obra');
       expect(params[4]).toBe(500_000_000);
       expect(params[5]).toBe('custom-embed-v1');
-      expect(params[6]).toContain('[');
-      expect(params[6].split(',')).toHaveLength(PGVECTOR_DIMENSIONS);
+      expect(typeof params[6]).toBe('string');
+      expect(params[6]).toHaveLength(64);
+      expect(params[7]).toContain('[');
+      expect(params[7].split(',')).toHaveLength(PGVECTOR_DIMENSIONS);
     });
 
     it('throws error when EmbedderPort is missing and indexOpportunity is called', async () => {

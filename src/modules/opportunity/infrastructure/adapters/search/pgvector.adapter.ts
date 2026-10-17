@@ -1,7 +1,8 @@
+import { createHash } from 'node:crypto';
 import { Injectable, Logger, LoggerService } from '@nestjs/common';
 import { Pool, QueryResult } from 'pg';
 import { SearchIndexPort } from '../../../domain/ports/search-index.port';
-import { Opportunity } from '../../../domain/entities/opportunity.entity';
+import { Opportunity, buildIndexText } from '../../../domain/entities/opportunity.entity';
 import { OpportunityFilters } from '../../../domain/value-objects/opportunity-filters';
 import { OpportunityId, asOpportunityId } from '../../../../shared/domain/typed-id';
 import { EmbedderPort } from '../../../../recommendation/domain/ports/ai-provider.port';
@@ -10,6 +11,10 @@ export const PGVECTOR_DIMENSIONS = 768;
 export const DEFAULT_SEARCH_LIMIT = 20;
 export const DEFAULT_TABLE_NAME = 'opportunity_embeddings';
 export const DEFAULT_EMBEDDING_MODEL = 'nomic-embed-text';
+
+export function computeIndexTextHash(text: string): string {
+  return createHash('sha256').update(text, 'utf8').digest('hex');
+}
 
 export interface PgVectorAdapterOptions {
   readonly pool: Pool;
@@ -48,6 +53,7 @@ export class PgVectorAdapter implements SearchIndexPort {
         contract_type VARCHAR(100),
         amount NUMERIC,
         embedding_model TEXT NOT NULL DEFAULT '${DEFAULT_EMBEDDING_MODEL}',
+        text_hash TEXT,
         embedding vector(${PGVECTOR_DIMENSIONS}) NOT NULL,
         indexed_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
@@ -60,8 +66,9 @@ export class PgVectorAdapter implements SearchIndexPort {
   }
 
   /**
-   * Indexes an Opportunity by extracting relevant searchable text, generating
-   * a 768-dim embedding via EmbedderPort, and upserting into pgvector with embedding_model.
+   * Indexes an Opportunity by building index text via buildIndexText(opportunity),
+   * generating a 768-dim embedding via EmbedderPort, and upserting into pgvector
+   * with embedding_model and text_hash.
    */
   async indexOpportunity(opportunity: Opportunity): Promise<void> {
     if (!this.embedder) {
@@ -70,16 +77,8 @@ export class PgVectorAdapter implements SearchIndexPort {
       );
     }
 
-    const textParts = [
-      opportunity.title,
-      opportunity.contractingEntity.name,
-      opportunity.categoryCode,
-      opportunity.contractType,
-      opportunity.procurementModality,
-      opportunity.analysis?.summary ?? '',
-    ].filter(Boolean);
-
-    const fullText = textParts.join(' ');
+    const fullText = buildIndexText(opportunity);
+    const textHash = computeIndexTextHash(fullText);
     const [vector] = await this.embedder.embed([fullText]);
 
     await this.indexVector(opportunity.id, vector, {
@@ -88,6 +87,7 @@ export class PgVectorAdapter implements SearchIndexPort {
       contractType: opportunity.contractType,
       amount: opportunity.amount.amount,
       embeddingModel: this.embedder.model,
+      textHash,
     });
   }
 
@@ -103,6 +103,7 @@ export class PgVectorAdapter implements SearchIndexPort {
       contractType?: string;
       amount?: number;
       embeddingModel?: string;
+      textHash?: string;
     },
   ): Promise<void> {
     if (!vector || vector.length !== PGVECTOR_DIMENSIONS) {
@@ -115,14 +116,15 @@ export class PgVectorAdapter implements SearchIndexPort {
     const model = metadata?.embeddingModel ?? this.embeddingModel;
     const query = `
       INSERT INTO ${this.tableName} (
-        opportunity_id, category_code, department, contract_type, amount, embedding_model, embedding, indexed_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7::vector, CURRENT_TIMESTAMP)
+        opportunity_id, category_code, department, contract_type, amount, embedding_model, text_hash, embedding, indexed_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8::vector, CURRENT_TIMESTAMP)
       ON CONFLICT (opportunity_id) DO UPDATE SET
         category_code = EXCLUDED.category_code,
         department = EXCLUDED.department,
         contract_type = EXCLUDED.contract_type,
         amount = EXCLUDED.amount,
         embedding_model = EXCLUDED.embedding_model,
+        text_hash = EXCLUDED.text_hash,
         embedding = EXCLUDED.embedding,
         indexed_at = CURRENT_TIMESTAMP;
     `;
@@ -134,6 +136,7 @@ export class PgVectorAdapter implements SearchIndexPort {
       metadata?.contractType ?? null,
       metadata?.amount ?? null,
       model,
+      metadata?.textHash ?? null,
       vectorString,
     ]);
   }
