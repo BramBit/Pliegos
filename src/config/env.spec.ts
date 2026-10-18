@@ -25,6 +25,9 @@ describe('loadEnv', () => {
     expect(env.OLLAMA_CHAT_TIMEOUT_MS).toBe(120000);
     expect(env.ANALYSIS_CONCURRENCY).toBe(2);
     expect(env.ANALYSIS_SUMMARIZE).toBe(true);
+    expect(env.SEMANTIC_COSINE_LOW).toBe(0.4);
+    expect(env.SEMANTIC_COSINE_HIGH).toBe(0.75);
+    expect(env.MIN_RECOMMENDATION_SCORE).toBe(0.45);
     expect(env.TEST_DATABASE_URL).toBeUndefined();
     expect(env.SECOP_APP_TOKEN).toBeUndefined();
   });

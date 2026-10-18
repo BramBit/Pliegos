@@ -42,6 +42,7 @@ export interface MatchedFactor {
 export interface Explanation {
   readonly summary: string;
   readonly matchedFactors: MatchedFactor[];
+  readonly unavailableFactors?: string[];
 }
 
 export interface Change {

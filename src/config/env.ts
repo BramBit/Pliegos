@@ -37,6 +37,10 @@ const envSchema = z.object({
     .enum(['true', 'false'])
     .default('true')
     .transform((value) => value === 'true'),
+
+  SEMANTIC_COSINE_LOW: z.coerce.number().min(-1).max(1).default(0.4),
+  SEMANTIC_COSINE_HIGH: z.coerce.number().min(-1).max(1).default(0.75),
+  MIN_RECOMMENDATION_SCORE: z.coerce.number().min(0).max(1).default(0.45),
 });
 
 export type Env = z.infer<typeof envSchema>;

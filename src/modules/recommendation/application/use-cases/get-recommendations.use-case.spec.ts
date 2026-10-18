@@ -247,7 +247,7 @@ describe('GetRecommendationsUseCase', () => {
     }
   });
 
-  it('embeds profile text once, calls retrieveCandidates once for 200 items, scores and ranks descending', async () => {
+  it('embeds profile text once, calls retrieveCandidates once for 200 items, scores and filters out items below MIN_RECOMMENDATION_SCORE (0.45)', async () => {
     await profileRepo.save(testProfile);
     await oppRepo.save(oppLow);
     await oppRepo.save(oppHigh);
@@ -265,13 +265,40 @@ describe('GetRecommendationsUseCase', () => {
     expect(searchIndex.lastLimit).toBe(200);
     expect(result.ok).toBe(true);
     if (result.ok) {
-      expect(result.value).toHaveLength(2);
+      // oppLow has score < 0.45 so it is neither persisted nor returned
+      expect(result.value).toHaveLength(1);
       expect(result.value[0].opportunityId).toBe('opp-high');
-      expect(result.value[1].opportunityId).toBe('opp-low');
-      expect(result.value[0].score).toBeGreaterThan(result.value[1].score);
+      expect(result.value[0].score).toBeGreaterThanOrEqual(0.45);
     }
 
-    expect(recRepo.recommendations).toHaveLength(2);
+    expect(recRepo.recommendations).toHaveLength(1);
+    expect(recRepo.recommendations[0].opportunityId).toBe('opp-high');
+  });
+
+  it('ranks multiple qualifying candidates (>= MIN_RECOMMENDATION_SCORE) descending by score', async () => {
+    const oppMedium: Opportunity = {
+      ...oppHigh,
+      id: asOpportunityId('opp-medium'),
+      title: 'Soporte de aplicaciones web',
+      categoryCode: 'V1.43231500', // partial category match 0.6 -> combined score >= 0.45
+    };
+    await profileRepo.save(testProfile);
+    await oppRepo.save(oppMedium);
+    await oppRepo.save(oppHigh);
+    await searchIndex.indexOpportunity(oppMedium);
+    await searchIndex.indexOpportunity(oppHigh);
+
+    const result = await useCase.execute({
+      profileId: testProfile.id,
+    });
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value).toHaveLength(2);
+      expect(result.value[0].opportunityId).toBe('opp-high');
+      expect(result.value[1].opportunityId).toBe('opp-medium');
+      expect(result.value[0].score).toBeGreaterThan(result.value[1].score);
+    }
   });
 
   it('asks for 200 candidates with only onlyCompetitive and actionable as filters', async () => {
@@ -313,10 +340,15 @@ describe('GetRecommendationsUseCase', () => {
   });
 
   it('returns only the top N recommendations when limit is provided', async () => {
+    const oppMedium: Opportunity = {
+      ...oppHigh,
+      id: asOpportunityId('opp-medium'),
+      categoryCode: 'V1.43231500',
+    };
     await profileRepo.save(testProfile);
-    await oppRepo.save(oppLow);
+    await oppRepo.save(oppMedium);
     await oppRepo.save(oppHigh);
-    await searchIndex.indexOpportunity(oppLow);
+    await searchIndex.indexOpportunity(oppMedium);
     await searchIndex.indexOpportunity(oppHigh);
 
     const result = await useCase.execute({ profileId: testProfile.id, limit: 1 });

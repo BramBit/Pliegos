@@ -10,7 +10,11 @@ import { SearchIndexPort } from '../../../opportunity/domain/ports/search-index.
 import { RecommendationRepositoryPort } from '../../domain/ports/recommendation.repository.port';
 import { EmbedderPort } from '../../domain/ports/ai-provider.port';
 import { Recommendation } from '../../domain/entities/recommendation.entity';
-import { MatchingService, buildProfileQuery } from '../../domain/services/matching.service';
+import {
+  MatchingService,
+  buildProfileQuery,
+  getMinRecommendationScore,
+} from '../../domain/services/matching.service';
 
 export const CANDIDATE_POOL_SIZE = 200;
 export const DEFAULT_RECOMMENDATION_LIMIT = 20;
@@ -30,6 +34,7 @@ export class GetRecommendationsUseCase implements IGetRecommendationsUseCase {
     private readonly matchingService: MatchingService,
     private readonly embedder: EmbedderPort,
     private readonly searchIndex: SearchIndexPort,
+    private readonly minRecommendationScore?: number,
   ) {}
 
   async execute(input: {
@@ -60,6 +65,7 @@ export class GetRecommendationsUseCase implements IGetRecommendationsUseCase {
     // Reuse the existing recommendation (id + feedback) per opportunity to avoid duplicates
     const existing = await this.recommendationRepository.findByProfile(input.profileId);
     const existingByOpportunity = new Map(existing.map((r) => [r.opportunityId, r]));
+    const minScore = this.minRecommendationScore ?? getMinRecommendationScore();
 
     const recommendations: Recommendation[] = [];
     for (const item of retrieval.items) {
@@ -75,6 +81,11 @@ export class GetRecommendationsUseCase implements IGetRecommendationsUseCase {
         semanticSimilarity,
         previous?.id,
       );
+
+      if (scored.score < minScore) {
+        continue;
+      }
+
       const rec: Recommendation = previous ? { ...scored, feedback: previous.feedback } : scored;
       await this.recommendationRepository.save(rec);
       recommendations.push(rec);
