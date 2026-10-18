@@ -6,8 +6,16 @@ import {
   RecommendationRun,
   RecommendationPageOptions,
   PagedRecommendations,
+  RecommendationFeedOptions,
+  PagedRecommendationFeed,
+  RecommendationFeedItem,
 } from '../../../domain/ports/recommendation.repository.port';
 import { Recommendation } from '../../../domain/entities/recommendation.entity';
+import { Opportunity } from '../../../../opportunity/domain/entities/opportunity.entity';
+import {
+  OpportunityStatus,
+  SummaryStatus,
+} from '../../../../opportunity/domain/value-objects/opportunity.value-objects';
 import {
   RecommendationId,
   ProfileId,
@@ -196,6 +204,276 @@ export class PostgresRecommendationRepository implements RecommendationRepositor
 
     if (res.rows.length === 0) return null;
     return this.mapRowToEntity(res.rows[0]);
+  }
+
+  async findFeed(
+    profileId: ProfileId,
+    options: RecommendationFeedOptions = {},
+  ): Promise<PagedRecommendationFeed> {
+    const page = Math.max(1, options.page ?? 1);
+    const pageSize = Math.min(50, Math.max(1, options.pageSize ?? 20));
+    const offset = (page - 1) * pageSize;
+    const state = options.state ?? 'new';
+    const minScore =
+      typeof options.minScore === 'number' && Number.isFinite(options.minScore)
+        ? options.minScore
+        : null;
+
+    const query = `
+      WITH profile_check AS (
+        SELECT id FROM profiles WHERE id = $1
+      ),
+      latest_run AS (
+        SELECT finished_at, degraded
+        FROM recommendation_runs
+        WHERE profile_id = $1
+        ORDER BY finished_at DESC, started_at DESC
+        LIMIT 1
+      ),
+      filtered_recs AS (
+        SELECT
+          r.id,
+          r.profile_id,
+          r.opportunity_id,
+          r.score,
+          r.explanation,
+          r.feedback,
+          row_to_json(o.*) AS opp_json
+        FROM recommendations r
+        JOIN opportunities o ON o.id = r.opportunity_id
+        WHERE r.profile_id = $1
+          AND (
+            $2 = 'all' OR
+            ($2 = 'new' AND r.feedback IS NULL) OR
+            ($2 = 'participate' AND r.feedback->>'decision' = 'Participate') OR
+            ($2 = 'discard' AND r.feedback->>'decision' = 'Discard')
+          )
+          AND ($3::numeric IS NULL OR r.score >= $3)
+      ),
+      paged_recs AS (
+        SELECT *
+        FROM filtered_recs
+        ORDER BY score DESC, id ASC
+        LIMIT $4 OFFSET $5
+      )
+      SELECT
+        (EXISTS(SELECT 1 FROM profile_check)) AS profile_exists,
+        (SELECT COUNT(*) FROM filtered_recs) AS total_count,
+        (SELECT row_to_json(lr) FROM latest_run lr) AS latest_run,
+        (SELECT COALESCE(json_agg(pr), '[]'::json) FROM paged_recs pr) AS items;
+    `;
+
+    const res = await this.pool.query(query, [profileId, state, minScore, pageSize, offset]);
+    const row = res.rows[0];
+    const profileExists = Boolean(row?.profile_exists);
+    const total = Number(row?.total_count ?? 0);
+    const latestRunRaw = row?.latest_run;
+    const lastRefreshedAt = latestRunRaw?.finished_at ? new Date(latestRunRaw.finished_at) : null;
+    const degraded = Boolean(latestRunRaw?.degraded ?? false);
+
+    const itemsRaw: any[] = row?.items ?? [];
+    const items: RecommendationFeedItem[] = itemsRaw.map((r: any) => {
+      const opportunity = this.mapOpportunityRow(r.opp_json);
+      const explanation =
+        typeof r.explanation === 'string' ? JSON.parse(r.explanation) : r.explanation;
+      const feedback =
+        typeof r.feedback === 'string' ? JSON.parse(r.feedback) : r.feedback;
+
+      return {
+        id: asRecommendationId(r.id),
+        profileId: asProfileId(r.profile_id),
+        opportunityId: asOpportunityId(r.opportunity_id),
+        score: parseFloat(r.score.toString()),
+        explanation,
+        feedback: feedback
+          ? {
+              decision: feedback.decision,
+              recordedAt: new Date(feedback.recordedAt),
+            }
+          : null,
+        opportunity,
+        lastRefreshedAt,
+        degraded,
+      };
+    });
+
+    return {
+      items,
+      total,
+      page,
+      pageSize,
+      lastRefreshedAt,
+      degraded,
+      profileExists,
+    };
+  }
+
+  async recordFeedbackWithWatch(
+    id: RecommendationId,
+    decision: 'Participate' | 'Discard',
+  ): Promise<Recommendation | null> {
+    const client = await this.pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      const findRes: QueryResult<RecommendationRow> = await client.query(
+        'SELECT * FROM recommendations WHERE id = $1 FOR UPDATE;',
+        [id],
+      );
+
+      if (findRes.rows.length === 0) {
+        await client.query('ROLLBACK');
+        return null;
+      }
+
+      const recRow = findRes.rows[0];
+
+      const updateRes: QueryResult<RecommendationRow> = await client.query(
+        `UPDATE recommendations
+         SET feedback = jsonb_build_object('decision', $2::text, 'recordedAt', CURRENT_TIMESTAMP),
+             updated_at = CURRENT_TIMESTAMP
+         WHERE id = $1
+         RETURNING *;`,
+        [id, decision],
+      );
+
+      if (decision === 'Participate') {
+        await client.query(
+          `INSERT INTO watches (profile_id, opportunity_id, created_at)
+           VALUES ($1, $2, CURRENT_TIMESTAMP)
+           ON CONFLICT (profile_id, opportunity_id) DO NOTHING;`,
+          [recRow.profile_id, recRow.opportunity_id],
+        );
+      } else if (decision === 'Discard') {
+        await client.query(
+          `DELETE FROM watches
+           WHERE profile_id = $1 AND opportunity_id = $2;`,
+          [recRow.profile_id, recRow.opportunity_id],
+        );
+      }
+
+      await client.query('COMMIT');
+      return this.mapRowToEntity(updateRes.rows[0]);
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
+  }
+
+  async clearFeedbackWithWatch(id: RecommendationId): Promise<Recommendation | null> {
+    const client = await this.pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      const findRes: QueryResult<RecommendationRow> = await client.query(
+        'SELECT * FROM recommendations WHERE id = $1 FOR UPDATE;',
+        [id],
+      );
+
+      if (findRes.rows.length === 0) {
+        await client.query('ROLLBACK');
+        return null;
+      }
+
+      const recRow = findRes.rows[0];
+      const prevFeedback =
+        typeof recRow.feedback === 'string'
+          ? JSON.parse(recRow.feedback)
+          : recRow.feedback;
+
+      if (prevFeedback?.decision === 'Participate') {
+        await client.query(
+          `DELETE FROM watches
+           WHERE profile_id = $1 AND opportunity_id = $2;`,
+          [recRow.profile_id, recRow.opportunity_id],
+        );
+      }
+
+      const updateRes: QueryResult<RecommendationRow> = await client.query(
+        `UPDATE recommendations
+         SET feedback = NULL,
+             updated_at = CURRENT_TIMESTAMP
+         WHERE id = $1
+         RETURNING *;`,
+        [id],
+      );
+
+      await client.query('COMMIT');
+      return this.mapRowToEntity(updateRes.rows[0]);
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
+  }
+
+  private mapOpportunityRow(row: any): Opportunity {
+    const analysisRaw =
+      typeof row.analysis === 'string' ? JSON.parse(row.analysis) : row.analysis;
+    const changeHistoryRaw =
+      typeof row.change_history === 'string'
+        ? JSON.parse(row.change_history)
+        : row.change_history;
+
+    const amountNum = Number(row.amount);
+    const amountKnown = Boolean(row.amount_known ?? true);
+
+    return {
+      id: asOpportunityId(row.id),
+      title: row.title,
+      description: row.description ?? '',
+      contractingEntity: {
+        name: row.contracting_entity_name,
+        taxId: row.contracting_entity_tax_id,
+      },
+      location: {
+        city: row.city ?? '',
+        department: row.department ?? '',
+      },
+      amount: {
+        amount: Number.isFinite(amountNum) ? amountNum : 0,
+        currency: (row.currency ?? 'COP') as 'COP',
+      },
+      amountKnown,
+      contractType: row.contract_type,
+      procurementModality: row.procurement_modality,
+      isCompetitive: Boolean(row.is_competitive),
+      categoryCode: row.category_code,
+      publishedAt: new Date(row.published_at),
+      lastPublishedAt: new Date(row.last_published_at ?? row.published_at),
+      closingDate: row.closing_date ? new Date(row.closing_date) : null,
+      isOpenForSubmission: Boolean(row.is_open_for_submission),
+      status: row.status as OpportunityStatus,
+      source: {
+        sourceName: row.source_name as 'SECOP',
+        externalId: row.source_external_id,
+        humanReference: row.source_human_reference,
+        originalUrl: row.source_original_url,
+      },
+      analysis: analysisRaw
+        ? {
+            summary: analysisRaw.summary ?? null,
+            summaryStatus: (analysisRaw.summaryStatus ??
+              (analysisRaw.summary ? 'ready' : 'unavailable')) as SummaryStatus,
+            requirements: Array.isArray(analysisRaw.requirements) ? analysisRaw.requirements : [],
+            embeddingGeneratedAt: analysisRaw.embeddingGeneratedAt
+              ? new Date(analysisRaw.embeddingGeneratedAt)
+              : null,
+          }
+        : null,
+      changeHistory: Array.isArray(changeHistoryRaw)
+        ? changeHistoryRaw.map((ch: any) => ({
+            field: ch.field,
+            previousValue: ch.previousValue,
+            newValue: ch.newValue,
+            detectedAt: new Date(ch.detectedAt),
+            material: Boolean(ch.material),
+          }))
+        : [],
+    };
   }
 
   async getProfileEmbedding(profileId: ProfileId): Promise<ProfileEmbeddingRecord | null> {

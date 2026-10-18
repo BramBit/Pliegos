@@ -350,64 +350,9 @@
         ]
       }
     },
-    "/recommendations/{profileId}": {
-      "get": {
-        "description": "Retorna las recomendaciones precalculadas para el perfil indicado ordenadas descendentemente por score con sus factores explicados.",
-        "operationId": "RecommendationController_getRecommendations",
-        "parameters": [
-          {
-            "name": "profileId",
-            "required": true,
-            "in": "path",
-            "description": "Identificador único del perfil de contratista",
-            "schema": {
-              "example": "d9b2d63d-a232-4d2c-8cb4-e5e6b72a44f1",
-              "type": "string"
-            }
-          },
-          {
-            "name": "limit",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Lista de recomendaciones ordenadas descendentemente por score",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/RecommendationDto"
-                  }
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "El perfil solicitado no existe",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelopeDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Obtener recomendaciones priorizadas para un perfil",
-        "tags": [
-          "Recommendations"
-        ]
-      }
-    },
     "/recommendations/{id}/feedback": {
       "post": {
-        "description": "Guarda la decisión del usuario (Participate o Discard) respecto a una recomendación específica para alimentar el ciclo de aprendizaje de la plataforma.",
+        "description": "Guarda la decisión del usuario (Participate o Discard) respecto a una recomendación específica. Participate crea una vigilancia en la misma transacción y Discard la remueve si existía.",
         "operationId": "RecommendationController_registerFeedback",
         "parameters": [
           {
@@ -464,6 +409,349 @@
           }
         },
         "summary": "Registrar feedback sobre una recomendación",
+        "tags": [
+          "Recommendations"
+        ]
+      },
+      "delete": {
+        "description": "Elimina el feedback registrado en la recomendación y remueve la vigilancia asociada si la decisión previa era Participate.",
+        "operationId": "RecommendationController_undoFeedback",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Identificador único de la recomendación",
+            "schema": {
+              "example": "rec-123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Feedback eliminado exitosamente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegisterFeedbackResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "La recomendación no fue encontrada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelopeDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Deshacer feedback de una recomendación",
+        "tags": [
+          "Recommendations"
+        ]
+      }
+    },
+    "/profiles/{id}/recommendations": {
+      "get": {
+        "description": "Retorna el feed de recomendaciones para un perfil con joins SQL eficientes en una única consulta, filtrable por estado (new, participate, discard, all) y minScore.",
+        "operationId": "ProfileRecommendationsController_getRecommendationFeed",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Identificador único del perfil",
+            "schema": {
+              "example": "d9b2d63d-a232-4d2c-8cb4-e5e6b72a44f1",
+              "type": "string"
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "description": "Tamaño de página (máximo 50)",
+            "schema": {
+              "example": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Número de página (base 1)",
+            "schema": {
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "minScore",
+            "required": false,
+            "in": "query",
+            "description": "Puntuación mínima de afinidad (0.0 a 1.0)",
+            "schema": {
+              "example": 0.7,
+              "type": "number"
+            }
+          },
+          {
+            "name": "state",
+            "required": false,
+            "in": "query",
+            "description": "Estado de feedback (por defecto new)",
+            "schema": {
+              "enum": [
+                "new",
+                "participate",
+                "discard",
+                "all"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Página de recomendaciones con resumen de oportunidad y explicaciones",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecommendationPageDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "El perfil solicitado no existe",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelopeDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Feed de recomendaciones filtrado y paginado para un perfil",
+        "tags": [
+          "Recommendations"
+        ]
+      }
+    },
+    "/profiles/{id}/summary": {
+      "get": {
+        "description": "Retorna métricas clave para la pantalla principal: recomendaciones pendientes, convocatorias vigiladas, vigiladas con cierre en menos de 7 días y alertas pendientes.",
+        "operationId": "ProfileRecommendationsController_getProfileSummary",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Identificador único del perfil",
+            "schema": {
+              "example": "d9b2d63d-a232-4d2c-8cb4-e5e6b72a44f1",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resumen de métricas del perfil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileSummaryDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "El perfil solicitado no existe",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelopeDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Resumen de actividad e indicadores clave para un perfil",
+        "tags": [
+          "Recommendations"
+        ]
+      }
+    },
+    "/profiles/{id}/watches": {
+      "get": {
+        "description": "Retorna las oportunidades actualmente bajo seguimiento/vigilancia con sus últimos 10 cambios registrados.",
+        "operationId": "ProfileRecommendationsController_getWatchedOpportunities",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Identificador único del perfil",
+            "schema": {
+              "example": "d9b2d63d-a232-4d2c-8cb4-e5e6b72a44f1",
+              "type": "string"
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": 1,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Página de oportunidades vigiladas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WatchedOpportunityPageDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "El perfil solicitado no existe",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelopeDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Listado paginado de oportunidades vigiladas por un perfil",
+        "tags": [
+          "Recommendations"
+        ]
+      }
+    },
+    "/profiles/{id}/watches/{opportunityId}": {
+      "post": {
+        "description": "Registra manualmente la oportunidad en la lista de seguimiento del contratista.",
+        "operationId": "ProfileRecommendationsController_watchOpportunity",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Identificador único del perfil",
+            "schema": {
+              "example": "d9b2d63d-a232-4d2c-8cb4-e5e6b72a44f1",
+              "type": "string"
+            }
+          },
+          {
+            "name": "opportunityId",
+            "required": true,
+            "in": "path",
+            "description": "Identificador de la oportunidad a vigilar",
+            "schema": {
+              "example": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Oportunidad agregada a la lista de vigilancia",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegisterFeedbackResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "El perfil o la oportunidad no existe",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelopeDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Agregar una oportunidad a la lista de vigilancia del perfil",
+        "tags": [
+          "Recommendations"
+        ]
+      },
+      "delete": {
+        "description": "Elimina la oportunidad de la lista de seguimiento del contratista.",
+        "operationId": "ProfileRecommendationsController_unwatchOpportunity",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Identificador único del perfil",
+            "schema": {
+              "example": "d9b2d63d-a232-4d2c-8cb4-e5e6b72a44f1",
+              "type": "string"
+            }
+          },
+          {
+            "name": "opportunityId",
+            "required": true,
+            "in": "path",
+            "description": "Identificador de la oportunidad a dejar de vigilar",
+            "schema": {
+              "example": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Oportunidad removida de la lista de vigilancia",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegisterFeedbackResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "El perfil solicitado no existe",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelopeDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Remover una oportunidad de la lista de vigilancia del perfil",
         "tags": [
           "Recommendations"
         ]
@@ -1325,6 +1613,40 @@
           "preferences"
         ]
       },
+      "RegisterFeedbackDto": {
+        "type": "object",
+        "properties": {
+          "decision": {
+            "type": "string",
+            "description": "Decisión tomada por el contratista respecto a la recomendación",
+            "enum": [
+              "Participate",
+              "Discard"
+            ],
+            "example": "Participate"
+          }
+        },
+        "required": [
+          "decision"
+        ]
+      },
+      "RegisterFeedbackResponseDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "message": {
+            "type": "string",
+            "example": "Feedback recorded successfully"
+          }
+        },
+        "required": [
+          "success",
+          "message"
+        ]
+      },
       "MatchedFactorDto": {
         "type": "object",
         "properties": {
@@ -1442,6 +1764,17 @@
                 "$ref": "#/components/schemas/OpportunitySummary"
               }
             ]
+          },
+          "lastRefreshedAt": {
+            "type": "string",
+            "nullable": true,
+            "description": "Timestamp de la última corrida de recomendaciones para este perfil",
+            "example": "2026-10-18T14:30:00.000Z"
+          },
+          "degraded": {
+            "type": "boolean",
+            "description": "Indica si la recuperación de candidatos operó en modo degradado",
+            "example": false
           }
         },
         "required": [
@@ -1454,38 +1787,127 @@
           "opportunity"
         ]
       },
-      "RegisterFeedbackDto": {
+      "RecommendationPageDto": {
         "type": "object",
         "properties": {
-          "decision": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RecommendationDto"
+            }
+          },
+          "total": {
+            "type": "number",
+            "example": 42
+          },
+          "page": {
+            "type": "number",
+            "example": 1
+          },
+          "pageSize": {
+            "type": "number",
+            "example": 20
+          },
+          "lastRefreshedAt": {
             "type": "string",
-            "description": "Decisión tomada por el contratista respecto a la recomendación",
-            "enum": [
-              "Participate",
-              "Discard"
-            ],
-            "example": "Participate"
+            "nullable": true,
+            "description": "Timestamp de la última corrida de recomendaciones para este perfil",
+            "example": "2026-10-18T14:30:00.000Z"
+          },
+          "degraded": {
+            "type": "boolean",
+            "description": "Indica si la recuperación de candidatos operó en modo degradado",
+            "example": false
           }
         },
         "required": [
-          "decision"
+          "items",
+          "total",
+          "page",
+          "pageSize"
         ]
       },
-      "RegisterFeedbackResponseDto": {
+      "ProfileSummaryDto": {
         "type": "object",
         "properties": {
-          "success": {
-            "type": "boolean",
-            "example": true
+          "newRecommendations": {
+            "type": "number",
+            "example": 14,
+            "description": "Recomendaciones pendientes de feedback"
           },
-          "message": {
-            "type": "string",
-            "example": "Feedback recorded successfully"
+          "watching": {
+            "type": "number",
+            "example": 3,
+            "description": "Convocatorias en lista de vigilancia"
+          },
+          "closingSoon": {
+            "type": "number",
+            "example": 1,
+            "description": "Convocatorias en vigilancia con cierre en menos de 7 días"
+          },
+          "unreadAlerts": {
+            "type": "number",
+            "example": 0,
+            "description": "Alertas no leídas (0 hasta Fase 5)"
           }
         },
         "required": [
-          "success",
-          "message"
+          "newRecommendations",
+          "watching",
+          "closingSoon",
+          "unreadAlerts"
+        ]
+      },
+      "WatchedOpportunityDto": {
+        "type": "object",
+        "properties": {
+          "opportunity": {
+            "$ref": "#/components/schemas/OpportunitySummary"
+          },
+          "last10Changes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChangeDto"
+            }
+          },
+          "addedAt": {
+            "type": "string",
+            "example": "2026-10-18T10:00:00.000Z"
+          }
+        },
+        "required": [
+          "opportunity",
+          "last10Changes",
+          "addedAt"
+        ]
+      },
+      "WatchedOpportunityPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WatchedOpportunityDto"
+            }
+          },
+          "total": {
+            "type": "number",
+            "example": 42
+          },
+          "page": {
+            "type": "number",
+            "example": 1
+          },
+          "pageSize": {
+            "type": "number",
+            "example": 20
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "pageSize"
         ]
       },
       "ReviewFollowUpResponseDto": {
@@ -1545,35 +1967,6 @@
             "type": "array",
             "items": {
               "type": "array"
-            }
-          },
-          "total": {
-            "type": "number",
-            "example": 42
-          },
-          "page": {
-            "type": "number",
-            "example": 1
-          },
-          "pageSize": {
-            "type": "number",
-            "example": 20
-          }
-        },
-        "required": [
-          "items",
-          "total",
-          "page",
-          "pageSize"
-        ]
-      },
-      "RecommendationPageDto": {
-        "type": "object",
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/RecommendationDto"
             }
           },
           "total": {

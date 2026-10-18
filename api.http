@@ -11,10 +11,11 @@
 ###   2. Sync: POST /opportunities/sync
 ###   3. Opportunities: GET /opportunities (paginated list, hybrid & structured filters) and GET /opportunities/:id (detail with lazy summary)
 ###   4. Profiles: POST /profiles (configureProfileTech, configureProfileCivilInfra)
-###   5. Recommendations: GET /recommendations/:profileId
-###   6. Feedback: POST /recommendations/:id/feedback (Participate & Discard)
-###   7. Alerts: POST /alerts/review-follow-up
-###   8. Negative cases: invalid body (400), unknown profileId (404), invalid feedback (400)
+###   5. Recommendations Feed: GET /profiles/:id/recommendations (filtered by state, minScore, paginated)
+###   6. Recommendation Feedback & Undo: POST/DELETE /recommendations/:id/feedback
+###   7. Watchlist & Profile Summary: POST/DELETE /profiles/:id/watches/:opportunityId, GET /profiles/:id/watches, GET /profiles/:id/summary
+###   8. Alerts: POST /alerts/review-follow-up
+###   9. Negative cases: invalid body (400), unknown profileId (404), invalid feedback (400)
 ### ==============================================================================
 
 ### Variables for request chaining
@@ -261,24 +262,29 @@ Content-Type: application/json
 }
 
 ### ==============================================================================
-### 5. Explainable Recommendations Engine
+### 5. Recommendation Feed (Filtered, Paginated, Single SQL Join)
 ### ==============================================================================
 
-# Validates AI-driven recommendation generation for a profile (@profileId).
-# Validates profile lookup, computes multi-factor score via MatchingService
-# (35% semantic similarity, 35% UNSPSC category, 20% budget, 10% location),
-# persists recommendations, and returns results sorted by relevance with explanations.
-# @name getRecommendations
-GET {{baseUrl}}/recommendations/{{profileId}}
+# Validates retrieving paginated recommendation feed for a contractor profile,
+# filtering by feedback state ('new', 'participate', 'discard', 'all'), optional minScore,
+# and returning opportunity summaries with match explanations and run metadata in a single query.
+# @name getRecommendationsFeedNew
+GET {{baseUrl}}/profiles/{{profileId}}/recommendations?state=new&pageSize=10
+Accept: application/json
+
+###
+
+# Validates retrieving all recommendations for the profile with minScore threshold
+# @name getRecommendationsFeedAll
+GET {{baseUrl}}/profiles/{{profileId}}/recommendations?state=all&minScore=0.7&page=1&pageSize=20
 Accept: application/json
 
 ### ==============================================================================
-### 6. Recommendation Feedback Loop
+### 6. Recommendation Feedback & Undo (Atomic Watch Synchronization)
 ### ==============================================================================
 
 # Validates recording user decision ('Participate') on a specific recommendation,
-# verifying the recommendation ID exists, validating the decision enum via Zod,
-# and saving the feedback timestamp for closed-loop learning.
+# which updates recommendation feedback and atomically adds the opportunity to watchlist.
 # @name registerFeedbackParticipate
 POST {{baseUrl}}/recommendations/{{recommendationId}}/feedback
 Content-Type: application/json
@@ -289,7 +295,16 @@ Content-Type: application/json
 
 ###
 
-# Validates recording a rejection decision ('Discard') when an opportunity is skipped
+# Validates undoing recommendation feedback (DELETE), resetting feedback to null
+# and removing the opportunity from watchlist if previously marked Participate.
+# @name undoFeedback
+DELETE {{baseUrl}}/recommendations/{{recommendationId}}/feedback
+Accept: application/json
+
+###
+
+# Validates recording a rejection decision ('Discard'), which removes the opportunity
+# from watchlist if present and records the discard decision.
 # @name registerFeedbackDiscard
 POST {{baseUrl}}/recommendations/{{recommendationId}}/feedback
 Content-Type: application/json
@@ -299,7 +314,38 @@ Content-Type: application/json
 }
 
 ### ==============================================================================
-### 7. Alerts & Follow-up Monitoring
+### 7. Watchlist & Profile Summary
+### ==============================================================================
+
+# Validates manually adding an opportunity to the contractor profile's watchlist
+# @name addOpportunityToWatchlist
+POST {{baseUrl}}/profiles/{{profileId}}/watches/{{opportunityId}}
+Accept: application/json
+
+###
+
+# Validates retrieving paginated watchlist with opportunity details and last 10 changes
+# @name getWatchedOpportunities
+GET {{baseUrl}}/profiles/{{profileId}}/watches?page=1&pageSize=10
+Accept: application/json
+
+###
+
+# Validates profile summary metrics for UI dashboards (new recommendations, watching,
+# closing soon within 7 days, unread alerts)
+# @name getProfileSummary
+GET {{baseUrl}}/profiles/{{profileId}}/summary
+Accept: application/json
+
+###
+
+# Validates removing an opportunity from the contractor profile's watchlist
+# @name removeOpportunityFromWatchlist
+DELETE {{baseUrl}}/profiles/{{profileId}}/watches/{{opportunityId}}
+Accept: application/json
+
+### ==============================================================================
+### 8. Alerts & Follow-up Monitoring
 ### ==============================================================================
 
 # Validates scanning undelivered alerts (amendments/adendas and upcoming deadlines),
@@ -312,7 +358,7 @@ Content-Type: application/json
 {}
 
 ### ==============================================================================
-### 8. Negative Test Cases & Validation Errors (Expect 400 / 404)
+### 9. Negative Test Cases & Validation Errors (Expect 400 / 404)
 ### ==============================================================================
 
 # Validates input validation error handling (Expect HTTP 400 Bad Request):
@@ -339,9 +385,9 @@ Content-Type: application/json
 ###
 
 # Validates non-existent profile error handling (Expect HTTP 404 Not Found):
-# Looking up recommendations for a non-registered profile ID.
+# Looking up recommendation feed for a non-registered profile ID.
 # @name negativeRecommendationsUnknownProfile
-GET {{baseUrl}}/recommendations/00000000-0000-0000-0000-000000000000
+GET {{baseUrl}}/profiles/00000000-0000-0000-0000-000000000000/recommendations
 Accept: application/json
 
 ###

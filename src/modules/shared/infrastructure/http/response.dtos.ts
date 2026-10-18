@@ -260,6 +260,20 @@ export class RecommendationDto {
 
   @ApiProperty({ type: OpportunitySummary, nullable: true })
   opportunity!: OpportunitySummary | null;
+
+  @ApiPropertyOptional({
+    type: String,
+    nullable: true,
+    description: 'Timestamp de la última corrida de recomendaciones para este perfil',
+    example: '2026-10-18T14:30:00.000Z',
+  })
+  lastRefreshedAt?: string | null;
+
+  @ApiPropertyOptional({
+    description: 'Indica si la recuperación de candidatos operó en modo degradado',
+    example: false,
+  })
+  degraded?: boolean;
 }
 
 export class CapabilityDto {
@@ -363,11 +377,55 @@ export class OpportunitySummaryPageDto extends Page<OpportunitySummary> {
 export class RecommendationPageDto extends Page<RecommendationDto> {
   @ApiProperty({ type: [RecommendationDto] })
   declare items: RecommendationDto[];
+
+  @ApiPropertyOptional({
+    type: String,
+    nullable: true,
+    description: 'Timestamp de la última corrida de recomendaciones para este perfil',
+    example: '2026-10-18T14:30:00.000Z',
+  })
+  lastRefreshedAt?: string | null;
+
+  @ApiPropertyOptional({
+    description: 'Indica si la recuperación de candidatos operó en modo degradado',
+    example: false,
+  })
+  degraded?: boolean;
 }
 
 export class AlertPageDto extends Page<AlertDto> {
   @ApiProperty({ type: [AlertDto] })
   declare items: AlertDto[];
+}
+
+export class WatchedOpportunityDto {
+  @ApiProperty({ type: OpportunitySummary })
+  opportunity!: OpportunitySummary;
+
+  @ApiProperty({ type: [ChangeDto] })
+  last10Changes!: ChangeDto[];
+
+  @ApiProperty({ example: '2026-10-18T10:00:00.000Z' })
+  addedAt!: string;
+}
+
+export class WatchedOpportunityPageDto extends Page<WatchedOpportunityDto> {
+  @ApiProperty({ type: [WatchedOpportunityDto] })
+  declare items: WatchedOpportunityDto[];
+}
+
+export class ProfileSummaryDto {
+  @ApiProperty({ example: 14, description: 'Recomendaciones pendientes de feedback' })
+  newRecommendations!: number;
+
+  @ApiProperty({ example: 3, description: 'Convocatorias en lista de vigilancia' })
+  watching!: number;
+
+  @ApiProperty({ example: 1, description: 'Convocatorias en vigilancia con cierre en menos de 7 días' })
+  closingSoon!: number;
+
+  @ApiProperty({ example: 0, description: 'Alertas no leídas (0 hasta Fase 5)' })
+  unreadAlerts!: number;
 }
 
 export class SyncOpportunitiesResponseDto {
@@ -515,6 +573,7 @@ export function toRecommendationDto(
   recommendation: Recommendation,
   opportunity: Opportunity | null = null,
   now: Date = new Date(),
+  meta?: { lastRefreshedAt?: Date | null; degraded?: boolean },
 ): RecommendationDto {
   return {
     id: recommendation.id,
@@ -537,6 +596,29 @@ export function toRecommendationDto(
         }
       : null,
     opportunity: opportunity ? toOpportunitySummaryDto(opportunity, now) : null,
+    lastRefreshedAt: meta?.lastRefreshedAt ? new Date(meta.lastRefreshedAt).toISOString() : null,
+    degraded: meta?.degraded ?? false,
+  };
+}
+
+export function toWatchedOpportunityDto(
+  item: {
+    opportunity: Opportunity;
+    last10Changes: import('../../../opportunity/domain/value-objects/opportunity.value-objects').Change[];
+    addedAt: Date;
+  },
+  now: Date = new Date(),
+): WatchedOpportunityDto {
+  return {
+    opportunity: toOpportunitySummaryDto(item.opportunity, now),
+    last10Changes: item.last10Changes.map((ch) => ({
+      field: ch.field,
+      previousValue: ch.previousValue,
+      newValue: ch.newValue,
+      detectedAt: new Date(ch.detectedAt).toISOString(),
+      material: Boolean(ch.material),
+    })),
+    addedAt: new Date(item.addedAt).toISOString(),
   };
 }
 

@@ -215,4 +215,155 @@ describe('PostgresRecommendationRepository (Real Test Database)', () => {
     const found = await repo.findById(asRecommendationId('missing-rec'));
     expect(found).toBeNull();
   });
+
+  describe('P3.4 Recommendation Feed & Feedback Transactions', () => {
+    it('recordFeedbackWithWatch creates a watch on Participate and removes it on Discard in the same transaction', async () => {
+      const profileId = asProfileId('prof-rec-1');
+      const oppId = asOpportunityId('opp-1');
+      const recId = asRecommendationId('rec-trans-1');
+
+      await repo.save({
+        id: recId,
+        profileId,
+        opportunityId: oppId,
+        score: 0.88,
+        explanation: { summary: 'Match', matchedFactors: [] },
+        feedback: null,
+      });
+
+      // 1. Participate -> updates feedback AND creates watch in watches
+      const updated = await repo.recordFeedbackWithWatch(recId, 'Participate');
+      expect(updated?.feedback?.decision).toBe('Participate');
+
+      const watchCheck1 = await pool.query(
+        'SELECT * FROM watches WHERE profile_id = $1 AND opportunity_id = $2;',
+        [profileId, oppId],
+      );
+      expect(watchCheck1.rows).toHaveLength(1);
+
+      // 2. Discard -> updates feedback AND deletes watch from watches
+      const updated2 = await repo.recordFeedbackWithWatch(recId, 'Discard');
+      expect(updated2?.feedback?.decision).toBe('Discard');
+
+      const watchCheck2 = await pool.query(
+        'SELECT * FROM watches WHERE profile_id = $1 AND opportunity_id = $2;',
+        [profileId, oppId],
+      );
+      expect(watchCheck2.rows).toHaveLength(0);
+    });
+
+    it('clearFeedbackWithWatch undoes Participate by removing watch and resetting feedback to null', async () => {
+      const profileId = asProfileId('prof-rec-1');
+      const oppId = asOpportunityId('opp-1');
+      const recId = asRecommendationId('rec-trans-2');
+
+      await repo.save({
+        id: recId,
+        profileId,
+        opportunityId: oppId,
+        score: 0.88,
+        explanation: { summary: 'Match', matchedFactors: [] },
+        feedback: null,
+      });
+
+      await repo.recordFeedbackWithWatch(recId, 'Participate');
+
+      const watchBefore = await pool.query(
+        'SELECT * FROM watches WHERE profile_id = $1 AND opportunity_id = $2;',
+        [profileId, oppId],
+      );
+      expect(watchBefore.rows).toHaveLength(1);
+
+      // Undo feedback
+      const cleared = await repo.clearFeedbackWithWatch(recId);
+      expect(cleared?.feedback).toBeNull();
+
+      const watchAfter = await pool.query(
+        'SELECT * FROM watches WHERE profile_id = $1 AND opportunity_id = $2;',
+        [profileId, oppId],
+      );
+      expect(watchAfter.rows).toHaveLength(0);
+    });
+
+    it('findFeed executes in EXACTLY 1 database query (asserted with query counter) and honors filters', async () => {
+      const profileId = asProfileId('prof-rec-1');
+
+      // Record a recommendation run
+      await repo.recordRun({
+        id: 'run-feed-1',
+        profileId,
+        startedAt: new Date(Date.now() - 60000),
+        finishedAt: new Date(),
+        candidates: 200,
+        kept: 2,
+        level: 'hybrid',
+        degraded: false,
+      });
+
+      // Rec 1: score 0.90, feedback Participate
+      await repo.save({
+        id: asRecommendationId('rec-f-1'),
+        profileId,
+        opportunityId: asOpportunityId('opp-1'),
+        score: 0.90,
+        explanation: { summary: 'Match 1', matchedFactors: [], unavailableFactors: [] },
+        feedback: { decision: 'Participate', recordedAt: new Date() },
+      });
+
+      // Rec 2: score 0.60, feedback NULL (new)
+      await repo.save({
+        id: asRecommendationId('rec-f-2'),
+        profileId,
+        opportunityId: asOpportunityId('opp-2'),
+        score: 0.60,
+        explanation: { summary: 'Match 2', matchedFactors: [], unavailableFactors: [] },
+        feedback: null,
+      });
+
+      // Set up a query counter on pool.query
+      let queryCount = 0;
+      const originalQuery = pool.query.bind(pool);
+      const countingPool = Object.create(pool);
+      countingPool.query = (...args: any[]) => {
+        queryCount++;
+        return (originalQuery as any)(...args);
+      };
+
+      const countedRepo = new PostgresRecommendationRepository(countingPool);
+
+      // Test 1: state 'all'
+      queryCount = 0;
+      const feedAll = await countedRepo.findFeed(profileId, { state: 'all' });
+      expect(queryCount).toBe(1); // EXACTLY ONE QUERY
+      expect(feedAll.profileExists).toBe(true);
+      expect(feedAll.total).toBe(2);
+      expect(feedAll.items).toHaveLength(2);
+      expect(feedAll.items[0].id).toBe('rec-f-1'); // score 0.90 first
+      expect(feedAll.items[0].opportunity.id).toBe('opp-1');
+      expect(feedAll.lastRefreshedAt).not.toBeNull();
+      expect(feedAll.degraded).toBe(false);
+
+      // Test 2: state 'new'
+      queryCount = 0;
+      const feedNew = await countedRepo.findFeed(profileId, { state: 'new' });
+      expect(queryCount).toBe(1); // EXACTLY ONE QUERY
+      expect(feedNew.total).toBe(1);
+      expect(feedNew.items[0].id).toBe('rec-f-2');
+
+      // Test 3: minScore 0.80
+      queryCount = 0;
+      const feedScore = await countedRepo.findFeed(profileId, { state: 'all', minScore: 0.80 });
+      expect(queryCount).toBe(1); // EXACTLY ONE QUERY
+      expect(feedScore.total).toBe(1);
+      expect(feedScore.items[0].id).toBe('rec-f-1');
+
+      // Test 4: unknown profile
+      queryCount = 0;
+      const feedMissing = await countedRepo.findFeed(asProfileId('00000000-0000-0000-0000-000000000000'));
+      expect(queryCount).toBe(1); // EXACTLY ONE QUERY
+      expect(feedMissing.profileExists).toBe(false);
+      expect(feedMissing.total).toBe(0);
+      expect(feedMissing.items).toHaveLength(0);
+    });
+  });
 });

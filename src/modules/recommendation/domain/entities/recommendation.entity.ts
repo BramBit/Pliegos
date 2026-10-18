@@ -10,6 +10,8 @@ import {
   Feedback,
 } from '../../../opportunity/domain/value-objects/opportunity.value-objects';
 
+export type { Explanation, Feedback };
+
 export interface Recommendation {
   readonly id: RecommendationId;
   readonly profileId: ProfileId;

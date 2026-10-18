@@ -141,7 +141,11 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
       expect(response.body.paths).not.toHaveProperty('/opportunities/search');
       expect(response.body.paths).toHaveProperty('/profiles');
       expect(response.body.paths).toHaveProperty('/profiles/{id}');
-      expect(response.body.paths).toHaveProperty('/recommendations/{profileId}');
+      expect(response.body.paths).toHaveProperty('/profiles/{id}/recommendations');
+      expect(response.body.paths).toHaveProperty('/profiles/{id}/summary');
+      expect(response.body.paths).toHaveProperty('/profiles/{id}/watches');
+      expect(response.body.paths).toHaveProperty('/profiles/{id}/watches/{opportunityId}');
+      expect(response.body.paths).not.toHaveProperty('/recommendations/{profileId}');
       expect(response.body.paths).toHaveProperty('/recommendations/{id}/feedback');
       expect(response.body.paths).toHaveProperty('/alerts/review-follow-up');
 
@@ -506,8 +510,16 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
       expect(response.body.message).toContain(nonExistentProfileId);
     });
 
-    it('GET /recommendations/:profileId computes and returns recommendations for existing profile', async () => {
-      // Create a profile first
+    it('GET /profiles/:id/recommendations returns 404 for non-existent profile', async () => {
+      const response = await request(app.getHttpServer())
+        .get('/profiles/00000000-0000-0000-0000-000000000000/recommendations')
+        .expect(404);
+
+      expect(response.body.statusCode).toBe(404);
+      expect(response.body.message).toContain('00000000-0000-0000-0000-000000000000');
+    });
+
+    it('GET /profiles/:id/recommendations returns paginated feed with single query and filters', async () => {
       const createResponse = await request(app.getHttpServer())
         .post('/profiles')
         .send({
@@ -525,25 +537,53 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
 
       const profileId = createResponse.body.id;
 
+      // Seed opportunity and recommendation
+      const oppId = asOpportunityId('opp-e2e-feed-01');
+      await seedOpportunity(pool, 'opp-e2e-feed-01');
+      const recId = asRecommendationId('rec-e2e-feed-01');
+      const scoreResult = createRelevanceScore(0.85);
+      if (!scoreResult.ok) throw new Error(scoreResult.error.message);
+      const testRecResult = createRecommendation({
+        id: recId,
+        profileId: asProfileId(profileId),
+        opportunityId: oppId,
+        score: scoreResult.value,
+        explanation: {
+          summary: 'Buena afinidad con perfil',
+          matchedFactors: [
+            { factor: 'semanticSimilarity', score: 0.85, description: 'Alta similitud semántica' },
+          ],
+        },
+      });
+      if (!testRecResult.ok) throw new Error(testRecResult.error.message);
+      await recRepo.save(testRecResult.value);
+
       const response = await request(app.getHttpServer())
-        .get(`/recommendations/${profileId}`)
+        .get(`/profiles/${profileId}/recommendations?state=new&pageSize=10`)
         .expect(200);
 
-      expect(Array.isArray(response.body)).toBe(true);
-      if (response.body.length > 0) {
-        expect(response.body[0]).toHaveProperty('score');
-        expect(response.body[0]).toHaveProperty('explanation');
-      }
+      expect(response.body).toHaveProperty('items');
+      expect(response.body).toHaveProperty('total');
+      expect(response.body).toHaveProperty('page', 1);
+      expect(response.body).toHaveProperty('pageSize', 10);
+      expect(response.body.items).toHaveLength(1);
+      expect(response.body.items[0].id).toBe('rec-e2e-feed-01');
+      expect(response.body.items[0].score).toBe(0.85);
+      expect(response.body.items[0].opportunity).not.toBeNull();
+      expect(response.body.items[0].opportunity.id).toBe('opp-e2e-feed-01');
     });
 
-    it('POST /recommendations/:id/feedback records user decision (Participate)', async () => {
+    it('POST and DELETE /recommendations/:id/feedback handles Participate, Discard and Undo with watch sync', async () => {
       const dummyRecId = asRecommendationId('rec-e2e-feedback-01');
+      const oppId = asOpportunityId('opp-feedback-test');
+      const profId = asProfileId('prof-feedback-test');
+
       const scoreResult = createRelevanceScore(0.88);
       if (!scoreResult.ok) throw new Error(scoreResult.error.message);
       const testRecResult = createRecommendation({
         id: dummyRecId,
-        profileId: asProfileId('prof-feedback-test'),
-        opportunityId: asOpportunityId('opp-feedback-test'),
+        profileId: profId,
+        opportunityId: oppId,
         score: scoreResult.value,
         explanation: {
           summary: 'Alta coincidencia con tu perfil',
@@ -553,22 +593,48 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
         },
       });
       if (!testRecResult.ok) throw new Error(testRecResult.error.message);
-      const testRec = testRecResult.value;
 
       await seedProfile(pool, 'prof-feedback-test');
       await seedOpportunity(pool, 'opp-feedback-test');
-      await recRepo.save(testRec);
+      await recRepo.save(testRecResult.value);
 
-      const response = await request(app.getHttpServer())
+      // 1. Participate -> creates watch
+      const participateRes = await request(app.getHttpServer())
         .post(`/recommendations/${dummyRecId}/feedback`)
         .send({ decision: 'Participate' })
         .expect(200);
 
-      expect(response.body.success).toBe(true);
-      expect(response.body.message).toBe('Feedback recorded successfully');
+      expect(participateRes.body.success).toBe(true);
 
-      const updated = await recRepo.findById(dummyRecId);
-      expect(updated?.feedback?.decision).toBe('Participate');
+      const watchCheck1 = await pool.query(
+        'SELECT * FROM watches WHERE profile_id = $1 AND opportunity_id = $2;',
+        [profId, oppId],
+      );
+      expect(watchCheck1.rows).toHaveLength(1);
+
+      // 2. Undo feedback (DELETE) -> clears feedback and deletes watch
+      const undoRes = await request(app.getHttpServer())
+        .delete(`/recommendations/${dummyRecId}/feedback`)
+        .expect(200);
+
+      expect(undoRes.body.success).toBe(true);
+      const updatedAfterUndo = await recRepo.findById(dummyRecId);
+      expect(updatedAfterUndo?.feedback).toBeNull();
+
+      const watchCheck2 = await pool.query(
+        'SELECT * FROM watches WHERE profile_id = $1 AND opportunity_id = $2;',
+        [profId, oppId],
+      );
+      expect(watchCheck2.rows).toHaveLength(0);
+
+      // 3. Discard -> removes watch if existing
+      await request(app.getHttpServer())
+        .post(`/recommendations/${dummyRecId}/feedback`)
+        .send({ decision: 'Discard' })
+        .expect(200);
+
+      const updatedAfterDiscard = await recRepo.findById(dummyRecId);
+      expect(updatedAfterDiscard?.feedback?.decision).toBe('Discard');
     });
 
     it('POST /recommendations/:id/feedback rejects invalid decision with 400 (Zod)', async () => {
@@ -588,6 +654,81 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
         .expect(404);
 
       expect(response.body.statusCode).toBe(404);
+    });
+
+    it('DELETE /recommendations/:id/feedback returns 404 for unknown recommendation', async () => {
+      const response = await request(app.getHttpServer())
+        .delete('/recommendations/non-existent-rec-id/feedback')
+        .expect(404);
+
+      expect(response.body.statusCode).toBe(404);
+    });
+
+    it('Watchlist and Summary endpoints: POST/DELETE watch, GET watches, GET summary', async () => {
+      const profId = asProfileId('prof-watch-e2e');
+      const oppId = asOpportunityId('opp-watch-e2e');
+      await seedProfile(pool, 'prof-watch-e2e');
+      await seedOpportunity(pool, 'opp-watch-e2e');
+
+      // 1. Summary before adding watch
+      const summary1 = await request(app.getHttpServer())
+        .get(`/profiles/${profId}/summary`)
+        .expect(200);
+
+      expect(summary1.body.watching).toBe(0);
+      expect(summary1.body.unreadAlerts).toBe(0);
+
+      // 2. Add watch via POST /profiles/:id/watches/:opportunityId
+      await request(app.getHttpServer())
+        .post(`/profiles/${profId}/watches/${oppId}`)
+        .expect(200);
+
+      // 3. GET watches
+      const watchesRes = await request(app.getHttpServer())
+        .get(`/profiles/${profId}/watches?page=1&pageSize=10`)
+        .expect(200);
+
+      expect(watchesRes.body.total).toBe(1);
+      expect(watchesRes.body.items).toHaveLength(1);
+      expect(watchesRes.body.items[0].opportunity.id).toBe(oppId);
+      expect(watchesRes.body.items[0]).toHaveProperty('last10Changes');
+      expect(watchesRes.body.items[0]).toHaveProperty('addedAt');
+
+      // 4. Summary after watch
+      const summary2 = await request(app.getHttpServer())
+        .get(`/profiles/${profId}/summary`)
+        .expect(200);
+
+      expect(summary2.body.watching).toBe(1);
+
+      // 5. Remove watch via DELETE /profiles/:id/watches/:opportunityId
+      await request(app.getHttpServer())
+        .delete(`/profiles/${profId}/watches/${oppId}`)
+        .expect(200);
+
+      const summary3 = await request(app.getHttpServer())
+        .get(`/profiles/${profId}/summary`)
+        .expect(200);
+
+      expect(summary3.body.watching).toBe(0);
+    });
+
+    it('Watchlist and Summary endpoints return 404 for non-existent profile', async () => {
+      await request(app.getHttpServer())
+        .get('/profiles/00000000-0000-0000-0000-000000000000/summary')
+        .expect(404);
+
+      await request(app.getHttpServer())
+        .get('/profiles/00000000-0000-0000-0000-000000000000/watches')
+        .expect(404);
+
+      await request(app.getHttpServer())
+        .post('/profiles/00000000-0000-0000-0000-000000000000/watches/opp-1')
+        .expect(404);
+
+      await request(app.getHttpServer())
+        .delete('/profiles/00000000-0000-0000-0000-000000000000/watches/opp-1')
+        .expect(404);
     });
   });
 
