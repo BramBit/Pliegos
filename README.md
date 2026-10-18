@@ -62,7 +62,7 @@ El proyecto está diseñado bajo **Arquitectura Hexagonal (Puertos y Adaptadores
    - Ingesta y normalización de procesos públicos de SECOP II vía Socrata API (`SecopAdapter`).
    - Detección automática de adendas, cambios de estado y registro histórico de variaciones.
    - Búsqueda híbrida (`PgVectorAdapter`): Búsqueda semántica vectorial por distancia coseno (768 dimensiones) combinada con filtros estructurados (categoría UNSPSC, departamento, cuantía).
-   - Cola asíncrona de análisis (`AnalyzeOpportunityJob` con BullMQ y Redis) para generación de embeddings y extracción de requisitos sin bloquear la ingesta.
+   - Cola asíncrona de análisis (`AnalyzeOpportunityJob` con BullMQ y Redis) para generación de embeddings y resúmenes analíticos bajo demanda sin bloquear la ingesta. Pliego document extraction is out of scope for this stage.
 
 2. **Módulo de Perfiles de Contratista (`ProfileModule`)**:
    - Modelado de capacidades técnicas, años de experiencia y preferencias de contratación (códigos UNSPSC, palabras clave, rango de cuantía en COP y departamentos de interés).

@@ -4,10 +4,13 @@ import {
   ProfileNotFoundError,
   createProfileNotFoundError,
 } from '../../../shared/domain/errors';
-import { ProfileId } from '../../../shared/domain/typed-id';
+import { OpportunityId, ProfileId } from '../../../shared/domain/typed-id';
 import { ProfileRepositoryPort } from '../../../profile/domain/ports/profile.repository.port';
 import { OpportunityRepositoryPort } from '../../../opportunity/domain/ports/opportunity.repository.port';
 import { SearchIndexPort } from '../../../opportunity/domain/ports/search-index.port';
+import { AnalysisQueuePort } from '../../../opportunity/domain/ports/analysis-queue.port';
+import { Opportunity } from '../../../opportunity/domain/entities/opportunity.entity';
+import { hasGeneratedSummary } from '../../../opportunity/infrastructure/jobs/analyze-opportunity.job';
 import {
   RecommendationRepositoryPort,
   RecommendationRun,
@@ -41,6 +44,7 @@ export class RefreshRecommendationsUseCase {
     private readonly embedder: EmbedderPort,
     private readonly searchIndex: SearchIndexPort,
     private readonly minRecommendationScore?: number,
+    private readonly analysisQueue?: AnalysisQueuePort,
   ) {}
 
   async execute(input: {
@@ -98,9 +102,11 @@ export class RefreshRecommendationsUseCase {
     const minScore = this.minRecommendationScore ?? getMinRecommendationScore();
 
     const qualifying: Recommendation[] = [];
+    const loadedOpportunities = new Map<OpportunityId, Opportunity>();
     for (const item of retrieval.items) {
       const opportunity = await this.opportunityRepository.findById(item.id);
       if (!opportunity) continue;
+      loadedOpportunities.set(opportunity.id, opportunity);
 
       const previous = existingByOpportunity.get(opportunity.id);
       const semanticSimilarity =
@@ -122,6 +128,15 @@ export class RefreshRecommendationsUseCase {
 
     qualifying.sort((a, b) => b.score - a.score);
     const top50 = qualifying.slice(0, TOP_RECOMMENDATIONS_KEPT);
+
+    if (this.analysisQueue) {
+      for (const rec of top50) {
+        const opp = loadedOpportunities.get(rec.opportunityId);
+        if (opp && !hasGeneratedSummary(opp.analysis)) {
+          await this.analysisQueue.enqueueAnalysis(opp.id, { summarize: true });
+        }
+      }
+    }
 
     let persisted: Recommendation[];
     if (this.recommendationRepository.upsertMany) {

@@ -146,9 +146,14 @@ class FakeOpportunityRepository implements OpportunityRepositoryPort {
 
 class FakeAnalysisQueue implements AnalysisQueuePort {
   public queuedOpportunityIds: OpportunityId[] = [];
+  public queuedJobs: Array<{ opportunityId: OpportunityId; summarize?: boolean }> = [];
 
-  async enqueueAnalysis(opportunityId: OpportunityId): Promise<void> {
+  async enqueueAnalysis(
+    opportunityId: OpportunityId,
+    options?: { summarize?: boolean },
+  ): Promise<void> {
     this.queuedOpportunityIds.push(opportunityId);
+    this.queuedJobs.push({ opportunityId, summarize: options?.summarize });
   }
 }
 
@@ -425,5 +430,12 @@ describe('SyncOpportunitiesUseCase', () => {
       expect(result.value.created).toBe(1);
       expect(result.value.skipped).toBe(2);
     }
+  });
+
+  it('never triggers LLM summarization during sync (enqueues embed-only jobs with summarize: false)', async () => {
+    const result = await useCase.execute({});
+    expect(result.ok).toBe(true);
+    expect(fakeQueue.queuedJobs).toHaveLength(1);
+    expect(fakeQueue.queuedJobs[0].summarize).toBe(false);
   });
 });

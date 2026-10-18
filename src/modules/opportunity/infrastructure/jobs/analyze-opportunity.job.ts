@@ -15,9 +15,17 @@ import {
   TEXT_GENERATOR_PORT,
   TextGeneratorPort,
 } from '../../../recommendation/domain/ports/ai-provider.port';
+import { buildSafeSummaryUserMessage } from '../../../recommendation/infrastructure/adapters/ollama/ollama.adapter';
 import { SEARCH_INDEX_PORT, SearchIndexPort } from '../../domain/ports/search-index.port';
 import { Opportunity, withOpportunityAnalysis } from '../../domain/entities/opportunity.entity';
-import { Analysis, Requirement } from '../../domain/value-objects/opportunity.value-objects';
+import {
+  Analysis,
+  Requirement,
+  SummaryStatus,
+} from '../../domain/value-objects/opportunity.value-objects';
+
+export const MAX_SUMMARY_OUTPUT_CHARS = 600;
+export const FALLBACK_DESCRIPTION_CHARS = 300;
 
 export interface IJobLike<T = any> {
   data: T;
@@ -36,6 +44,17 @@ export function computeAnalysisContentHash(
     embeddingModel,
   ].join('|');
   return createHash('sha256').update(payload, 'utf8').digest('hex');
+}
+
+export function hasGeneratedSummary(analysis: Analysis | null | undefined): boolean {
+  if (!analysis) return false;
+  if (analysis.summaryStatus === 'ready' || analysis.summaryStatus === 'fallback') {
+    return true;
+  }
+  if (!analysis.summaryStatus && Boolean(analysis.summary?.trim())) {
+    return true;
+  }
+  return false;
 }
 
 @Processor(ANALYSIS_QUEUE_NAME, {
@@ -68,7 +87,8 @@ export class AnalyzeOpportunityJob extends WorkerHost {
    * `analysis` column so concurrent updates (e.g. closing_date or status) are never overwritten.
    */
   async process(job: IJobLike<AnalyzeOpportunityJobPayload>): Promise<void> {
-    const { opportunityId } = job.data;
+    const { opportunityId, summarize } = job.data;
+    const shouldSummarize = summarize !== false;
 
     const runWork = async () => {
       const opportunity = await this.opportunityRepository.findById(opportunityId);
@@ -80,7 +100,21 @@ export class AnalyzeOpportunityJob extends WorkerHost {
       }
 
       const contentHash = computeAnalysisContentHash(opportunity, this.embeddingModel);
-      if (opportunity.analysis?.contentHash === contentHash) {
+      const embeddingUpToDate =
+        opportunity.analysis?.contentHash === contentHash &&
+        Boolean(opportunity.analysis?.embeddingGeneratedAt);
+      const summaryUpToDate =
+        opportunity.analysis?.contentHash === contentHash &&
+        hasGeneratedSummary(opportunity.analysis);
+
+      if (!shouldSummarize && embeddingUpToDate) {
+        this.logger.log(
+          `AnalyzeOpportunityJob: Skipping Opportunity ${opportunityId} — contentHash ${contentHash} unchanged (embed-only).`,
+        );
+        return;
+      }
+
+      if (shouldSummarize && embeddingUpToDate && summaryUpToDate) {
         this.logger.log(
           `AnalyzeOpportunityJob: Skipping Opportunity ${opportunityId} — contentHash ${contentHash} unchanged.`,
         );
@@ -89,57 +123,57 @@ export class AnalyzeOpportunityJob extends WorkerHost {
 
       this.logger.log(`AnalyzeOpportunityJob: Starting analysis for Opportunity ${opportunityId}...`);
 
-      // 1. Construct contextual text for AI processing
-      const textToAnalyze = [
-        `Titulo: ${opportunity.title}`,
-        opportunity.description ? `Descripcion: ${opportunity.description}` : '',
-        `Entidad contratante: ${opportunity.contractingEntity.name}`,
-        `Modalidad: ${opportunity.procurementModality}`,
-        `Tipo de contrato: ${opportunity.contractType}`,
-        `Categoria UNSPSC: ${opportunity.categoryCode}`,
-        `Presupuesto: ${opportunity.amount.amount} ${opportunity.amount.currency}`,
-        `Ubicacion: ${opportunity.location.city ?? ''} ${opportunity.location.department ?? ''}`,
-      ]
-        .filter(Boolean)
-        .join('. ');
+      let summary = '';
+      let summaryStatus: SummaryStatus = 'unavailable';
 
-      // 2. Generate concise Spanish analytical summary via local chat model (llama3.1)
-      // Set ANALYSIS_SUMMARIZE=false for a fast embeddings-only bulk load (skips the slow LLM call)
-      const summary =
-        process.env.ANALYSIS_SUMMARIZE === 'false'
-          ? ''
-          : await this.textGenerator.summarize(textToAnalyze);
+      if (shouldSummarize) {
+        const userMessage = buildSafeSummaryUserMessage(
+          opportunity.title,
+          opportunity.description ?? '',
+        );
 
-      // 3. Extract baseline requirements
-      const requirements: Requirement[] = [
-        {
-          text: `Capacidad financiera y organizacional para ejecutar contrato por valor de ${opportunity.amount.amount.toLocaleString()} ${opportunity.amount.currency}`,
-          type: 'financial',
-        },
-        {
-          text: 'Cumplimiento de especificaciones tecnicas minimas y experiencia en contratos afines',
-          type: 'technical',
-        },
-        {
-          text: 'Habilitacion juridica para contratar con el Estado colombiano',
-          type: 'legal',
-        },
-      ];
+        try {
+          const rawSummary = (await this.textGenerator.summarize(userMessage)).trim();
+          if (rawSummary.length > 0 && rawSummary.length <= MAX_SUMMARY_OUTPUT_CHARS) {
+            summary = rawSummary;
+            summaryStatus = 'ready';
+          } else {
+            summary = (opportunity.description ?? '').slice(0, FALLBACK_DESCRIPTION_CHARS);
+            summaryStatus = 'fallback';
+          }
+        } catch (error) {
+          const msg = error instanceof Error ? error.message : String(error);
+          this.logger.warn(
+            `AnalyzeOpportunityJob: LLM summarize failed for Opportunity ${opportunityId} (${msg}); using fallback.`,
+          );
+          summary = (opportunity.description ?? '').slice(0, FALLBACK_DESCRIPTION_CHARS);
+          summaryStatus = 'fallback';
+        }
+      } else if (opportunity.analysis?.contentHash === contentHash && opportunity.analysis.summaryStatus) {
+        summary = opportunity.analysis.summary;
+        summaryStatus = opportunity.analysis.summaryStatus;
+      }
+
+      const requirements: Requirement[] = [];
+      const embeddingGeneratedAt =
+        embeddingUpToDate && opportunity.analysis?.embeddingGeneratedAt
+          ? opportunity.analysis.embeddingGeneratedAt
+          : new Date();
 
       const analysis: Analysis = {
-        summary: summary || 'Analisis general del pliego contractual.',
+        summary,
+        summaryStatus,
         requirements,
-        embeddingGeneratedAt: new Date(),
+        embeddingGeneratedAt,
         contentHash,
       };
 
-      // 4. Attach analysis in memory for pgvector indexing
       const analyzedOpportunity = withOpportunityAnalysis(opportunity, analysis);
 
-      // 5. Index opportunity in pgvector (768 dimensions via nomic-embed-text)
-      await this.searchIndex.indexOpportunity(analyzedOpportunity);
+      if (!embeddingUpToDate) {
+        await this.searchIndex.indexOpportunity(analyzedOpportunity);
+      }
 
-      // 6. Persist ONLY the analysis column so concurrent row updates are never overwritten
       await this.opportunityRepository.saveAnalysis(opportunity.id, analysis);
 
       this.logger.log(

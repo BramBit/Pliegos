@@ -373,7 +373,7 @@ export class SyncOpportunitiesUseCase implements ISyncOpportunitiesUseCase {
 
     if (this.analysisQueue) {
       for (const id of toEnqueue) {
-        await this.analysisQueue.enqueueAnalysis(id);
+        await this.analysisQueue.enqueueAnalysis(id, { summarize: false });
       }
     }
   }

@@ -24,7 +24,6 @@ describe('loadEnv', () => {
     expect(env.OLLAMA_EMBED_TIMEOUT_MS).toBe(30000);
     expect(env.OLLAMA_CHAT_TIMEOUT_MS).toBe(120000);
     expect(env.ANALYSIS_CONCURRENCY).toBe(2);
-    expect(env.ANALYSIS_SUMMARIZE).toBe(true);
     expect(env.SEMANTIC_COSINE_LOW).toBe(0.4);
     expect(env.SEMANTIC_COSINE_HIGH).toBe(0.75);
     expect(env.MIN_RECOMMENDATION_SCORE).toBe(0.45);
@@ -32,11 +31,10 @@ describe('loadEnv', () => {
     expect(env.SECOP_APP_TOKEN).toBeUndefined();
   });
 
-  it('coerces numeric values and the summarize flag', () => {
-    const env = loadEnv({ ...validEnv, PORT: '4000', ANALYSIS_SUMMARIZE: 'false' });
+  it('coerces numeric values', () => {
+    const env = loadEnv({ ...validEnv, PORT: '4000' });
 
     expect(env.PORT).toBe(4000);
-    expect(env.ANALYSIS_SUMMARIZE).toBe(false);
   });
 
   it('fails when DATABASE_URL is missing', () => {

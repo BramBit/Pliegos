@@ -22,6 +22,7 @@ import {
 } from '../recommendation/infrastructure/adapters/queue/bullmq-recommendation-refresh-queue.adapter';
 import { SyncOpportunitiesUseCase } from './application/use-cases/sync-opportunities.use-case';
 import { SearchOpportunitiesUseCase } from './application/use-cases/search-opportunities.use-case';
+import { GetOpportunityByIdUseCase } from './application/use-cases/get-opportunity-by-id.use-case';
 import { AnalyzeOpportunityJob } from './infrastructure/jobs/analyze-opportunity.job';
 import { OpportunityController } from './infrastructure/controllers/opportunity.controller';
 
@@ -73,6 +74,11 @@ import { OpportunityController } from './infrastructure/controllers/opportunity.
         new SearchOpportunitiesUseCase(repo, searchIndex, embedder),
       inject: [OPPORTUNITY_REPOSITORY_PORT, SEARCH_INDEX_PORT, EMBEDDER_PORT],
     },
+    {
+      provide: GetOpportunityByIdUseCase,
+      useFactory: (repo, queue) => new GetOpportunityByIdUseCase(repo, queue),
+      inject: [OPPORTUNITY_REPOSITORY_PORT, ANALYSIS_QUEUE_PORT],
+    },
   ],
   exports: [
     OPPORTUNITY_REPOSITORY_PORT,
@@ -80,6 +86,7 @@ import { OpportunityController } from './infrastructure/controllers/opportunity.
     ANALYSIS_QUEUE_PORT,
     SyncOpportunitiesUseCase,
     SearchOpportunitiesUseCase,
+    GetOpportunityByIdUseCase,
   ],
 })
 export class OpportunityModule {}

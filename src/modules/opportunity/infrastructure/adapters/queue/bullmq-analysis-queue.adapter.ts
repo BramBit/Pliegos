@@ -1,6 +1,8 @@
 import { Injectable, Logger, LoggerService } from '@nestjs/common';
-import { Queue } from 'bullmq';
-import { AnalysisQueuePort } from '../../../domain/ports/analysis-queue.port';
+import {
+  AnalysisQueuePort,
+  EnqueueAnalysisOptions,
+} from '../../../domain/ports/analysis-queue.port';
 import { OpportunityId } from '../../../../shared/domain/typed-id';
 
 export const ANALYSIS_QUEUE_NAME = 'opportunity-analysis';
@@ -8,6 +10,7 @@ export const ANALYZE_OPPORTUNITY_JOB_NAME = 'analyze-opportunity';
 
 export interface AnalyzeOpportunityJobPayload {
   readonly opportunityId: OpportunityId;
+  readonly summarize?: boolean;
 }
 
 export interface IQueueLike {
@@ -28,8 +31,14 @@ export class BullMQAnalysisQueueAdapter implements AnalysisQueuePort {
   /**
    * Enqueues an analysis job for the given opportunity ID into the BullMQ queue.
    */
-  async enqueueAnalysis(opportunityId: OpportunityId): Promise<void> {
-    const payload: AnalyzeOpportunityJobPayload = { opportunityId };
+  async enqueueAnalysis(
+    opportunityId: OpportunityId,
+    options?: EnqueueAnalysisOptions,
+  ): Promise<void> {
+    const payload: AnalyzeOpportunityJobPayload =
+      options?.summarize !== undefined
+        ? { opportunityId, summarize: options.summarize }
+        : { opportunityId };
 
     await this.queue.add(ANALYZE_OPPORTUNITY_JOB_NAME, payload, {
       attempts: 3,

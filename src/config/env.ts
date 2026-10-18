@@ -33,10 +33,6 @@ const envSchema = z.object({
   SECOP_SYNC_WINDOW_DAYS: positiveInt.default(14),
 
   ANALYSIS_CONCURRENCY: positiveInt.default(2),
-  ANALYSIS_SUMMARIZE: z
-    .enum(['true', 'false'])
-    .default('true')
-    .transform((value) => value === 'true'),
 
   SEMANTIC_COSINE_LOW: z.coerce.number().min(-1).max(1).default(0.4),
   SEMANTIC_COSINE_HIGH: z.coerce.number().min(-1).max(1).default(0.75),

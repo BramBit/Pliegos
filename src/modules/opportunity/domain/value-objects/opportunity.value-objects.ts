@@ -60,8 +60,11 @@ export interface Feedback {
   readonly recordedAt: Date;
 }
 
+export type SummaryStatus = 'pending' | 'ready' | 'fallback' | 'unavailable';
+
 export interface Analysis {
   readonly summary: string;
+  readonly summaryStatus?: SummaryStatus;
   readonly requirements: Requirement[];
   readonly embeddingGeneratedAt: Date | null;  // null until the queued analysis job runs
   readonly contentHash?: string;

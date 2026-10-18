@@ -1,14 +1,19 @@
 import {
   Controller,
+  Get,
   Post,
+  Param,
   Body,
   HttpCode,
   HttpStatus,
   BadGatewayException,
+  NotFoundException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { asOpportunityId } from '../../../shared/domain/typed-id';
 import { SyncOpportunitiesUseCase } from '../../application/use-cases/sync-opportunities.use-case';
 import { SearchOpportunitiesUseCase } from '../../application/use-cases/search-opportunities.use-case';
+import { GetOpportunityByIdUseCase } from '../../application/use-cases/get-opportunity-by-id.use-case';
 import { ZodValidationPipe } from '../../../shared/infrastructure/http/zod-validation.pipe';
 import {
   SyncOpportunitiesDto,
@@ -25,18 +30,56 @@ export class OpportunityController {
   constructor(
     private readonly syncOpportunitiesUseCase: SyncOpportunitiesUseCase,
     private readonly searchOpportunitiesUseCase: SearchOpportunitiesUseCase,
+    private readonly getOpportunityByIdUseCase?: GetOpportunityByIdUseCase,
   ) {}
+
+  @Get(':id')
+  @ApiOperation({
+    summary: 'Obtener detalle de una oportunidad por ID',
+    description:
+      'Retorna el detalle de una oportunidad de contratación. Si aún no cuenta con resumen analítico, encola el trabajo de generación bajo demanda y responde con summaryStatus = "pending".',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Detalle de la oportunidad con estado de resumen (pending | ready | fallback | unavailable)',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'La oportunidad solicitada no existe',
+  })
+  async getById(@Param('id') id: string) {
+    if (!this.getOpportunityByIdUseCase) {
+      throw new NotFoundException(`Oportunidad no encontrada: ${id}`);
+    }
+
+    const result = await this.getOpportunityByIdUseCase.execute({
+      opportunityId: asOpportunityId(id),
+    });
+
+    if (!result.ok) {
+      throw new NotFoundException({
+        statusCode: HttpStatus.NOT_FOUND,
+        error: result.error.type,
+        message: `Oportunidad no encontrada: ${result.error.opportunityId}`,
+      });
+    }
+
+    return {
+      ...result.value.opportunity,
+      summaryStatus: result.value.summaryStatus,
+    };
+  }
 
   @Post('sync')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Sincronizar oportunidades desde SECOP II',
     description:
-      'Consulta la API pública de SECOP II (Socrata), normaliza los procesos hacia el modelo de dominio Opportunity, detecta cambios o nuevas convocatorias y encola los trabajos de análisis asíncrono.',
+      'Consulta la API pública de SECOP II (Socrata), normaliza los procesos hacia el modelo de dominio Opportunity, detecta cambios o nuevas convocatorias y encola los trabajos de indexación asíncrona.',
   })
   @ApiResponse({
     status: HttpStatus.OK,
-    description: 'Procesos sincronizados y analizados en cola correctamente',
+    description: 'Procesos sincronizados e indexados en cola correctamente',
     schema: {
       type: 'object',
       properties: {

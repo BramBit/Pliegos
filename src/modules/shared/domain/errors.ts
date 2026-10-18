@@ -1,8 +1,13 @@
-import { ProfileId, RecommendationId } from './typed-id';
+import { OpportunityId, ProfileId, RecommendationId } from './typed-id';
 
 export interface SourceUnavailableError {
   readonly type: 'SourceUnavailableError';
   readonly sourceName: string;
+}
+
+export interface OpportunityNotFoundError {
+  readonly type: 'OpportunityNotFoundError';
+  readonly opportunityId: OpportunityId;
 }
 
 export interface ProfileNotFoundError {
@@ -24,6 +29,13 @@ export interface ValidationError {
 export const createSourceUnavailableError = (sourceName: string): SourceUnavailableError => ({
   type: 'SourceUnavailableError',
   sourceName,
+});
+
+export const createOpportunityNotFoundError = (
+  opportunityId: OpportunityId,
+): OpportunityNotFoundError => ({
+  type: 'OpportunityNotFoundError',
+  opportunityId,
 });
 
 export const createProfileNotFoundError = (profileId: ProfileId): ProfileNotFoundError => ({

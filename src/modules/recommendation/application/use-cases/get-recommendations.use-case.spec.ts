@@ -445,4 +445,59 @@ describe('RefreshRecommendationsUseCase & GetRecommendationsUseCase (P2.6)', () 
       expect(limited.value[0].opportunityId).toBe('opp-high');
     }
   });
+
+  it('enqueues lazy summary generation ({ summarize: true }) only for top 50 opportunities that do not yet have a summary', async () => {
+    const oppAlreadySummarized: Opportunity = {
+      ...oppHigh,
+      id: asOpportunityId('opp-already-summarized'),
+      analysis: {
+        summary: 'Resumen existente listo.',
+        summaryStatus: 'ready',
+        requirements: [],
+        embeddingGeneratedAt: new Date(),
+      },
+    };
+    const oppUnsummarized: Opportunity = {
+      ...oppHigh,
+      id: asOpportunityId('opp-unsummarized'),
+      analysis: {
+        summary: '',
+        summaryStatus: 'unavailable',
+        requirements: [],
+        embeddingGeneratedAt: new Date(),
+      },
+    };
+
+    await profileRepo.save(testProfile);
+    await oppRepo.save(oppAlreadySummarized);
+    await oppRepo.save(oppUnsummarized);
+    await oppRepo.save(oppLow);
+    await searchIndex.indexOpportunity(oppAlreadySummarized);
+    await searchIndex.indexOpportunity(oppUnsummarized);
+    await searchIndex.indexOpportunity(oppLow);
+
+    const enqueued: Array<{ id: OpportunityId; summarize?: boolean }> = [];
+    const fakeAnalysisQueue = {
+      enqueueAnalysis: jest.fn(async (id: OpportunityId, opts?: { summarize?: boolean }) => {
+        enqueued.push({ id, summarize: opts?.summarize });
+      }),
+    };
+
+    const refreshWithQueue = new RefreshRecommendationsUseCase(
+      profileRepo,
+      oppRepo,
+      recRepo,
+      matchingService,
+      embedder,
+      searchIndex,
+      undefined,
+      fakeAnalysisQueue,
+    );
+
+    await refreshWithQueue.execute({ profileId: testProfile.id });
+
+    // Only opp-unsummarized (in top 50 and lacking a summary) is enqueued;
+    // opp-already-summarized (already has summary) and opp-low (below threshold) are not.
+    expect(enqueued).toEqual([{ id: asOpportunityId('opp-unsummarized'), summarize: true }]);
+  });
 });
