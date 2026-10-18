@@ -16,13 +16,23 @@ import {
   BullMQAnalysisQueueAdapter,
   ANALYSIS_QUEUE_NAME,
 } from './infrastructure/adapters/queue/bullmq-analysis-queue.adapter';
+import {
+  BullMQRecommendationRefreshQueueAdapter,
+  REFRESH_RECOMMENDATIONS_QUEUE_NAME,
+} from '../recommendation/infrastructure/adapters/queue/bullmq-recommendation-refresh-queue.adapter';
 import { SyncOpportunitiesUseCase } from './application/use-cases/sync-opportunities.use-case';
 import { SearchOpportunitiesUseCase } from './application/use-cases/search-opportunities.use-case';
 import { AnalyzeOpportunityJob } from './infrastructure/jobs/analyze-opportunity.job';
 import { OpportunityController } from './infrastructure/controllers/opportunity.controller';
 
 @Module({
-  imports: [AiModule, BullModule.registerQueue({ name: ANALYSIS_QUEUE_NAME })],
+  imports: [
+    AiModule,
+    BullModule.registerQueue(
+      { name: ANALYSIS_QUEUE_NAME },
+      { name: REFRESH_RECOMMENDATIONS_QUEUE_NAME },
+    ),
+  ],
   controllers: [OpportunityController],
   providers: [
     {
@@ -49,8 +59,13 @@ import { OpportunityController } from './infrastructure/controllers/opportunity.
     AnalyzeOpportunityJob,
     {
       provide: SyncOpportunitiesUseCase,
-      useFactory: (source, repo, queue) => new SyncOpportunitiesUseCase(source, repo, queue),
-      inject: [OPPORTUNITY_SOURCE_PORT, OPPORTUNITY_REPOSITORY_PORT, ANALYSIS_QUEUE_PORT],
+      useFactory: (source, repo, queue) =>
+        new SyncOpportunitiesUseCase(source, repo, queue),
+      inject: [
+        OPPORTUNITY_SOURCE_PORT,
+        OPPORTUNITY_REPOSITORY_PORT,
+        ANALYSIS_QUEUE_PORT,
+      ],
     },
     {
       provide: SearchOpportunitiesUseCase,

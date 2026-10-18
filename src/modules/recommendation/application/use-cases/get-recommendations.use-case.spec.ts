@@ -1,4 +1,8 @@
-import { GetRecommendationsUseCase, CANDIDATE_POOL_SIZE } from './get-recommendations.use-case';
+import { GetRecommendationsUseCase } from './get-recommendations.use-case';
+import {
+  RefreshRecommendationsUseCase,
+  REFRESH_CANDIDATE_POOL_SIZE,
+} from './refresh-recommendations.use-case';
 import { ProfileRepositoryPort } from '../../../profile/domain/ports/profile.repository.port';
 import { OpportunityRepositoryPort } from '../../../opportunity/domain/ports/opportunity.repository.port';
 import {
@@ -8,7 +12,11 @@ import {
   CandidateRetrievalResult,
   reciprocalRankFusion,
 } from '../../../opportunity/domain/ports/search-index.port';
-import { RecommendationRepositoryPort } from '../../domain/ports/recommendation.repository.port';
+import {
+  RecommendationRepositoryPort,
+  ProfileEmbeddingRecord,
+  RecommendationRun,
+} from '../../domain/ports/recommendation.repository.port';
 import { MatchingService, cosine } from '../../domain/services/matching.service';
 import { Profile } from '../../../profile/domain/entities/profile.entity';
 import { Opportunity } from '../../../opportunity/domain/entities/opportunity.entity';
@@ -20,6 +28,7 @@ import {
   RecommendationId,
   asProfileId,
   asOpportunityId,
+  asRecommendationId,
   asUserId,
 } from '../../../shared/domain/typed-id';
 import { createMoney } from '../../../opportunity/domain/value-objects/money.vo';
@@ -74,17 +83,82 @@ class FakeOpportunityRepo implements OpportunityRepositoryPort {
 
 class FakeRecommendationRepo implements RecommendationRepositoryPort {
   public recommendations: Recommendation[] = [];
+  public profileEmbeddings: Map<ProfileId, ProfileEmbeddingRecord> = new Map();
+  public runs: RecommendationRun[] = [];
 
   async save(recommendation: Recommendation): Promise<void> {
-    this.recommendations.push(recommendation);
+    const idx = this.recommendations.findIndex((r) => r.id === recommendation.id);
+    if (idx >= 0) {
+      this.recommendations[idx] = recommendation;
+    } else {
+      this.recommendations.push(recommendation);
+    }
+  }
+
+  async upsertMany(
+    profileId: ProfileId,
+    incoming: Recommendation[],
+  ): Promise<Recommendation[]> {
+    const keptOppIds = new Set<OpportunityId>();
+    const kept: Recommendation[] = [];
+
+    for (const rec of incoming) {
+      keptOppIds.add(rec.opportunityId);
+      const existingIdx = this.recommendations.findIndex(
+        (r) => r.profileId === profileId && r.opportunityId === rec.opportunityId,
+      );
+      if (existingIdx >= 0) {
+        const prev = this.recommendations[existingIdx];
+        const merged: Recommendation = {
+          ...rec,
+          id: prev.id,
+          feedback: prev.feedback ?? rec.feedback,
+        };
+        this.recommendations[existingIdx] = merged;
+        kept.push(merged);
+      } else {
+        this.recommendations.push(rec);
+        kept.push(rec);
+      }
+    }
+
+    // Delete stale rows outside top set that have no feedback
+    this.recommendations = this.recommendations.filter(
+      (r) =>
+        r.profileId !== profileId ||
+        keptOppIds.has(r.opportunityId) ||
+        r.feedback !== null,
+    );
+
+    return kept;
   }
 
   async findByProfile(profileId: ProfileId): Promise<Recommendation[]> {
-    return this.recommendations.filter((r) => r.profileId === profileId);
+    return this.recommendations
+      .filter((r) => r.profileId === profileId)
+      .sort((a, b) => b.score - a.score);
   }
 
   async findById(id: RecommendationId): Promise<Recommendation | null> {
     return this.recommendations.find((r) => r.id === id) ?? null;
+  }
+
+  async getProfileEmbedding(profileId: ProfileId): Promise<ProfileEmbeddingRecord | null> {
+    return this.profileEmbeddings.get(profileId) ?? null;
+  }
+
+  async saveProfileEmbedding(record: ProfileEmbeddingRecord): Promise<void> {
+    this.profileEmbeddings.set(record.profileId, record);
+  }
+
+  async recordRun(run: RecommendationRun): Promise<void> {
+    this.runs.push(run);
+  }
+
+  async getLatestRun(profileId: ProfileId): Promise<RecommendationRun | null> {
+    const forProfile = this.runs.filter((r) => r.profileId === profileId);
+    if (forProfile.length === 0) return null;
+    return forProfile[forProfile.length - 1];
   }
 }
 
@@ -93,6 +167,7 @@ class FakeSearchIndex implements SearchIndexPort {
   public retrieveCalls = 0;
   public lastFilters?: CandidateRetrievalFilters;
   public lastLimit?: number;
+  public forceDegraded = false;
 
   constructor(private readonly embedder: HashEmbedder) {}
 
@@ -147,8 +222,8 @@ class FakeSearchIndex implements SearchIndexPort {
         textRank: null,
         fusedScore: f.fusedScore,
       })),
-      level: 'hybrid',
-      degraded: false,
+      level: this.forceDegraded ? 'fulltext' : 'hybrid',
+      degraded: this.forceDegraded,
     };
   }
 }
@@ -159,14 +234,15 @@ const mustCreateMoney = (amount: number) => {
   return result.value;
 };
 
-describe('GetRecommendationsUseCase', () => {
+describe('RefreshRecommendationsUseCase & GetRecommendationsUseCase (P2.6)', () => {
   let profileRepo: FakeProfileRepo;
   let oppRepo: FakeOpportunityRepo;
   let recRepo: FakeRecommendationRepo;
   let embedder: HashEmbedder;
   let searchIndex: FakeSearchIndex;
   let matchingService: MatchingService;
-  let useCase: GetRecommendationsUseCase;
+  let refreshUseCase: RefreshRecommendationsUseCase;
+  let getUseCase: GetRecommendationsUseCase;
 
   const testProfile: Profile = {
     id: asProfileId('profile-1'),
@@ -225,7 +301,7 @@ describe('GetRecommendationsUseCase', () => {
     embedder = new HashEmbedder();
     searchIndex = new FakeSearchIndex(embedder);
     matchingService = new MatchingService();
-    useCase = new GetRecommendationsUseCase(
+    refreshUseCase = new RefreshRecommendationsUseCase(
       profileRepo,
       oppRepo,
       recRepo,
@@ -233,130 +309,140 @@ describe('GetRecommendationsUseCase', () => {
       embedder,
       searchIndex,
     );
+    getUseCase = new GetRecommendationsUseCase(profileRepo, recRepo);
   });
 
   it('returns ProfileNotFoundError when profile is not registered', async () => {
-    const result = await useCase.execute({
+    const refreshRes = await refreshUseCase.execute({
       profileId: asProfileId('non-existent'),
     });
+    expect(refreshRes.ok).toBe(false);
 
-    expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.error.type).toBe('ProfileNotFoundError');
-      expect(result.error.profileId).toBe('non-existent');
+    const getRes = await getUseCase.execute({
+      profileId: asProfileId('non-existent'),
+    });
+    expect(getRes.ok).toBe(false);
+    if (!getRes.ok) {
+      expect(getRes.error.type).toBe('ProfileNotFoundError');
+      expect(getRes.error.profileId).toBe('non-existent');
     }
   });
 
-  it('embeds profile text once, calls retrieveCandidates once for 200 items, scores and filters out items below MIN_RECOMMENDATION_SCORE (0.45)', async () => {
+  it('the read path (GetRecommendationsUseCase) makes zero Ollama calls (embedder.calls == 0) and returns lastRefreshedAt and degraded', async () => {
     await profileRepo.save(testProfile);
-    await oppRepo.save(oppLow);
     await oppRepo.save(oppHigh);
-    await searchIndex.indexOpportunity(oppLow);
+    await searchIndex.indexOpportunity(oppHigh);
+
+    searchIndex.forceDegraded = true;
+    await refreshUseCase.execute({ profileId: testProfile.id });
+
+    // Reset embedder and searchIndex counters before calling the read path
+    embedder.calls = 0;
+    searchIndex.retrieveCalls = 0;
+
+    const readResult = await getUseCase.execute({ profileId: testProfile.id });
+
+    expect(embedder.calls).toBe(0);
+    expect(searchIndex.retrieveCalls).toBe(0);
+    expect(readResult.ok).toBe(true);
+    if (readResult.ok) {
+      expect(readResult.value.items).toHaveLength(1);
+      expect(readResult.value[0].opportunityId).toBe('opp-high');
+      expect(readResult.value.lastRefreshedAt).toBeInstanceOf(Date);
+      expect(readResult.value.degraded).toBe(true);
+    }
+  });
+
+  it('refreshing twice keeps the same ids and the feedback, reuses profile_embeddings (0 embed calls on 2nd run), and creates no duplicates', async () => {
+    await profileRepo.save(testProfile);
+    await oppRepo.save(oppHigh);
     await searchIndex.indexOpportunity(oppHigh);
     embedder.calls = 0;
 
-    const result = await useCase.execute({
-      profileId: testProfile.id,
-    });
-
+    const first = await refreshUseCase.execute({ profileId: testProfile.id });
+    if (!first.ok) throw new Error('first refresh failed');
     expect(embedder.calls).toBe(1);
-    expect(searchIndex.retrieveCalls).toBe(1);
-    expect(searchIndex.lastLimit).toBe(CANDIDATE_POOL_SIZE);
-    expect(searchIndex.lastLimit).toBe(200);
-    expect(result.ok).toBe(true);
-    if (result.ok) {
-      // oppLow has score < 0.45 so it is neither persisted nor returned
-      expect(result.value).toHaveLength(1);
-      expect(result.value[0].opportunityId).toBe('opp-high');
-      expect(result.value[0].score).toBeGreaterThanOrEqual(0.45);
-    }
-
-    expect(recRepo.recommendations).toHaveLength(1);
-    expect(recRepo.recommendations[0].opportunityId).toBe('opp-high');
-  });
-
-  it('ranks multiple qualifying candidates (>= MIN_RECOMMENDATION_SCORE) descending by score', async () => {
-    const oppMedium: Opportunity = {
-      ...oppHigh,
-      id: asOpportunityId('opp-medium'),
-      title: 'Soporte de aplicaciones web',
-      categoryCode: 'V1.43231500', // partial category match 0.6 -> combined score >= 0.45
-    };
-    await profileRepo.save(testProfile);
-    await oppRepo.save(oppMedium);
-    await oppRepo.save(oppHigh);
-    await searchIndex.indexOpportunity(oppMedium);
-    await searchIndex.indexOpportunity(oppHigh);
-
-    const result = await useCase.execute({
-      profileId: testProfile.id,
-    });
-
-    expect(result.ok).toBe(true);
-    if (result.ok) {
-      expect(result.value).toHaveLength(2);
-      expect(result.value[0].opportunityId).toBe('opp-high');
-      expect(result.value[1].opportunityId).toBe('opp-medium');
-      expect(result.value[0].score).toBeGreaterThan(result.value[1].score);
-    }
-  });
-
-  it('asks for 200 candidates with only onlyCompetitive and actionable as filters', async () => {
-    await profileRepo.save(testProfile);
-
-    await useCase.execute({ profileId: testProfile.id });
-
+    expect(searchIndex.lastLimit).toBe(REFRESH_CANDIDATE_POOL_SIZE);
     expect(searchIndex.lastFilters).toEqual({
       onlyCompetitive: true,
       actionable: true,
     });
-    expect(searchIndex.lastLimit).toBe(200);
-  });
 
-  it('reuses recommendation id and feedback on repeated calls (no duplicates)', async () => {
-    await profileRepo.save(testProfile);
-    await oppRepo.save(oppHigh);
-    await searchIndex.indexOpportunity(oppHigh);
+    const firstId = first.value.recommendations[0].id;
 
-    recRepo.save = async (rec: Recommendation) => {
-      const idx = recRepo.recommendations.findIndex((r) => r.id === rec.id);
-      if (idx >= 0) recRepo.recommendations[idx] = rec;
-      else recRepo.recommendations.push(rec);
-    };
-
-    const first = await useCase.execute({ profileId: testProfile.id });
-    if (!first.ok) throw new Error('first call failed');
+    // Attach feedback on the persisted recommendation
     recRepo.recommendations[0] = {
       ...recRepo.recommendations[0],
       feedback: { decision: 'Participate', recordedAt: new Date() },
     };
 
-    const second = await useCase.execute({ profileId: testProfile.id });
-    if (!second.ok) throw new Error('second call failed');
+    embedder.calls = 0;
+    const second = await refreshUseCase.execute({ profileId: testProfile.id });
+    if (!second.ok) throw new Error('second refresh failed');
 
+    // Profile query text and model did not change -> reused profile_embeddings!
+    expect(embedder.calls).toBe(0);
     expect(recRepo.recommendations).toHaveLength(1);
-    expect(second.value[0].id).toBe(first.value[0].id);
-    expect(second.value[0].feedback?.decision).toBe('Participate');
+    expect(second.value.recommendations[0].id).toBe(firstId);
+    expect(second.value.recommendations[0].feedback?.decision).toBe('Participate');
+    expect(recRepo.runs).toHaveLength(2);
   });
 
-  it('returns only the top N recommendations when limit is provided', async () => {
+  it('deletes stale recommendations outside the top 50 that have no feedback, while keeping rows with feedback', async () => {
+    await profileRepo.save(testProfile);
+    await oppRepo.save(oppHigh);
+    await searchIndex.indexOpportunity(oppHigh);
+
+    // Seed two stale recommendations: one without feedback, one with feedback
+    recRepo.recommendations.push({
+      id: asRecommendationId('rec-stale-no-fb'),
+      profileId: testProfile.id,
+      opportunityId: asOpportunityId('opp-stale-1'),
+      score: 0.5,
+      explanation: { summary: 'Stale', matchedFactors: [] },
+      feedback: null,
+    });
+    recRepo.recommendations.push({
+      id: asRecommendationId('rec-stale-with-fb'),
+      profileId: testProfile.id,
+      opportunityId: asOpportunityId('opp-stale-2'),
+      score: 0.5,
+      explanation: { summary: 'Stale with feedback', matchedFactors: [] },
+      feedback: { decision: 'Discard', recordedAt: new Date() },
+    });
+
+    await refreshUseCase.execute({ profileId: testProfile.id });
+
+    const remainingOppIds = recRepo.recommendations.map((r) => r.opportunityId);
+    expect(remainingOppIds).toContain('opp-high');
+    expect(remainingOppIds).toContain('opp-stale-2'); // kept because it has feedback
+    expect(remainingOppIds).not.toContain('opp-stale-1'); // deleted because no feedback
+  });
+
+  it('filters out candidates below MIN_RECOMMENDATION_SCORE (0.45) and slices read results by limit', async () => {
     const oppMedium: Opportunity = {
       ...oppHigh,
       id: asOpportunityId('opp-medium'),
       categoryCode: 'V1.43231500',
     };
     await profileRepo.save(testProfile);
+    await oppRepo.save(oppLow);
     await oppRepo.save(oppMedium);
     await oppRepo.save(oppHigh);
+    await searchIndex.indexOpportunity(oppLow);
     await searchIndex.indexOpportunity(oppMedium);
     await searchIndex.indexOpportunity(oppHigh);
 
-    const result = await useCase.execute({ profileId: testProfile.id, limit: 1 });
+    await refreshUseCase.execute({ profileId: testProfile.id });
 
-    expect(result.ok).toBe(true);
-    if (result.ok) {
-      expect(result.value).toHaveLength(1);
-      expect(result.value[0].opportunityId).toBe('opp-high');
+    // oppLow (< 0.45) is not persisted
+    expect(recRepo.recommendations).toHaveLength(2);
+
+    const limited = await getUseCase.execute({ profileId: testProfile.id, limit: 1 });
+    expect(limited.ok).toBe(true);
+    if (limited.ok) {
+      expect(limited.value).toHaveLength(1);
+      expect(limited.value[0].opportunityId).toBe('opp-high');
     }
   });
 });

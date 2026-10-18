@@ -15,6 +15,7 @@ import {
   TEXT_GENERATOR_PORT,
 } from '../modules/recommendation/domain/ports/ai-provider.port';
 import { ANALYSIS_QUEUE_PORT } from '../modules/opportunity/domain/ports/analysis-queue.port';
+import { RECOMMENDATION_REFRESH_QUEUE_PORT } from '../modules/recommendation/domain/ports/recommendation-refresh-queue.port';
 import { NOTIFICATION_PORT } from '../modules/alert/domain/ports/notification.port';
 import { RecommendationRepositoryPort, RECOMMENDATION_REPOSITORY_PORT } from '../modules/recommendation/domain/ports/recommendation.repository.port';
 import { ProfileRepositoryPort, PROFILE_REPOSITORY_PORT } from '../modules/profile/domain/ports/profile.repository.port';
@@ -75,6 +76,11 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
       enqueueAnalysis: jest.fn().mockResolvedValue(undefined),
     };
 
+    const mockRefreshQueue = {
+      enqueueRefresh: jest.fn().mockResolvedValue(undefined),
+      enqueueRefreshForAllProfiles: jest.fn().mockResolvedValue(0),
+    };
+
     const mockNotification = {
       send: jest.fn().mockResolvedValue(undefined),
     };
@@ -92,6 +98,8 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
       .useValue(mockTextGenerator)
       .overrideProvider(ANALYSIS_QUEUE_PORT)
       .useValue(mockQueue)
+      .overrideProvider(RECOMMENDATION_REFRESH_QUEUE_PORT)
+      .useValue(mockRefreshQueue)
       .overrideProvider(NOTIFICATION_PORT)
       .useValue(mockNotification)
       .compile();

@@ -13,6 +13,7 @@ import { PostgresAlertRepository } from '../src/modules/alert/infrastructure/ada
 import { SyncOpportunitiesUseCase } from '../src/modules/opportunity/application/use-cases/sync-opportunities.use-case';
 import { ConfigureProfileUseCase } from '../src/modules/profile/application/use-cases/configure-profile.use-case';
 import { GetRecommendationsUseCase } from '../src/modules/recommendation/application/use-cases/get-recommendations.use-case';
+import { RefreshRecommendationsUseCase } from '../src/modules/recommendation/application/use-cases/refresh-recommendations.use-case';
 import { RegisterFeedbackUseCase } from '../src/modules/recommendation/application/use-cases/register-feedback.use-case';
 import { ReviewFollowUpUseCase } from '../src/modules/alert/application/use-cases/review-follow-up.use-case';
 import { MatchingService } from '../src/modules/recommendation/domain/services/matching.service';
@@ -156,7 +157,7 @@ async function main() {
     console.log('PASO 4: Motor de Recomendacion Explicada (MatchingService)');
     console.log('─────────────────────────────────────────────────────────────────');
     const matchingService = new MatchingService();
-    const getRecommendationsUseCase = new GetRecommendationsUseCase(
+    const refreshRecommendationsUseCase = new RefreshRecommendationsUseCase(
       profileRepo,
       opportunityRepo,
       recommendationRepo,
@@ -164,15 +165,20 @@ async function main() {
       ollamaAdapter,
       pgvectorAdapter,
     );
+    const getRecommendationsUseCase = new GetRecommendationsUseCase(
+      profileRepo,
+      recommendationRepo,
+    );
 
     console.log('Calculando score ponderado (0.35 semantica + 0.35 categoria + 0.20 monto + 0.10 ubicacion)...');
+    await refreshRecommendationsUseCase.execute({ profileId: profile.id });
     const recsResult = await getRecommendationsUseCase.execute({ profileId: profile.id });
 
     if (!recsResult.ok) {
       throw new Error('Fallo la generacion de recomendaciones');
     }
 
-    const recommendations = recsResult.value;
+    const recommendations = recsResult.value.items;
     console.log(`✓ Se generaron ${recommendations.length} recomendaciones rankeadas.\n`);
 
     const topRec = recommendations[0];

@@ -13,6 +13,7 @@ import {
 } from '../../domain/ports/opportunity-source.port';
 import { OpportunityRepositoryPort } from '../../domain/ports/opportunity.repository.port';
 import { AnalysisQueuePort } from '../../domain/ports/analysis-queue.port';
+import { RecommendationRefreshQueuePort } from '../../../recommendation/domain/ports/recommendation-refresh-queue.port';
 import {
   createOpportunity,
   withOpportunityChange,
@@ -28,6 +29,7 @@ export interface SyncOpportunitiesResult {
   skipped: number;
   unknownStatuses: Record<string, number>;
   durationMs: number;
+  refreshTriggered?: boolean;
 }
 
 export interface ISyncOpportunitiesUseCase {
@@ -49,6 +51,7 @@ export class SyncOpportunitiesUseCase implements ISyncOpportunitiesUseCase {
     private readonly repository: OpportunityRepositoryPort,
     private readonly analysisQueue?: AnalysisQueuePort,
     logger?: LoggerService,
+    private readonly refreshQueue?: RecommendationRefreshQueuePort,
   ) {
     this.logger = logger ?? new Logger(SyncOpportunitiesUseCase.name);
   }
@@ -164,6 +167,15 @@ export class SyncOpportunitiesUseCase implements ISyncOpportunitiesUseCase {
       }
     }
 
+    let refreshTriggered = false;
+    if (
+      (counters.created > 0 || counters.updated > 0) &&
+      this.refreshQueue?.enqueueRefreshForAllProfiles
+    ) {
+      await this.refreshQueue.enqueueRefreshForAllProfiles();
+      refreshTriggered = true;
+    }
+
     const durationMs = Date.now() - startMs;
     const summary: SyncOpportunitiesResult = {
       created: counters.created,
@@ -172,6 +184,7 @@ export class SyncOpportunitiesUseCase implements ISyncOpportunitiesUseCase {
       skipped: counters.skipped,
       unknownStatuses,
       durationMs,
+      ...(refreshTriggered ? { refreshTriggered: true } : {}),
     };
 
     this.logger.log(

@@ -1,7 +1,11 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { SyncOpportunitiesUseCase } from '../opportunity/application/use-cases/sync-opportunities.use-case';
 import { ReviewFollowUpUseCase } from '../alert/application/use-cases/review-follow-up.use-case';
+import {
+  RECOMMENDATION_REFRESH_QUEUE_PORT,
+  RecommendationRefreshQueuePort,
+} from '../recommendation/domain/ports/recommendation-refresh-queue.port';
 
 export const SYNC_OPPORTUNITIES_CRON =
   process.env.SYNC_OPPORTUNITIES_CRON || CronExpression.EVERY_4_HOURS;
@@ -23,6 +27,9 @@ export class SchedulerAdapter {
   constructor(
     private readonly syncOpportunitiesUseCase: SyncOpportunitiesUseCase,
     private readonly reviewFollowUpUseCase: ReviewFollowUpUseCase,
+    @Optional()
+    @Inject(RECOMMENDATION_REFRESH_QUEUE_PORT)
+    private readonly refreshQueue?: RecommendationRefreshQueuePort,
   ) {}
 
   /**
@@ -42,6 +49,13 @@ export class SchedulerAdapter {
         this.logger.log(
           `Scheduled sync completed: ${result.value.created} created, ${result.value.updated} updated`,
         );
+        if (
+          (result.value.created > 0 || result.value.updated > 0) &&
+          !result.value.refreshTriggered &&
+          this.refreshQueue?.enqueueRefreshForAllProfiles
+        ) {
+          await this.refreshQueue.enqueueRefreshForAllProfiles();
+        }
       } else {
         this.logger.warn(
           `Scheduled sync failed: source unavailable (${result.error.sourceName})`,

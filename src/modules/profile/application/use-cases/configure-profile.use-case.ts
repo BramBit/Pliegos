@@ -4,6 +4,7 @@ import { ValidationError } from '../../../shared/domain/errors';
 import { ProfileId, asProfileId } from '../../../shared/domain/typed-id';
 import { ProfileRepositoryPort } from '../../domain/ports/profile.repository.port';
 import { Profile, createProfile } from '../../domain/entities/profile.entity';
+import { RecommendationRefreshQueuePort } from '../../../recommendation/domain/ports/recommendation-refresh-queue.port';
 
 export interface IConfigureProfileUseCase {
   execute(input: {
@@ -13,7 +14,10 @@ export interface IConfigureProfileUseCase {
 }
 
 export class ConfigureProfileUseCase implements IConfigureProfileUseCase {
-  constructor(private readonly profileRepository: ProfileRepositoryPort) {}
+  constructor(
+    private readonly profileRepository: ProfileRepositoryPort,
+    private readonly refreshQueue?: RecommendationRefreshQueuePort,
+  ) {}
 
   async execute(input: {
     profileId: ProfileId | null;
@@ -34,6 +38,9 @@ export class ConfigureProfileUseCase implements IConfigureProfileUseCase {
     }
 
     await this.profileRepository.save(profileResult.value);
+    if (this.refreshQueue) {
+      await this.refreshQueue.enqueueRefresh(profileResult.value.id);
+    }
     return ok(profileResult.value);
   }
 }
