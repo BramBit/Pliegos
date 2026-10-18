@@ -9,7 +9,7 @@
 ### Execution Order:
 ###   1. Docs: GET /reference and GET /api-json
 ###   2. Sync: POST /opportunities/sync
-###   3. Search: POST /opportunities/search (hybrid, semantic-only, structured-only)
+###   3. Opportunities: GET /opportunities (paginated list, hybrid & structured filters) and GET /opportunities/:id (detail with lazy summary)
 ###   4. Profiles: POST /profiles (configureProfileTech, configureProfileCivilInfra)
 ###   5. Recommendations: GET /recommendations/:profileId
 ###   6. Feedback: POST /recommendations/:id/feedback (Participate & Discard)
@@ -20,6 +20,7 @@
 ### Variables for request chaining
 @baseUrl = http://localhost:3000
 @profileId = d9b2d63d-a232-4d2c-8cb4-e5e6b72a44f1
+@opportunityId = 9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d
 @recommendationId = 3bfc62c2-5918-426b-a908-660eb2e5a662
 
 ### ==============================================================================
@@ -63,53 +64,35 @@ Content-Type: application/json
 {}
 
 ### ==============================================================================
-### 3. Opportunities Search (Hybrid, Semantic & Structured)
+### 3. Opportunities List & Detail (Paginated, Hybrid & Structured)
 ### ==============================================================================
 
 # Validates hybrid search combining natural language semantic query with structured
-# filters (UNSPSC prefix, department, and budget range) using pgvector cosine distance.
-# @name searchOpportunitiesHybrid
-POST {{baseUrl}}/opportunities/search
-Content-Type: application/json
-
-{
-  "query": "Desarrollo de software a la medida, plataformas web e integración de sistemas",
-  "categoryCodePrefix": "V1.8011",
-  "department": "Cundinamarca",
-  "minAmount": 50000000,
-  "maxAmount": 500000000,
-  "limit": 10
-}
-
+# filters (UNSPSC prefix, department, and budget range) using pgvector and RRF.
+# @name listOpportunitiesHybrid
+GET {{baseUrl}}/opportunities?q=Desarrollo+de+software+a+la+medida&categoryPrefix=V1.8011&department=Cundinamarca&minAmount=50000000&maxAmount=500000000&pageSize=10
+Accept: application/json
 
 ###
 
-# Validates pure semantic search using AI vector embeddings (nomic-embed-text 768 dims)
-# to match contractor intent against opportunity summaries and procedural descriptions.
-# @name searchOpportunitiesSemanticOnly
-POST {{baseUrl}}/opportunities/search
-Content-Type: application/json
-
-{
-  "query": "Mantenimiento preventivo y correctivo de infraestructura tecnológica y ciberseguridad",
-  "limit": 5
-}
+# Validates free-text semantic query with relevance sort and custom pagination
+# @name listOpportunitiesSemantic
+GET {{baseUrl}}/opportunities?q=Mantenimiento+preventivo+y+correctivo&pageSize=5&sort=relevance&order=desc
+Accept: application/json
 
 ###
 
-# Validates structured relational filtering without vector embedding generation,
-# filtering strictly by UNSPSC segment, geographic execution area, and budget thresholds.
-# @name searchOpportunitiesStructuredOnly
-POST {{baseUrl}}/opportunities/search
-Content-Type: application/json
+# Validates relational filtered query with COUNT(*) OVER() pagination and sort by published date
+# @name listOpportunitiesStructuredOnly
+GET {{baseUrl}}/opportunities?categoryPrefix=V1.8111&department=Antioquia&minAmount=20000000&maxAmount=300000000&page=1&pageSize=10&sort=publishedAt&order=desc
+Accept: application/json
 
-{
-  "categoryCodePrefix": "V1.8111",
-  "department": "Antioquia",
-  "minAmount": 20000000,
-  "maxAmount": 300000000,
-  "limit": 10
-}
+###
+
+# Validates opportunity detail retrieval with lazy LLM summary enqueuing
+# @name getOpportunityDetail
+GET {{baseUrl}}/opportunities/{{opportunityId}}
+Accept: application/json
 
 ### ==============================================================================
 ### 4. Contractor Profiles Configuration

@@ -1,6 +1,39 @@
 {
   "openapi": "3.0.0",
   "paths": {
+    "/opportunities": {
+      "get": {
+        "description": "Retorna una página de oportunidades (OpportunitySummary). Soporta búsqueda híbrida semántica y por texto completo cuando se provee el parámetro `q` (ordenado por relevancia por defecto), o consulta filtrada directa sobre PostgreSQL con paginación real `COUNT(*) OVER()`.",
+        "operationId": "OpportunityController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Página de oportunidades que cumplen los criterios de búsqueda y filtrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpportunitySummaryPageDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Parámetros de consulta o paginación inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelopeDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Listado paginado de oportunidades con búsqueda y filtros",
+        "tags": [
+          "Opportunities"
+        ]
+      }
+    },
     "/opportunities/{id}": {
       "get": {
         "description": "Retorna el detalle de una oportunidad de contratación. Si aún no cuenta con resumen analítico, encola el trabajo de generación bajo demanda y responde con summaryStatus = \"pending\".",
@@ -93,52 +126,6 @@
           }
         },
         "summary": "Sincronizar oportunidades desde SECOP II",
-        "tags": [
-          "Opportunities"
-        ]
-      }
-    },
-    "/opportunities/search": {
-      "post": {
-        "description": "Realiza una búsqueda combinada en el índice de pgvector: si se especifica query en lenguaje natural, ejecuta ordenamiento por distancia coseno; además aplica filtros por categoría UNSPSC, departamento y rango de cuantía.",
-        "operationId": "OpportunityController_search",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SearchOpportunitiesDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Lista de oportunidades coincidentes con la consulta y filtros",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/OpportunitySummary"
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Filtros de búsqueda inválidos",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelopeDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Búsqueda estructurada y semántica de oportunidades",
         "tags": [
           "Opportunities"
         ]
@@ -433,6 +420,214 @@
           "originalUrl"
         ]
       },
+      "OpportunitySummary": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d"
+          },
+          "title": {
+            "type": "string",
+            "example": "Servicio de desarrollo de software a la medida"
+          },
+          "description": {
+            "type": "string",
+            "example": "Desarrollo e implementación de plataforma web en arquitectura hexagonal"
+          },
+          "contractingEntity": {
+            "$ref": "#/components/schemas/ContractingEntityDto"
+          },
+          "entityName": {
+            "type": "string",
+            "example": "Ministerio de Tecnologías de la Información y las Comunicaciones"
+          },
+          "location": {
+            "$ref": "#/components/schemas/LocationDto"
+          },
+          "city": {
+            "type": "string",
+            "nullable": true,
+            "example": "Bogotá"
+          },
+          "department": {
+            "type": "string",
+            "nullable": true,
+            "example": "Bogotá D.C."
+          },
+          "amount": {
+            "type": "number",
+            "nullable": true,
+            "description": "Amount in COP, or null when the opportunity does not declare a known amount",
+            "example": 150000000
+          },
+          "amountKnown": {
+            "type": "boolean",
+            "example": true
+          },
+          "currency": {
+            "type": "string",
+            "example": "COP"
+          },
+          "contractType": {
+            "type": "string",
+            "example": "Prestación de servicios"
+          },
+          "procurementModality": {
+            "type": "string",
+            "example": "Licitación pública"
+          },
+          "isCompetitive": {
+            "type": "boolean",
+            "example": true
+          },
+          "categoryCode": {
+            "type": "string",
+            "nullable": true,
+            "example": "80111600"
+          },
+          "publishedAt": {
+            "type": "string",
+            "example": "2026-10-01T08:00:00.000Z"
+          },
+          "lastPublishedAt": {
+            "type": "string",
+            "example": "2026-10-10T12:00:00.000Z"
+          },
+          "closingDate": {
+            "type": "string",
+            "nullable": true,
+            "example": "2026-10-30T17:00:00.000Z"
+          },
+          "daysToClose": {
+            "type": "number",
+            "nullable": true,
+            "description": "Whole days remaining until closingDate, or null when closingDate is null",
+            "example": 12
+          },
+          "isOpenForSubmission": {
+            "type": "boolean",
+            "example": true
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "Draft",
+              "Published",
+              "Amended",
+              "Closed",
+              "Awarded",
+              "Cancelled",
+              "Unknown"
+            ],
+            "example": "Published"
+          },
+          "source": {
+            "$ref": "#/components/schemas/SourceReferenceDto"
+          },
+          "sourceUrl": {
+            "type": "string",
+            "example": "https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=CO1.NTC.1"
+          },
+          "summaryStatus": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "ready",
+              "fallback",
+              "unavailable"
+            ],
+            "example": "ready"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "description",
+          "contractingEntity",
+          "entityName",
+          "location",
+          "city",
+          "department",
+          "amount",
+          "amountKnown",
+          "currency",
+          "contractType",
+          "procurementModality",
+          "isCompetitive",
+          "categoryCode",
+          "publishedAt",
+          "lastPublishedAt",
+          "closingDate",
+          "daysToClose",
+          "isOpenForSubmission",
+          "status",
+          "source",
+          "sourceUrl",
+          "summaryStatus"
+        ]
+      },
+      "OpportunitySummaryPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OpportunitySummary"
+            }
+          },
+          "total": {
+            "type": "number",
+            "example": 42
+          },
+          "page": {
+            "type": "number",
+            "example": 1
+          },
+          "pageSize": {
+            "type": "number",
+            "example": 20
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "pageSize"
+        ]
+      },
+      "ErrorEnvelopeDto": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "example": 400
+          },
+          "error": {
+            "type": "string",
+            "example": "ValidationError"
+          },
+          "message": {
+            "type": "string",
+            "example": "Validation failed"
+          },
+          "details": {
+            "type": "object",
+            "description": "Optional structured details about the error",
+            "nullable": true
+          },
+          "requestId": {
+            "type": "string",
+            "example": "c42d8e41-29a4-4f6a-9870-8d65e32b5011"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message",
+          "requestId"
+        ]
+      },
       "RequirementDto": {
         "type": "object",
         "properties": {
@@ -694,38 +889,6 @@
           "changeHistory"
         ]
       },
-      "ErrorEnvelopeDto": {
-        "type": "object",
-        "properties": {
-          "statusCode": {
-            "type": "number",
-            "example": 400
-          },
-          "error": {
-            "type": "string",
-            "example": "ValidationError"
-          },
-          "message": {
-            "type": "string",
-            "example": "Validation failed"
-          },
-          "details": {
-            "type": "object",
-            "description": "Optional structured details about the error",
-            "nullable": true
-          },
-          "requestId": {
-            "type": "string",
-            "example": "c42d8e41-29a4-4f6a-9870-8d65e32b5011"
-          }
-        },
-        "required": [
-          "statusCode",
-          "error",
-          "message",
-          "requestId"
-        ]
-      },
       "SyncOpportunitiesDto": {
         "type": "object",
         "properties": {
@@ -783,189 +946,6 @@
           "skipped",
           "unknownStatuses",
           "durationMs"
-        ]
-      },
-      "SearchOpportunitiesDto": {
-        "type": "object",
-        "properties": {
-          "query": {
-            "type": "string",
-            "description": "Consulta en lenguaje natural para búsqueda semántica vectorial",
-            "example": "Desarrollo de software y mantenimiento de plataformas web"
-          },
-          "categoryCodePrefix": {
-            "type": "string",
-            "description": "Prefijo de código UNSPSC para filtrar categorías (ej. V1.8011)",
-            "example": "V1.8011"
-          },
-          "department": {
-            "type": "string",
-            "description": "Departamento de ejecución de la contratación",
-            "example": "Antioquia"
-          },
-          "minAmount": {
-            "type": "number",
-            "description": "Monto mínimo en COP para filtrar oportunidades",
-            "example": 50000000
-          },
-          "maxAmount": {
-            "type": "number",
-            "description": "Monto máximo en COP para filtrar oportunidades",
-            "example": 500000000
-          },
-          "limit": {
-            "type": "number",
-            "description": "Límite máximo de resultados a retornar (1-100, default 20)",
-            "example": 20,
-            "default": 20
-          }
-        }
-      },
-      "OpportunitySummary": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "example": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d"
-          },
-          "title": {
-            "type": "string",
-            "example": "Servicio de desarrollo de software a la medida"
-          },
-          "description": {
-            "type": "string",
-            "example": "Desarrollo e implementación de plataforma web en arquitectura hexagonal"
-          },
-          "contractingEntity": {
-            "$ref": "#/components/schemas/ContractingEntityDto"
-          },
-          "entityName": {
-            "type": "string",
-            "example": "Ministerio de Tecnologías de la Información y las Comunicaciones"
-          },
-          "location": {
-            "$ref": "#/components/schemas/LocationDto"
-          },
-          "city": {
-            "type": "string",
-            "nullable": true,
-            "example": "Bogotá"
-          },
-          "department": {
-            "type": "string",
-            "nullable": true,
-            "example": "Bogotá D.C."
-          },
-          "amount": {
-            "type": "number",
-            "nullable": true,
-            "description": "Amount in COP, or null when the opportunity does not declare a known amount",
-            "example": 150000000
-          },
-          "amountKnown": {
-            "type": "boolean",
-            "example": true
-          },
-          "currency": {
-            "type": "string",
-            "example": "COP"
-          },
-          "contractType": {
-            "type": "string",
-            "example": "Prestación de servicios"
-          },
-          "procurementModality": {
-            "type": "string",
-            "example": "Licitación pública"
-          },
-          "isCompetitive": {
-            "type": "boolean",
-            "example": true
-          },
-          "categoryCode": {
-            "type": "string",
-            "nullable": true,
-            "example": "80111600"
-          },
-          "publishedAt": {
-            "type": "string",
-            "example": "2026-10-01T08:00:00.000Z"
-          },
-          "lastPublishedAt": {
-            "type": "string",
-            "example": "2026-10-10T12:00:00.000Z"
-          },
-          "closingDate": {
-            "type": "string",
-            "nullable": true,
-            "example": "2026-10-30T17:00:00.000Z"
-          },
-          "daysToClose": {
-            "type": "number",
-            "nullable": true,
-            "description": "Whole days remaining until closingDate, or null when closingDate is null",
-            "example": 12
-          },
-          "isOpenForSubmission": {
-            "type": "boolean",
-            "example": true
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "Draft",
-              "Published",
-              "Amended",
-              "Closed",
-              "Awarded",
-              "Cancelled",
-              "Unknown"
-            ],
-            "example": "Published"
-          },
-          "source": {
-            "$ref": "#/components/schemas/SourceReferenceDto"
-          },
-          "sourceUrl": {
-            "type": "string",
-            "example": "https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=CO1.NTC.1"
-          },
-          "summaryStatus": {
-            "type": "string",
-            "enum": [
-              "pending",
-              "ready",
-              "fallback",
-              "unavailable"
-            ],
-            "example": "ready"
-          }
-        },
-        "required": [
-          "id",
-          "title",
-          "description",
-          "contractingEntity",
-          "entityName",
-          "location",
-          "city",
-          "department",
-          "amount",
-          "amountKnown",
-          "currency",
-          "contractType",
-          "procurementModality",
-          "isCompetitive",
-          "categoryCode",
-          "publishedAt",
-          "lastPublishedAt",
-          "closingDate",
-          "daysToClose",
-          "isOpenForSubmission",
-          "status",
-          "source",
-          "sourceUrl",
-          "summaryStatus"
         ]
       },
       "CapabilityDto": {
@@ -1352,35 +1332,6 @@
             "type": "array",
             "items": {
               "type": "array"
-            }
-          },
-          "total": {
-            "type": "number",
-            "example": 42
-          },
-          "page": {
-            "type": "number",
-            "example": 1
-          },
-          "pageSize": {
-            "type": "number",
-            "example": 20
-          }
-        },
-        "required": [
-          "items",
-          "total",
-          "page",
-          "pageSize"
-        ]
-      },
-      "OpportunitySummaryPageDto": {
-        "type": "object",
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/OpportunitySummary"
             }
           },
           "total": {

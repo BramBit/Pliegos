@@ -326,8 +326,16 @@ export class PgVectorAdapter implements SearchIndexPort {
         `o.is_competitive = TRUE`,
         `(o.closing_date IS NULL OR o.closing_date >= NOW())`,
       );
-    } else if (filters.onlyCompetitive) {
-      clauses.push(`o.is_competitive = TRUE`);
+    } else {
+      if (filters.onlyCompetitive) {
+        clauses.push(`o.is_competitive = TRUE`);
+      }
+      if (filters.onlyOpen) {
+        clauses.push(
+          `o.status IN ('Published', 'Amended')`,
+          `(o.closing_date IS NULL OR o.closing_date >= NOW())`,
+        );
+      }
     }
 
     if (filters.department && filters.department.trim() !== '') {
@@ -336,13 +344,37 @@ export class PgVectorAdapter implements SearchIndexPort {
     }
 
     if (filters.categoryCode && filters.categoryCode.trim() !== '') {
-      params.push(`${filters.categoryCode.trim()}%`);
-      clauses.push(`o.category_code LIKE $${params.length}`);
+      const rawPrefix = filters.categoryCode.trim();
+      const strippedPrefix = rawPrefix.replace(/^v1\./i, '');
+      params.push(`${rawPrefix}%`, `${strippedPrefix}%`);
+      clauses.push(
+        `(o.category_code LIKE $${params.length - 1} OR o.category_code LIKE $${params.length})`,
+      );
     }
 
     if (filters.contractType && filters.contractType.trim() !== '') {
       params.push(filters.contractType.trim());
       clauses.push(`o.contract_type = $${params.length}`);
+    }
+
+    if (filters.modality && filters.modality.trim() !== '') {
+      params.push(filters.modality.trim());
+      clauses.push(`LOWER(o.procurement_modality) = LOWER($${params.length})`);
+    }
+
+    if (filters.status && filters.status.trim() !== '') {
+      params.push(filters.status.trim());
+      clauses.push(`o.status = $${params.length}`);
+    }
+
+    if (filters.closingAfter instanceof Date && !isNaN(filters.closingAfter.getTime())) {
+      params.push(filters.closingAfter);
+      clauses.push(`o.closing_date >= $${params.length}`);
+    }
+
+    if (filters.closingBefore instanceof Date && !isNaN(filters.closingBefore.getTime())) {
+      params.push(filters.closingBefore);
+      clauses.push(`o.closing_date <= $${params.length}`);
     }
 
     if (typeof filters.amountMin === 'number' && Number.isFinite(filters.amountMin)) {

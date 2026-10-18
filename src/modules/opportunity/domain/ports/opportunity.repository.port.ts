@@ -1,6 +1,9 @@
 import { Opportunity } from '../entities/opportunity.entity';
 import { OpportunityId } from '../../../shared/domain/typed-id';
-import { OpportunityFilters } from '../value-objects/opportunity-filters';
+import {
+  OpportunityFilters,
+  PagedOpportunitiesResult,
+} from '../value-objects/opportunity-filters';
 import { Analysis } from '../value-objects/opportunity.value-objects';
 
 export interface SyncState {
@@ -18,6 +21,7 @@ export interface OpportunityRepositoryPort {
   findByExternalId(externalId: string): Promise<Opportunity | null>;
   findByExternalIds(externalIds: string[]): Promise<Opportunity[]>;
   findByFilters(filters: OpportunityFilters): Promise<Opportunity[]>;
+  findPaged?(filters: OpportunityFilters): Promise<PagedOpportunitiesResult>;
   getSyncState?(source: string): Promise<SyncState | null>;
   saveSyncState?(
     source: string,

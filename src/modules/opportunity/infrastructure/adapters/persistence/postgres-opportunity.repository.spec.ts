@@ -247,4 +247,89 @@ describe('PostgresOpportunityRepository (Real Test Database)', () => {
     expect(filteredByAmount).toHaveLength(1);
     expect(filteredByAmount[0].id).toBe('opp-2');
   });
+
+  it('supports findPaged with COUNT(*) OVER(), pagination and sorting', async () => {
+    const oppA = createSampleOpportunity({
+      id: asOpportunityId('opp-paged-1'),
+      source: {
+        sourceName: 'SECOP',
+        externalId: 'EXT-P-1',
+        humanReference: 'REF-P-1',
+        originalUrl: 'https://secop.gov.co/p1',
+      },
+      publishedAt: new Date('2026-03-01T10:00:00.000Z'),
+      closingDate: new Date('2026-04-01T17:00:00.000Z'),
+      amount: { amount: 100_000_000, currency: 'COP' },
+      isCompetitive: true,
+      status: 'Published',
+      procurementModality: 'Licitación pública',
+    });
+
+    const oppB = createSampleOpportunity({
+      id: asOpportunityId('opp-paged-2'),
+      source: {
+        sourceName: 'SECOP',
+        externalId: 'EXT-P-2',
+        humanReference: 'REF-P-2',
+        originalUrl: 'https://secop.gov.co/p2',
+      },
+      publishedAt: new Date('2026-03-05T10:00:00.000Z'),
+      closingDate: new Date('2026-04-10T17:00:00.000Z'),
+      amount: { amount: 300_000_000, currency: 'COP' },
+      isCompetitive: true,
+      status: 'Published',
+      procurementModality: 'Selección abreviada',
+    });
+
+    const oppC = createSampleOpportunity({
+      id: asOpportunityId('opp-paged-3'),
+      source: {
+        sourceName: 'SECOP',
+        externalId: 'EXT-P-3',
+        humanReference: 'REF-P-3',
+        originalUrl: 'https://secop.gov.co/p3',
+      },
+      publishedAt: new Date('2026-03-10T10:00:00.000Z'),
+      closingDate: new Date('2026-03-15T17:00:00.000Z'),
+      amount: { amount: 50_000_000, currency: 'COP' },
+      isCompetitive: false,
+      status: 'Closed',
+      procurementModality: 'Contratación directa',
+    });
+
+    await repo.save(oppA);
+    await repo.save(oppB);
+    await repo.save(oppC);
+
+    // Test pagination
+    const page1 = await repo.findPaged({ page: 1, pageSize: 2, sort: 'publishedAt', order: 'asc' });
+    expect(page1.total).toBe(3);
+    expect(page1.page).toBe(1);
+    expect(page1.pageSize).toBe(2);
+    expect(page1.items).toHaveLength(2);
+    expect(page1.items[0].id).toBe('opp-paged-1');
+    expect(page1.items[1].id).toBe('opp-paged-2');
+
+    const page2 = await repo.findPaged({ page: 2, pageSize: 2, sort: 'publishedAt', order: 'asc' });
+    expect(page2.total).toBe(3);
+    expect(page2.page).toBe(2);
+    expect(page2.items).toHaveLength(1);
+    expect(page2.items[0].id).toBe('opp-paged-3');
+
+    // Test sort by amount desc
+    const sortedAmount = await repo.findPaged({ sort: 'amount', order: 'desc', pageSize: 10 });
+    expect(sortedAmount.items[0].id).toBe('opp-paged-2');
+    expect(sortedAmount.items[1].id).toBe('opp-paged-1');
+    expect(sortedAmount.items[2].id).toBe('opp-paged-3');
+
+    // Test filter onlyCompetitive
+    const competitiveOnly = await repo.findPaged({ onlyCompetitive: true });
+    expect(competitiveOnly.total).toBe(2);
+    expect(competitiveOnly.items.every((it) => it.isCompetitive)).toBe(true);
+
+    // Test filter modality
+    const modalityFiltered = await repo.findPaged({ modality: 'licitación pública' });
+    expect(modalityFiltered.total).toBe(1);
+    expect(modalityFiltered.items[0].id).toBe('opp-paged-1');
+  });
 });

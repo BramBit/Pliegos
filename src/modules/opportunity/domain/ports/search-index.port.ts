@@ -8,12 +8,19 @@ export interface CandidateRetrievalQuery {
   readonly mode?: 'profile' | 'user';
 }
 
+import { OpportunityStatus } from '../value-objects/opportunity.value-objects';
+
 export interface CandidateRetrievalFilters {
   readonly onlyCompetitive?: boolean;
+  readonly onlyOpen?: boolean;
   readonly actionable?: boolean;
   readonly department?: string;
   readonly categoryCode?: string;
   readonly contractType?: string;
+  readonly modality?: string;
+  readonly status?: OpportunityStatus;
+  readonly closingAfter?: Date;
+  readonly closingBefore?: Date;
   readonly amountMin?: number;
   readonly amountMax?: number;
 }

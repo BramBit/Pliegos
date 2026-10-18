@@ -4,6 +4,7 @@ import {
   Post,
   Param,
   Body,
+  Query,
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
@@ -18,7 +19,7 @@ import { DomainErrorException } from '../../../shared/infrastructure/http/global
 import {
   ErrorEnvelopeDto,
   OpportunityDetail,
-  OpportunitySummary,
+  OpportunitySummaryPageDto,
   SyncOpportunitiesResponseDto,
   toOpportunityDetailDto,
   toOpportunitySummaryDto,
@@ -28,8 +29,9 @@ import {
   syncOpportunitiesSchema,
 } from './dtos/sync-opportunities.dto';
 import {
-  SearchOpportunitiesDto,
-  searchOpportunitiesSchema,
+  ListOpportunitiesQueryDto,
+  ListOpportunitiesQueryInput,
+  listOpportunitiesQuerySchema,
 } from './dtos/search-opportunities.dto';
 
 @ApiTags('Opportunities')
@@ -40,6 +42,58 @@ export class OpportunityController {
     private readonly searchOpportunitiesUseCase: SearchOpportunitiesUseCase,
     private readonly getOpportunityByIdUseCase?: GetOpportunityByIdUseCase,
   ) {}
+
+  @Get()
+  @ApiOperation({
+    summary: 'Listado paginado de oportunidades con búsqueda y filtros',
+    description:
+      'Retorna una página de oportunidades (OpportunitySummary). Soporta búsqueda híbrida semántica y por texto completo cuando se provee el parámetro `q` (ordenado por relevancia por defecto), o consulta filtrada directa sobre PostgreSQL con paginación real `COUNT(*) OVER()`.',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Página de oportunidades que cumplen los criterios de búsqueda y filtrado',
+    type: OpportunitySummaryPageDto,
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Parámetros de consulta o paginación inválidos',
+    type: ErrorEnvelopeDto,
+  })
+  async list(
+    @Query(new ZodValidationPipe(listOpportunitiesQuerySchema))
+    query: ListOpportunitiesQueryInput,
+  ): Promise<OpportunitySummaryPageDto> {
+    const result = await this.searchOpportunitiesUseCase.executePaged({
+      q: query.q,
+      filters: {
+        categoryCode: query.categoryPrefix,
+        department: query.department,
+        amountMin: query.minAmount,
+        amountMax: query.maxAmount,
+        status: query.status,
+        modality: query.modality,
+        closingAfter: query.closingAfter,
+        closingBefore: query.closingBefore,
+        onlyCompetitive: query.onlyCompetitive,
+        onlyOpen: query.onlyOpen,
+        sort: query.sort,
+        order: query.order,
+        page: query.page,
+        pageSize: query.pageSize,
+      },
+    });
+
+    if (!result.ok) {
+      throw new DomainErrorException(result.error);
+    }
+
+    return {
+      items: result.value.items.map((opp) => toOpportunitySummaryDto(opp)),
+      total: result.value.total,
+      page: result.value.page,
+      pageSize: result.value.pageSize,
+    };
+  }
 
   @Get(':id')
   @ApiOperation({
@@ -115,42 +169,5 @@ export class OpportunityController {
     }
 
     return result.value;
-  }
-
-  @Post('search')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({
-    summary: 'Búsqueda estructurada y semántica de oportunidades',
-    description:
-      'Realiza una búsqueda combinada en el índice de pgvector: si se especifica query en lenguaje natural, ejecuta ordenamiento por distancia coseno; además aplica filtros por categoría UNSPSC, departamento y rango de cuantía.',
-  })
-  @ApiResponse({
-    status: HttpStatus.OK,
-    description: 'Lista de oportunidades coincidentes con la consulta y filtros',
-    type: [OpportunitySummary],
-  })
-  @ApiResponse({
-    status: HttpStatus.BAD_REQUEST,
-    description: 'Filtros de búsqueda inválidos',
-    type: ErrorEnvelopeDto,
-  })
-  async search(
-    @Body(new ZodValidationPipe(searchOpportunitiesSchema))
-    body: SearchOpportunitiesDto,
-  ): Promise<OpportunitySummary[]> {
-    const result = await this.searchOpportunitiesUseCase.execute({
-      query: body.query,
-      filters: {
-        categoryCode: body.categoryCodePrefix,
-        department: body.department,
-        amountMin: body.minAmount,
-        amountMax: body.maxAmount,
-      },
-    });
-
-    if (result.ok) {
-      return result.value.map((opp) => toOpportunitySummaryDto(opp));
-    }
-    return [];
   }
 }

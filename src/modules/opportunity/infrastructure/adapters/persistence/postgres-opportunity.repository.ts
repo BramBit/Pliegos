@@ -6,7 +6,10 @@ import {
 } from '../../../domain/ports/opportunity.repository.port';
 import { Opportunity } from '../../../domain/entities/opportunity.entity';
 import { OpportunityId, asOpportunityId } from '../../../../shared/domain/typed-id';
-import { OpportunityFilters } from '../../../domain/value-objects/opportunity-filters';
+import {
+  OpportunityFilters,
+  PagedOpportunitiesResult,
+} from '../../../domain/value-objects/opportunity-filters';
 import { Analysis, OpportunityStatus } from '../../../domain/value-objects/opportunity.value-objects';
 
 export class OpportunityLockBusyError extends Error {
@@ -233,15 +236,16 @@ export class PostgresOpportunityRepository implements OpportunityRepositoryPort 
     );
   }
 
-  async findByFilters(filters: OpportunityFilters): Promise<Opportunity[]> {
+  private buildWhereClauses(filters: OpportunityFilters, params: unknown[]): string[] {
     const where: string[] = [];
-    const params: unknown[] = [];
 
     if (filters.categoryCode && filters.categoryCode.trim() !== '') {
       const rawPrefix = filters.categoryCode.trim();
       const strippedPrefix = rawPrefix.replace(/^v1\./i, '');
       params.push(`${rawPrefix}%`, `${strippedPrefix}%`);
-      where.push(`(category_code LIKE $${params.length - 1} OR category_code LIKE $${params.length})`);
+      where.push(
+        `(category_code LIKE $${params.length - 1} OR category_code LIKE $${params.length})`,
+      );
     }
 
     if (filters.department && filters.department.trim() !== '') {
@@ -252,6 +256,26 @@ export class PostgresOpportunityRepository implements OpportunityRepositoryPort 
     if (filters.contractType && filters.contractType.trim() !== '') {
       params.push(filters.contractType.trim());
       where.push(`contract_type = $${params.length}`);
+    }
+
+    if (filters.modality && filters.modality.trim() !== '') {
+      params.push(filters.modality.trim());
+      where.push(`LOWER(procurement_modality) = LOWER($${params.length})`);
+    }
+
+    if (filters.status && filters.status.trim() !== '') {
+      params.push(filters.status.trim());
+      where.push(`status = $${params.length}`);
+    }
+
+    if (filters.closingAfter instanceof Date && !isNaN(filters.closingAfter.getTime())) {
+      params.push(filters.closingAfter);
+      where.push(`closing_date >= $${params.length}`);
+    }
+
+    if (filters.closingBefore instanceof Date && !isNaN(filters.closingBefore.getTime())) {
+      params.push(filters.closingBefore);
+      where.push(`closing_date <= $${params.length}`);
     }
 
     if (typeof filters.amountMin === 'number' && Number.isFinite(filters.amountMin)) {
@@ -267,15 +291,86 @@ export class PostgresOpportunityRepository implements OpportunityRepositoryPort 
     if (filters.actionableOnly) {
       where.push(`status IN ('Published', 'Amended')`);
       where.push('(closing_date IS NULL OR closing_date >= NOW())');
+    } else {
+      if (filters.onlyCompetitive) {
+        where.push(`is_competitive = TRUE`);
+      }
+      if (filters.onlyOpen) {
+        where.push(`status IN ('Published', 'Amended')`);
+        where.push('(closing_date IS NULL OR closing_date >= NOW())');
+      }
     }
 
-    const limit = Math.min(Math.max(Math.trunc(filters.limit ?? 100), 1), 1000);
+    return where;
+  }
+
+  private buildOrderBySql(filters: OpportunityFilters): string {
+    const dir = filters.order === 'asc' ? 'ASC' : 'DESC';
+    switch (filters.sort) {
+      case 'closingDate':
+        return `closing_date ${dir} NULLS LAST, id ASC`;
+      case 'amount':
+        return `amount ${dir}, id ASC`;
+      case 'publishedAt':
+      default:
+        return `published_at ${dir}, id ASC`;
+    }
+  }
+
+  async findByFilters(filters: OpportunityFilters): Promise<Opportunity[]> {
+    const params: unknown[] = [];
+    const where = this.buildWhereClauses(filters, params);
+    const orderBy = this.buildOrderBySql(filters);
+    const limit = Math.min(Math.max(Math.trunc(filters.pageSize ?? filters.limit ?? 100), 1), 1000);
 
     const whereSql = where.length > 0 ? `WHERE ${where.join(' AND ')}` : '';
-    const query = `SELECT * FROM opportunities ${whereSql} ORDER BY published_at DESC LIMIT ${limit};`;
+    const query = `SELECT * FROM opportunities ${whereSql} ORDER BY ${orderBy} LIMIT ${limit};`;
 
     const res: QueryResult<OpportunityRow> = await this.pool.query(query, params);
     return res.rows.map((row) => this.mapRowToEntity(row));
+  }
+
+  async findPaged(filters: OpportunityFilters): Promise<PagedOpportunitiesResult> {
+    const page = Math.max(1, Math.trunc(filters.page ?? 1));
+    const pageSize = Math.min(Math.max(1, Math.trunc(filters.pageSize ?? filters.limit ?? 20)), 50);
+    const offset = (page - 1) * pageSize;
+
+    const params: unknown[] = [];
+    const where = this.buildWhereClauses(filters, params);
+    const whereSql = where.length > 0 ? `WHERE ${where.join(' AND ')}` : '';
+    const orderBy = this.buildOrderBySql(filters);
+
+    params.push(pageSize, offset);
+    const limitIdx = params.length - 1;
+    const offsetIdx = params.length;
+
+    const query = `
+      SELECT *, COUNT(*) OVER() AS total_count
+      FROM opportunities
+      ${whereSql}
+      ORDER BY ${orderBy}
+      LIMIT $${limitIdx} OFFSET $${offsetIdx};
+    `;
+
+    const res: QueryResult<OpportunityRow & { total_count: string | number }> =
+      await this.pool.query(query, params);
+
+    let total = res.rows.length > 0 ? Number(res.rows[0].total_count) : 0;
+    if (res.rows.length === 0 && offset > 0) {
+      const countParams = params.slice(0, params.length - 2);
+      const countRes = await this.pool.query<{ total_count: string | number }>(
+        `SELECT COUNT(*) AS total_count FROM opportunities ${whereSql};`,
+        countParams,
+      );
+      total = Number(countRes.rows[0]?.total_count ?? 0);
+    }
+
+    return {
+      items: res.rows.map((row) => this.mapRowToEntity(row)),
+      total,
+      page,
+      pageSize,
+    };
   }
 
   private mapRowToEntity(row: OpportunityRow): Opportunity {

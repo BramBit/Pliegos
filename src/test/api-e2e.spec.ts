@@ -137,7 +137,8 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
       expect(response.body.info.title).toBe('Pliegos API');
       expect(response.body.paths).toHaveProperty('/opportunities/{id}');
       expect(response.body.paths).toHaveProperty('/opportunities/sync');
-      expect(response.body.paths).toHaveProperty('/opportunities/search');
+      expect(response.body.paths).toHaveProperty('/opportunities');
+      expect(response.body.paths).not.toHaveProperty('/opportunities/search');
       expect(response.body.paths).toHaveProperty('/profiles');
       expect(response.body.paths).toHaveProperty('/recommendations/{profileId}');
       expect(response.body.paths).toHaveProperty('/recommendations/{id}/feedback');
@@ -186,30 +187,133 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
       expect(response.body.requestId).toBe('req-sync-invalid-400');
     });
 
-    it('POST /opportunities/search executes structured and semantic query', async () => {
+    it('GET /opportunities returns paginated Page<OpportunitySummary> with default params', async () => {
       const response = await request(app.getHttpServer())
-        .post('/opportunities/search')
-        .send({
-          query: 'desarrollo de software',
-          categoryCodePrefix: 'V1.8011',
-          department: 'Cundinamarca',
+        .get('/opportunities')
+        .expect(200);
+
+      expect(response.body).toHaveProperty('items');
+      expect(response.body).toHaveProperty('total');
+      expect(response.body).toHaveProperty('page', 1);
+      expect(response.body).toHaveProperty('pageSize', 20);
+      expect(Array.isArray(response.body.items)).toBe(true);
+    });
+
+    it('GET /opportunities supports hybrid candidate search with q and relevance sort', async () => {
+      const response = await request(app.getHttpServer())
+        .get('/opportunities')
+        .query({ q: 'software', sort: 'relevance', order: 'desc', pageSize: 10 })
+        .expect(200);
+
+      expect(response.body.page).toBe(1);
+      expect(response.body.pageSize).toBe(10);
+      expect(Array.isArray(response.body.items)).toBe(true);
+    });
+
+    it('GET /opportunities supports pagination (page and pageSize)', async () => {
+      const response = await request(app.getHttpServer())
+        .get('/opportunities')
+        .query({ page: 2, pageSize: 5 })
+        .expect(200);
+
+      expect(response.body.page).toBe(2);
+      expect(response.body.pageSize).toBe(5);
+      expect(Array.isArray(response.body.items)).toBe(true);
+    });
+
+    it('GET /opportunities supports each sort field and order', async () => {
+      await request(app.getHttpServer())
+        .get('/opportunities')
+        .query({ sort: 'publishedAt', order: 'asc' })
+        .expect(200);
+
+      await request(app.getHttpServer())
+        .get('/opportunities')
+        .query({ sort: 'closingDate', order: 'desc' })
+        .expect(200);
+
+      await request(app.getHttpServer())
+        .get('/opportunities')
+        .query({ sort: 'amount', order: 'asc' })
+        .expect(200);
+    });
+
+    it('GET /opportunities supports filters: department, categoryPrefix, minAmount, maxAmount, status, modality, closingAfter, closingBefore', async () => {
+      const response = await request(app.getHttpServer())
+        .get('/opportunities')
+        .query({
+          department: 'Antioquia',
+          categoryPrefix: 'V1.43',
           minAmount: 10000000,
           maxAmount: 500000000,
-          limit: 10,
+          status: 'Published',
+          modality: 'Licitación pública',
+          onlyCompetitive: 'true',
+          onlyOpen: 'true',
+          closingAfter: '2026-01-01T00:00:00.000Z',
+          closingBefore: '2026-12-31T23:59:59.000Z',
         })
         .expect(200);
 
-      expect(Array.isArray(response.body)).toBe(true);
+      expect(response.body).toHaveProperty('items');
+      expect(response.body).toHaveProperty('total');
     });
 
-    it('POST /opportunities/search rejects negative minAmount with 400 (Zod)', async () => {
+    it('GET /opportunities/:id returns 404 with error envelope for non-existent id', async () => {
+      const nonExistentId = '00000000-0000-0000-0000-000000000000';
       const response = await request(app.getHttpServer())
-        .post('/opportunities/search')
-        .send({ minAmount: -500 })
+        .get(`/opportunities/${nonExistentId}`)
+        .expect(404);
+
+      expect(response.body.statusCode).toBe(404);
+      expect(response.body.error).toBe('OpportunityNotFoundError');
+      expect(response.body.requestId).toBeDefined();
+    });
+
+    it('GET /opportunities/:id returns OpportunityDetail for an existing opportunity', async () => {
+      const listResp = await request(app.getHttpServer())
+        .get('/opportunities')
+        .query({ pageSize: 1 })
+        .expect(200);
+
+      if (listResp.body.items.length > 0) {
+        const existingId = listResp.body.items[0].id;
+        const detailResp = await request(app.getHttpServer())
+          .get(`/opportunities/${existingId}`)
+          .expect(200);
+
+        expect(detailResp.body.id).toBe(existingId);
+        expect(detailResp.body).toHaveProperty('summaryStatus');
+        expect(detailResp.body).toHaveProperty('isCompetitive');
+        expect(detailResp.body).toHaveProperty('sourceUrl');
+        expect(detailResp.body).toHaveProperty('daysToClose');
+      }
+    });
+
+    it('GET /opportunities rejects invalid query values with 400', async () => {
+      // pageSize > 50
+      await request(app.getHttpServer())
+        .get('/opportunities')
+        .query({ pageSize: 100 })
         .expect(400);
 
-      expect(response.body.statusCode).toBe(400);
-      expect(response.body.message).toBe('Validation failed');
+      // sort=relevance without q
+      await request(app.getHttpServer())
+        .get('/opportunities')
+        .query({ sort: 'relevance' })
+        .expect(400);
+
+      // negative minAmount
+      await request(app.getHttpServer())
+        .get('/opportunities')
+        .query({ minAmount: -500 })
+        .expect(400);
+
+      // invalid status
+      await request(app.getHttpServer())
+        .get('/opportunities')
+        .query({ status: 'InvalidStatus' })
+        .expect(400);
     });
   });
 

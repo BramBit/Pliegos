@@ -54,6 +54,25 @@ class FakeRepo implements OpportunityRepositoryPort {
     }
     return result;
   }
+
+  async findPaged(filters: OpportunityFilters) {
+    let result = Array.from(this.data.values());
+    if (filters.categoryCode) {
+      result = result.filter((o) => o.categoryCode === filters.categoryCode);
+    }
+    if (filters.department) {
+      result = result.filter((o) => o.location.department === filters.department);
+    }
+    const page = filters.page ?? 1;
+    const pageSize = filters.pageSize ?? 20;
+    const offset = (page - 1) * pageSize;
+    return {
+      items: result.slice(offset, offset + pageSize),
+      total: result.length,
+      page,
+      pageSize,
+    };
+  }
 }
 
 class FakeSearchIndex implements SearchIndexPort {
@@ -206,4 +225,36 @@ describe('SearchOpportunitiesUseCase', () => {
       expect.objectContaining({ categoryCode: 'V1.43230000' }),
     );
   });
+
+  it('executes paginated search without query using repository findPaged', async () => {
+    const result = await useCase.executePaged({
+      filters: { page: 1, pageSize: 1, department: 'Bogotá D.C.' },
+    });
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.total).toBe(1);
+      expect(result.value.page).toBe(1);
+      expect(result.value.pageSize).toBe(1);
+      expect(result.value.items).toHaveLength(1);
+      expect(result.value.items[0].id).toBe('opp-1');
+    }
+  });
+
+  it('executes paginated search with query, honors sort by amount and pagination', async () => {
+    searchIndex.returnIds = [asOpportunityId('opp-1'), asOpportunityId('opp-2')];
+
+    const result = await useCase.executePaged({
+      q: 'computadores y software',
+      filters: { sort: 'amount', order: 'desc', page: 1, pageSize: 10 },
+    });
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.total).toBe(2);
+      expect(result.value.page).toBe(1);
+      expect(result.value.items).toHaveLength(2);
+    }
+  });
 });
+
