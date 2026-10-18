@@ -37,6 +37,10 @@ const envSchema = z.object({
   SEMANTIC_COSINE_LOW: z.coerce.number().min(-1).max(1).default(0.4),
   SEMANTIC_COSINE_HIGH: z.coerce.number().min(-1).max(1).default(0.75),
   MIN_RECOMMENDATION_SCORE: z.coerce.number().min(0).max(1).default(0.45),
+
+  JWT_SECRET: z.string().min(32, 'must be at least 32 characters long'),
+  JWT_ACCESS_TTL: nonEmpty.default('15m'),
+  JWT_REFRESH_TTL: nonEmpty.default('7d'),
 });
 
 export type Env = z.infer<typeof envSchema>;

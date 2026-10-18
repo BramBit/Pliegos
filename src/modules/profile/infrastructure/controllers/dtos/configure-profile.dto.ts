@@ -40,7 +40,7 @@ export const profilePreferencesSchema = z.object({
 
 export const configureProfileSchema = z.object({
   profileId: z.string().uuid().optional(),
-  ownerId: z.string().min(1),
+  ownerId: z.string().min(1).optional(),
   name: z.string().trim().min(1).optional().nullable(),
   contactEmail: z.string().trim().email().optional().nullable(),
   alertsEnabled: z.boolean().default(true),
@@ -104,11 +104,11 @@ export class ConfigureProfileDto {
   })
   profileId?: string;
 
-  @ApiProperty({
-    description: 'Identificador del usuario propietario del perfil',
+  @ApiPropertyOptional({
+    description: 'Identificador del usuario propietario del perfil (provisto automáticamente del token)',
     example: 'user-empresa-123',
   })
-  ownerId!: string;
+  ownerId?: string;
 
   @ApiPropertyOptional({
     description: 'Nombre comercial o razón social del contratista',

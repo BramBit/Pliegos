@@ -8,6 +8,7 @@ import { ProfileModule } from './modules/profile/profile.module';
 import { RecommendationModule } from './modules/recommendation/recommendation.module';
 import { AlertModule } from './modules/alert/alert.module';
 import { SchedulerModule } from './modules/scheduler/scheduler.module';
+import { AuthModule } from './modules/auth/auth.module';
 import { GlobalExceptionFilter } from './modules/shared/infrastructure/http/global-exception.filter';
 import { RequestIdMiddleware } from './modules/shared/infrastructure/http/request-id.middleware';
 
@@ -24,6 +25,7 @@ import { RequestIdMiddleware } from './modules/shared/infrastructure/http/reques
       },
     }),
     DatabaseModule,
+    AuthModule,
     OpportunityModule,
     ProfileModule,
     RecommendationModule,

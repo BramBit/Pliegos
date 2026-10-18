@@ -27,6 +27,7 @@ import { asAlertId, asOpportunityId, asProfileId, asRecommendationId } from '../
 import { createRecommendation } from '../modules/recommendation/domain/entities/recommendation.entity';
 import { createRelevanceScore } from '../modules/opportunity/domain/value-objects/relevance-score.vo';
 import { HashEmbedder } from '../modules/shared/testing/hash-embedder';
+import { JwtService } from '@nestjs/jwt';
 
 describe('Pliegos Phase 1 REST Surface (E2E)', () => {
   let app: INestApplication;
@@ -34,12 +35,23 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
   let profileRepo: ProfileRepositoryPort;
   let recRepo: RecommendationRepositoryPort;
   let alertRepo: AlertRepositoryPort;
+  let jwtService: JwtService;
+  let authToken: string;
+  let expiredToken: string;
 
   beforeAll(async () => {
     const testDbUrl = requireTestDatabaseUrl();
 
     pool = new Pool({ connectionString: testDbUrl });
     await migrateTestDatabase(pool);
+    await pool.query('DELETE FROM refresh_tokens;');
+    await pool.query('DELETE FROM users;');
+    await pool.query('DELETE FROM watches;');
+    await pool.query('DELETE FROM alerts;');
+    await pool.query('DELETE FROM recommendations;');
+    await pool.query('DELETE FROM recommendation_runs;');
+    await pool.query('DELETE FROM profiles;');
+    await pool.query('DELETE FROM opportunities;');
 
     const mockEmbedder = new HashEmbedder('nomic-embed-text');
     const mockTextGenerator = {
@@ -113,6 +125,13 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
     profileRepo = moduleFixture.get<ProfileRepositoryPort>(PROFILE_REPOSITORY_PORT);
     recRepo = moduleFixture.get<RecommendationRepositoryPort>(RECOMMENDATION_REPOSITORY_PORT);
     alertRepo = moduleFixture.get<AlertRepositoryPort>(ALERT_REPOSITORY_PORT);
+    jwtService = moduleFixture.get<JwtService>(JwtService);
+
+    authToken = jwtService.sign({ sub: '00000000-0000-0000-0000-000000000001', role: 'admin' });
+    expiredToken = jwtService.sign(
+      { sub: '00000000-0000-0000-0000-000000000001', role: 'admin' },
+      { expiresIn: '-1s' },
+    );
   });
 
   afterAll(async () => {
@@ -148,6 +167,10 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
       expect(response.body.paths).not.toHaveProperty('/recommendations/{profileId}');
       expect(response.body.paths).toHaveProperty('/recommendations/{id}/feedback');
       expect(response.body.paths).toHaveProperty('/alerts/review-follow-up');
+      expect(response.body.paths).toHaveProperty('/auth/register');
+      expect(response.body.paths).toHaveProperty('/auth/login');
+      expect(response.body.paths).toHaveProperty('/auth/refresh');
+      expect(response.body.paths).toHaveProperty('/auth/logout');
 
       writeFileSync(
         resolve(process.cwd(), 'docs/openapi.json'),
@@ -168,6 +191,7 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
     it('POST /opportunities/sync syncs data from source', async () => {
       const response = await request(app.getHttpServer())
         .post('/opportunities/sync')
+        .set('Authorization', `Bearer ${authToken}`)
         .send({ since: '2026-01-01T00:00:00.000Z' })
         .expect(200);
 
@@ -179,6 +203,7 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
     it('POST /opportunities/sync rejects invalid date with 400 (Zod) and error envelope', async () => {
       const response = await request(app.getHttpServer())
         .post('/opportunities/sync')
+        .set('Authorization', `Bearer ${authToken}`)
         .set('X-Request-Id', 'req-sync-invalid-400')
         .send({ since: 'not-a-valid-date' })
         .expect(400);
@@ -195,6 +220,7 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
     it('GET /opportunities returns paginated Page<OpportunitySummary> with default params', async () => {
       const response = await request(app.getHttpServer())
         .get('/opportunities')
+        .set('Authorization', `Bearer ${authToken}`)
         .expect(200);
 
       expect(response.body).toHaveProperty('items');
@@ -207,6 +233,7 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
     it('GET /opportunities supports hybrid candidate search with q and relevance sort', async () => {
       const response = await request(app.getHttpServer())
         .get('/opportunities')
+        .set('Authorization', `Bearer ${authToken}`)
         .query({ q: 'software', sort: 'relevance', order: 'desc', pageSize: 10 })
         .expect(200);
 
@@ -218,6 +245,7 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
     it('GET /opportunities supports pagination (page and pageSize)', async () => {
       const response = await request(app.getHttpServer())
         .get('/opportunities')
+        .set('Authorization', `Bearer ${authToken}`)
         .query({ page: 2, pageSize: 5 })
         .expect(200);
 
@@ -229,16 +257,19 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
     it('GET /opportunities supports each sort field and order', async () => {
       await request(app.getHttpServer())
         .get('/opportunities')
+        .set('Authorization', `Bearer ${authToken}`)
         .query({ sort: 'publishedAt', order: 'asc' })
         .expect(200);
 
       await request(app.getHttpServer())
         .get('/opportunities')
+        .set('Authorization', `Bearer ${authToken}`)
         .query({ sort: 'closingDate', order: 'desc' })
         .expect(200);
 
       await request(app.getHttpServer())
         .get('/opportunities')
+        .set('Authorization', `Bearer ${authToken}`)
         .query({ sort: 'amount', order: 'asc' })
         .expect(200);
     });
@@ -246,6 +277,7 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
     it('GET /opportunities supports filters: department, categoryPrefix, minAmount, maxAmount, status, modality, closingAfter, closingBefore', async () => {
       const response = await request(app.getHttpServer())
         .get('/opportunities')
+        .set('Authorization', `Bearer ${authToken}`)
         .query({
           department: 'Antioquia',
           categoryPrefix: 'V1.43',
@@ -268,6 +300,7 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
       const nonExistentId = '00000000-0000-0000-0000-000000000000';
       const response = await request(app.getHttpServer())
         .get(`/opportunities/${nonExistentId}`)
+        .set('Authorization', `Bearer ${authToken}`)
         .expect(404);
 
       expect(response.body.statusCode).toBe(404);
@@ -278,6 +311,7 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
     it('GET /opportunities/:id returns OpportunityDetail for an existing opportunity', async () => {
       const listResp = await request(app.getHttpServer())
         .get('/opportunities')
+        .set('Authorization', `Bearer ${authToken}`)
         .query({ pageSize: 1 })
         .expect(200);
 
@@ -285,6 +319,7 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
         const existingId = listResp.body.items[0].id;
         const detailResp = await request(app.getHttpServer())
           .get(`/opportunities/${existingId}`)
+          .set('Authorization', `Bearer ${authToken}`)
           .expect(200);
 
         expect(detailResp.body.id).toBe(existingId);
@@ -299,24 +334,28 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
       // pageSize > 50
       await request(app.getHttpServer())
         .get('/opportunities')
+        .set('Authorization', `Bearer ${authToken}`)
         .query({ pageSize: 100 })
         .expect(400);
 
       // sort=relevance without q
       await request(app.getHttpServer())
         .get('/opportunities')
+        .set('Authorization', `Bearer ${authToken}`)
         .query({ sort: 'relevance' })
         .expect(400);
 
       // negative minAmount
       await request(app.getHttpServer())
         .get('/opportunities')
+        .set('Authorization', `Bearer ${authToken}`)
         .query({ minAmount: -500 })
         .expect(400);
 
       // invalid status
       await request(app.getHttpServer())
         .get('/opportunities')
+        .set('Authorization', `Bearer ${authToken}`)
         .query({ status: 'InvalidStatus' })
         .expect(400);
     });
@@ -346,12 +385,13 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
 
       const response = await request(app.getHttpServer())
         .post('/profiles')
+        .set('Authorization', `Bearer ${authToken}`)
         .send(profilePayload)
         .expect(200);
 
       expect(response.body.id).toBeDefined();
       createdProfileId = response.body.id;
-      expect(response.body.ownerId).toBe(profilePayload.ownerId);
+      expect(response.body.ownerId).toBe('00000000-0000-0000-0000-000000000001');
       expect(response.body.name).toBe(profilePayload.name);
       expect(response.body.contactEmail).toBe(profilePayload.contactEmail);
       expect(response.body.alertsEnabled).toBe(true);
@@ -376,6 +416,7 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
 
       const response = await request(app.getHttpServer())
         .post('/profiles')
+        .set('Authorization', `Bearer ${authToken}`)
         .send(invalidPayload)
         .expect(400);
 
@@ -398,6 +439,7 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
 
       const response = await request(app.getHttpServer())
         .post('/profiles')
+        .set('Authorization', `Bearer ${authToken}`)
         .send(invalidPayload)
         .expect(400);
 
@@ -420,6 +462,7 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
 
       const response = await request(app.getHttpServer())
         .post('/profiles')
+        .set('Authorization', `Bearer ${authToken}`)
         .send(invalidPayload)
         .expect(400);
 
@@ -429,7 +472,8 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
     it('GET /profiles?ownerId= returns profiles for the specified owner', async () => {
       const response = await request(app.getHttpServer())
         .get('/profiles')
-        .query({ ownerId: 'user-e2e-contractor-01' })
+        .set('Authorization', `Bearer ${authToken}`)
+        .query({ ownerId: '00000000-0000-0000-0000-000000000001' })
         .expect(200);
 
       expect(Array.isArray(response.body)).toBe(true);
@@ -440,6 +484,7 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
     it('GET /profiles/:id returns profile detail for existing profile and 404 for unknown', async () => {
       const response = await request(app.getHttpServer())
         .get(`/profiles/${createdProfileId}`)
+        .set('Authorization', `Bearer ${authToken}`)
         .expect(200);
 
       expect(response.body.id).toBe(createdProfileId);
@@ -447,6 +492,7 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
 
       await request(app.getHttpServer())
         .get('/profiles/00000000-0000-0000-0000-000000000000')
+        .set('Authorization', `Bearer ${authToken}`)
         .expect(404);
     });
 
@@ -471,6 +517,7 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
 
       const response = await request(app.getHttpServer())
         .put(`/profiles/${createdProfileId}`)
+        .set('Authorization', `Bearer ${authToken}`)
         .send(updatedPayload)
         .expect(200);
 
@@ -485,16 +532,19 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
     it('DELETE /profiles/:id deletes the profile and returns 204', async () => {
       await request(app.getHttpServer())
         .delete(`/profiles/${createdProfileId}`)
+        .set('Authorization', `Bearer ${authToken}`)
         .expect(204);
 
       // Verify it no longer exists
       await request(app.getHttpServer())
         .get(`/profiles/${createdProfileId}`)
+        .set('Authorization', `Bearer ${authToken}`)
         .expect(404);
 
       // Deleting again returns 404
       await request(app.getHttpServer())
         .delete(`/profiles/${createdProfileId}`)
+        .set('Authorization', `Bearer ${authToken}`)
         .expect(404);
     });
   });
@@ -504,6 +554,7 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
       const nonExistentProfileId = asProfileId('00000000-0000-0000-0000-000000000999');
       const response = await request(app.getHttpServer())
         .get(`/recommendations/${nonExistentProfileId}`)
+        .set('Authorization', `Bearer ${authToken}`)
         .expect(404);
 
       expect(response.body.statusCode).toBe(404);
@@ -513,6 +564,7 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
     it('GET /profiles/:id/recommendations returns 404 for non-existent profile', async () => {
       const response = await request(app.getHttpServer())
         .get('/profiles/00000000-0000-0000-0000-000000000000/recommendations')
+        .set('Authorization', `Bearer ${authToken}`)
         .expect(404);
 
       expect(response.body.statusCode).toBe(404);
@@ -522,6 +574,7 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
     it('GET /profiles/:id/recommendations returns paginated feed with single query and filters', async () => {
       const createResponse = await request(app.getHttpServer())
         .post('/profiles')
+        .set('Authorization', `Bearer ${authToken}`)
         .send({
           ownerId: 'user-rec-test',
           sector: 'Tecnología',
@@ -560,6 +613,7 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
 
       const response = await request(app.getHttpServer())
         .get(`/profiles/${profileId}/recommendations?state=new&pageSize=10`)
+        .set('Authorization', `Bearer ${authToken}`)
         .expect(200);
 
       expect(response.body).toHaveProperty('items');
@@ -601,6 +655,7 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
       // 1. Participate -> creates watch
       const participateRes = await request(app.getHttpServer())
         .post(`/recommendations/${dummyRecId}/feedback`)
+        .set('Authorization', `Bearer ${authToken}`)
         .send({ decision: 'Participate' })
         .expect(200);
 
@@ -615,6 +670,7 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
       // 2. Undo feedback (DELETE) -> clears feedback and deletes watch
       const undoRes = await request(app.getHttpServer())
         .delete(`/recommendations/${dummyRecId}/feedback`)
+        .set('Authorization', `Bearer ${authToken}`)
         .expect(200);
 
       expect(undoRes.body.success).toBe(true);
@@ -630,6 +686,7 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
       // 3. Discard -> removes watch if existing
       await request(app.getHttpServer())
         .post(`/recommendations/${dummyRecId}/feedback`)
+        .set('Authorization', `Bearer ${authToken}`)
         .send({ decision: 'Discard' })
         .expect(200);
 
@@ -640,6 +697,7 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
     it('POST /recommendations/:id/feedback rejects invalid decision with 400 (Zod)', async () => {
       const response = await request(app.getHttpServer())
         .post('/recommendations/rec-any/feedback')
+        .set('Authorization', `Bearer ${authToken}`)
         .send({ decision: 'InvalidDecisionValue' })
         .expect(400);
 
@@ -650,6 +708,7 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
     it('POST /recommendations/:id/feedback returns 404 for unknown recommendation', async () => {
       const response = await request(app.getHttpServer())
         .post('/recommendations/non-existent-rec-id/feedback')
+        .set('Authorization', `Bearer ${authToken}`)
         .send({ decision: 'Discard' })
         .expect(404);
 
@@ -659,6 +718,7 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
     it('DELETE /recommendations/:id/feedback returns 404 for unknown recommendation', async () => {
       const response = await request(app.getHttpServer())
         .delete('/recommendations/non-existent-rec-id/feedback')
+        .set('Authorization', `Bearer ${authToken}`)
         .expect(404);
 
       expect(response.body.statusCode).toBe(404);
@@ -673,6 +733,7 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
       // 1. Summary before adding watch
       const summary1 = await request(app.getHttpServer())
         .get(`/profiles/${profId}/summary`)
+        .set('Authorization', `Bearer ${authToken}`)
         .expect(200);
 
       expect(summary1.body.watching).toBe(0);
@@ -681,11 +742,13 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
       // 2. Add watch via POST /profiles/:id/watches/:opportunityId
       await request(app.getHttpServer())
         .post(`/profiles/${profId}/watches/${oppId}`)
+        .set('Authorization', `Bearer ${authToken}`)
         .expect(200);
 
       // 3. GET watches
       const watchesRes = await request(app.getHttpServer())
         .get(`/profiles/${profId}/watches?page=1&pageSize=10`)
+        .set('Authorization', `Bearer ${authToken}`)
         .expect(200);
 
       expect(watchesRes.body.total).toBe(1);
@@ -697,6 +760,7 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
       // 4. Summary after watch
       const summary2 = await request(app.getHttpServer())
         .get(`/profiles/${profId}/summary`)
+        .set('Authorization', `Bearer ${authToken}`)
         .expect(200);
 
       expect(summary2.body.watching).toBe(1);
@@ -704,10 +768,12 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
       // 5. Remove watch via DELETE /profiles/:id/watches/:opportunityId
       await request(app.getHttpServer())
         .delete(`/profiles/${profId}/watches/${oppId}`)
+        .set('Authorization', `Bearer ${authToken}`)
         .expect(200);
 
       const summary3 = await request(app.getHttpServer())
         .get(`/profiles/${profId}/summary`)
+        .set('Authorization', `Bearer ${authToken}`)
         .expect(200);
 
       expect(summary3.body.watching).toBe(0);
@@ -716,18 +782,22 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
     it('Watchlist and Summary endpoints return 404 for non-existent profile', async () => {
       await request(app.getHttpServer())
         .get('/profiles/00000000-0000-0000-0000-000000000000/summary')
+        .set('Authorization', `Bearer ${authToken}`)
         .expect(404);
 
       await request(app.getHttpServer())
         .get('/profiles/00000000-0000-0000-0000-000000000000/watches')
+        .set('Authorization', `Bearer ${authToken}`)
         .expect(404);
 
       await request(app.getHttpServer())
         .post('/profiles/00000000-0000-0000-0000-000000000000/watches/opp-1')
+        .set('Authorization', `Bearer ${authToken}`)
         .expect(404);
 
       await request(app.getHttpServer())
         .delete('/profiles/00000000-0000-0000-0000-000000000000/watches/opp-1')
+        .set('Authorization', `Bearer ${authToken}`)
         .expect(404);
     });
   });
@@ -749,11 +819,214 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
 
       const response = await request(app.getHttpServer())
         .post('/alerts/review-follow-up')
+        .set('Authorization', `Bearer ${authToken}`)
         .expect(200);
 
       expect(response.body).toBeDefined();
       expect(typeof response.body.alertsSent).toBe('number');
       expect(response.body.alertsSent).toBeGreaterThanOrEqual(1);
+    });
+  });
+
+  describe('AuthController & Authentication Guard', () => {
+    const testUser = {
+      email: 'contratista.test@empresa.com.co',
+      password: 'SecurePassword123!',
+    };
+    let registeredUserId: string;
+    let authAccessToken: string;
+    let authRefreshToken: string;
+
+    it('POST /auth/register creates user and returns 201 with id and lowercase email', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/auth/register')
+        .send({
+          email: '  Contratista.Test@Empresa.Com.CO  ',
+          password: testUser.password,
+        })
+        .expect(201);
+
+      expect(response.body.id).toBeDefined();
+      expect(response.body.email).toBe(testUser.email);
+      expect(response.body.password).toBeUndefined();
+      expect(response.body.passwordHash).toBeUndefined();
+      registeredUserId = response.body.id;
+    });
+
+    it('POST /auth/register rejects password shorter than 10 characters with 400', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/auth/register')
+        .send({
+          email: 'short.pass@empresa.com',
+          password: 'short',
+        })
+        .expect(400);
+
+      expect(response.body.statusCode).toBe(400);
+      expect(response.body.error).toBe('ValidationError');
+    });
+
+    it('POST /auth/register rejects duplicate email with 400', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/auth/register')
+        .send(testUser)
+        .expect(400);
+
+      expect(response.body.statusCode).toBe(400);
+    });
+
+    it('POST /auth/login returns accessToken and refreshToken on valid credentials', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/auth/login')
+        .send(testUser)
+        .expect(200);
+
+      expect(response.body.accessToken).toBeDefined();
+      expect(response.body.refreshToken).toBeDefined();
+      authAccessToken = response.body.accessToken;
+      authRefreshToken = response.body.refreshToken;
+
+      // Verify accessToken payload
+      const decoded = jwtService.verify(authAccessToken);
+      expect(decoded.sub).toBe(registeredUserId);
+      expect(decoded.role).toBe('user');
+    });
+
+    it('POST /auth/login returns identical 401 message for wrong email and wrong password', async () => {
+      const wrongEmailRes = await request(app.getHttpServer())
+        .post('/auth/login')
+        .send({ email: 'nonexistent@user.com', password: testUser.password })
+        .expect(401);
+
+      const wrongPassRes = await request(app.getHttpServer())
+        .post('/auth/login')
+        .send({ email: testUser.email, password: 'WrongPassword999!' })
+        .expect(401);
+
+      expect(wrongEmailRes.body.message).toBe('Invalid email or password');
+      expect(wrongPassRes.body.message).toBe('Invalid email or password');
+    });
+
+    it('POST /auth/login throttles after 5 failed attempts per email and IP with 429', async () => {
+      const throttledEmail = 'throttled.target@pliegos.com';
+      // Register user first
+      await request(app.getHttpServer())
+        .post('/auth/register')
+        .send({ email: throttledEmail, password: 'ValidPassword123!' })
+        .expect(201);
+
+      // 5 failed login attempts
+      for (let i = 0; i < 5; i++) {
+        await request(app.getHttpServer())
+          .post('/auth/login')
+          .set('X-Forwarded-For', '192.168.100.50')
+          .send({ email: throttledEmail, password: 'WrongPassword123!' })
+          .expect(401);
+      }
+
+      // 6th attempt should be blocked with 429
+      const throttledRes = await request(app.getHttpServer())
+        .post('/auth/login')
+        .set('X-Forwarded-For', '192.168.100.50')
+        .send({ email: throttledEmail, password: 'ValidPassword123!' })
+        .expect(429);
+
+      expect(throttledRes.body.message).toContain('Too many failed login attempts');
+    });
+
+    it('POST /auth/refresh performs token rotation and rejects reused old refresh token', async () => {
+      // Refresh with authRefreshToken
+      const refreshRes = await request(app.getHttpServer())
+        .post('/auth/refresh')
+        .send({ refreshToken: authRefreshToken })
+        .expect(200);
+
+      expect(refreshRes.body.accessToken).toBeDefined();
+      expect(refreshRes.body.refreshToken).toBeDefined();
+      expect(refreshRes.body.refreshToken).not.toBe(authRefreshToken);
+
+      const newRefreshToken = refreshRes.body.refreshToken;
+
+      // Reusing old refreshToken should return 401
+      const reuseRes = await request(app.getHttpServer())
+        .post('/auth/refresh')
+        .send({ refreshToken: authRefreshToken })
+        .expect(401);
+
+      expect(reuseRes.body.message).toContain('Refresh token has already been revoked');
+
+      // Refreshing with an unknown token returns 401 with invalid or expired message
+      const unknownRes = await request(app.getHttpServer())
+        .post('/auth/refresh')
+        .send({ refreshToken: '0000000000000000000000000000000000000000000000000000000000000000' })
+        .expect(401);
+
+      expect(unknownRes.body.message).toContain('Invalid or expired refresh token');
+
+      // Refreshing with the new token works
+      const secondRefreshRes = await request(app.getHttpServer())
+        .post('/auth/refresh')
+        .send({ refreshToken: newRefreshToken })
+        .expect(200);
+
+      expect(secondRefreshRes.body.accessToken).toBeDefined();
+      authRefreshToken = secondRefreshRes.body.refreshToken;
+    });
+
+    it('POST /auth/logout revokes refresh token so subsequent refresh fails with 401', async () => {
+      // Logout
+      const logoutRes = await request(app.getHttpServer())
+        .post('/auth/logout')
+        .send({ refreshToken: authRefreshToken })
+        .expect(200);
+
+      expect(logoutRes.body.success).toBe(true);
+
+      // Subsequent refresh fails with 401
+      await request(app.getHttpServer())
+        .post('/auth/refresh')
+        .send({ refreshToken: authRefreshToken })
+        .expect(401);
+    });
+
+    it('Global AuthGuard enforces authentication on protected routes and permits public routes', async () => {
+      // 1. Missing authorization header gives 401
+      const unauthRes = await request(app.getHttpServer())
+        .get('/opportunities')
+        .expect(401);
+
+      expect(unauthRes.body.message).toBe('Missing or invalid authorization header');
+
+      // 2. Malformed token gives 401
+      const malformedRes = await request(app.getHttpServer())
+        .get('/opportunities')
+        .set('Authorization', 'Bearer not-a-valid-jwt')
+        .expect(401);
+
+      expect(malformedRes.body.message).toBe('Invalid or expired token');
+
+      // 3. Expired token gives 401
+      const expiredRes = await request(app.getHttpServer())
+        .get('/opportunities')
+        .set('Authorization', `Bearer ${expiredToken}`)
+        .expect(401);
+
+      expect(expiredRes.body.message).toBe('Invalid or expired token');
+
+      // 4. Valid token succeeds
+      await request(app.getHttpServer())
+        .get('/opportunities')
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(200);
+
+      // 5. Public routes succeed without authorization header
+      await request(app.getHttpServer())
+        .get('/api-json')
+        .expect(200);
+
+      await request(app.getHttpServer())
+        .get('/reference')
+        .expect(200);
     });
   });
 });

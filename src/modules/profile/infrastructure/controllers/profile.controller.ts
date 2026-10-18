@@ -28,6 +28,10 @@ import {
   ConfigureProfileDto,
   configureProfileSchema,
 } from './dtos/configure-profile.dto';
+import {
+  CurrentUser,
+  CurrentUserPayload,
+} from '../../../auth/infrastructure/security/current-user.decorator';
 
 @ApiTags('Profiles')
 @Controller('profiles')
@@ -123,14 +127,16 @@ export class ProfileController {
     type: ErrorEnvelopeDto,
   })
   async create(
+    @CurrentUser() user: CurrentUserPayload | undefined,
     @Body(new ZodValidationPipe(configureProfileSchema))
     body: ConfigureProfileDto,
   ): Promise<ProfileDto> {
+    const ownerId = user?.sub || body.ownerId || '';
     const profileId = body.profileId ? asProfileId(body.profileId) : null;
     const result = await this.configureProfileUseCase.execute({
       profileId,
       data: {
-        ownerId: asUserId(body.ownerId),
+        ownerId: asUserId(ownerId),
         name: body.name ?? null,
         contactEmail: body.contactEmail ?? null,
         alertsEnabled: body.alertsEnabled ?? true,
@@ -184,9 +190,11 @@ export class ProfileController {
   })
   async replace(
     @Param('id') id: string,
+    @CurrentUser() user: CurrentUserPayload | undefined,
     @Body(new ZodValidationPipe(configureProfileSchema))
     body: ConfigureProfileDto,
   ): Promise<ProfileDto> {
+    const ownerId = user?.sub || body.ownerId || '';
     if (this.getProfileByIdUseCase) {
       const existing = await this.getProfileByIdUseCase.execute({
         profileId: asProfileId(id),
@@ -199,7 +207,7 @@ export class ProfileController {
     const result = await this.configureProfileUseCase.execute({
       profileId: asProfileId(id),
       data: {
-        ownerId: asUserId(body.ownerId),
+        ownerId: asUserId(ownerId),
         name: body.name ?? null,
         contactEmail: body.contactEmail ?? null,
         alertsEnabled: body.alertsEnabled ?? true,

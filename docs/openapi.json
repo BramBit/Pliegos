@@ -1,6 +1,178 @@
 {
   "openapi": "3.0.0",
   "paths": {
+    "/auth/register": {
+      "post": {
+        "description": "Crea una nueva cuenta de usuario con correo electrónico y contraseña (mínimo 10 caracteres).",
+        "operationId": "AuthController_register",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Usuario registrado exitosamente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegisterResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Correo inválido, contraseña muy corta o correo ya registrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelopeDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Registrar un nuevo usuario",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "description": "Valida correo y contraseña. Retorna un accessToken JWT (15 minutos) y un refreshToken rotativo (7 días). Máximo 5 intentos fallidos cada 15 minutos por correo e IP.",
+        "operationId": "AuthController_login",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Sesión iniciada exitosamente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthTokensResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Correo o contraseña incorrectos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelopeDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Demasiados intentos fallidos. Por favor espere 15 minutos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelopeDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Iniciar sesión con credenciales",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/auth/refresh": {
+      "post": {
+        "description": "Emite un nuevo par de accessToken y refreshToken. El refreshToken anterior queda revocado inmediatamente (detección de reúso).",
+        "operationId": "AuthController_refresh",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshTokenDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Tokens renovados exitosamente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthTokensResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Refresh token inválido, expirado o revocado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelopeDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Rotar tokens con refresh token",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "description": "Revoca el refreshToken para invalidar la sesión actual.",
+        "operationId": "AuthController_logout",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LogoutDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Sesión cerrada exitosamente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LogoutResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Cerrar sesión",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
     "/opportunities": {
       "get": {
         "description": "Retorna una página de oportunidades (OpportunitySummary). Soporta búsqueda híbrida semántica y por texto completo cuando se provee el parámetro `q` (ordenado por relevancia por defecto), o consulta filtrada directa sobre PostgreSQL con paginación real `COUNT(*) OVER()`.",
@@ -818,6 +990,145 @@
   "servers": [],
   "components": {
     "schemas": {
+      "RegisterDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "example": "contratista@empresa.com"
+          },
+          "password": {
+            "type": "string",
+            "example": "ContraseñaSegura2026!",
+            "minLength": 10
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ]
+      },
+      "RegisterResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "d9b2d63d-a232-4d2c-8cb4-e5e6b72a44f1"
+          },
+          "email": {
+            "type": "string",
+            "example": "contratista@empresa.com"
+          }
+        },
+        "required": [
+          "id",
+          "email"
+        ]
+      },
+      "ErrorEnvelopeDto": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "example": 400
+          },
+          "error": {
+            "type": "string",
+            "example": "ValidationError"
+          },
+          "message": {
+            "type": "string",
+            "example": "Validation failed"
+          },
+          "details": {
+            "type": "object",
+            "description": "Optional structured details about the error",
+            "nullable": true
+          },
+          "requestId": {
+            "type": "string",
+            "example": "c42d8e41-29a4-4f6a-9870-8d65e32b5011"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message",
+          "requestId"
+        ]
+      },
+      "LoginDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "example": "contratista@empresa.com"
+          },
+          "password": {
+            "type": "string",
+            "example": "ContraseñaSegura2026!"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ]
+      },
+      "AuthTokensResponseDto": {
+        "type": "object",
+        "properties": {
+          "accessToken": {
+            "type": "string",
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+          },
+          "refreshToken": {
+            "type": "string",
+            "example": "a1b2c3d4e5f6...refresh-token-string"
+          }
+        },
+        "required": [
+          "accessToken",
+          "refreshToken"
+        ]
+      },
+      "RefreshTokenDto": {
+        "type": "object",
+        "properties": {
+          "refreshToken": {
+            "type": "string",
+            "example": "a1b2c3d4e5f6...refresh-token-string"
+          }
+        },
+        "required": [
+          "refreshToken"
+        ]
+      },
+      "LogoutDto": {
+        "type": "object",
+        "properties": {
+          "refreshToken": {
+            "type": "string",
+            "example": "a1b2c3d4e5f6...refresh-token-string"
+          }
+        }
+      },
+      "LogoutResponseDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "message": {
+            "type": "string",
+            "example": "Logged out successfully"
+          }
+        },
+        "required": [
+          "success",
+          "message"
+        ]
+      },
       "ContractingEntityDto": {
         "type": "object",
         "properties": {
@@ -1058,38 +1369,6 @@
           "total",
           "page",
           "pageSize"
-        ]
-      },
-      "ErrorEnvelopeDto": {
-        "type": "object",
-        "properties": {
-          "statusCode": {
-            "type": "number",
-            "example": 400
-          },
-          "error": {
-            "type": "string",
-            "example": "ValidationError"
-          },
-          "message": {
-            "type": "string",
-            "example": "Validation failed"
-          },
-          "details": {
-            "type": "object",
-            "description": "Optional structured details about the error",
-            "nullable": true
-          },
-          "requestId": {
-            "type": "string",
-            "example": "c42d8e41-29a4-4f6a-9870-8d65e32b5011"
-          }
-        },
-        "required": [
-          "statusCode",
-          "error",
-          "message",
-          "requestId"
         ]
       },
       "RequirementDto": {
@@ -1560,7 +1839,7 @@
           },
           "ownerId": {
             "type": "string",
-            "description": "Identificador del usuario propietario del perfil",
+            "description": "Identificador del usuario propietario del perfil (provisto automáticamente del token)",
             "example": "user-empresa-123"
           },
           "name": {
@@ -1607,7 +1886,6 @@
           }
         },
         "required": [
-          "ownerId",
           "sector",
           "capabilities",
           "preferences"

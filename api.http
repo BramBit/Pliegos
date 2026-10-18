@@ -4,28 +4,31 @@
 ### Description: Comprehensive manual testing and verification suite for every
 ###              endpoint in Pliegos, including realistic Colombian SECOP II
 ###              payloads, structured & semantic search, contractor profiles,
-###              explainable recommendations, feedback, and alerts.
+###              explainable recommendations, feedback, watches, and auth.
 ###
 ### Execution Order:
-###   1. Docs: GET /reference and GET /api-json
-###   2. Sync: POST /opportunities/sync
-###   3. Opportunities: GET /opportunities (paginated list, hybrid & structured filters) and GET /opportunities/:id (detail with lazy summary)
-###   4. Profiles: POST /profiles (configureProfileTech, configureProfileCivilInfra)
-###   5. Recommendations Feed: GET /profiles/:id/recommendations (filtered by state, minScore, paginated)
-###   6. Recommendation Feedback & Undo: POST/DELETE /recommendations/:id/feedback
-###   7. Watchlist & Profile Summary: POST/DELETE /profiles/:id/watches/:opportunityId, GET /profiles/:id/watches, GET /profiles/:id/summary
-###   8. Alerts: POST /alerts/review-follow-up
-###   9. Negative cases: invalid body (400), unknown profileId (404), invalid feedback (400)
+###   1. Docs: GET /reference and GET /api-json (Public)
+###   2. Auth: POST /auth/register, POST /auth/login, POST /auth/refresh, POST /auth/logout (Public)
+###   3. Sync: POST /opportunities/sync (Protected)
+###   4. Opportunities: GET /opportunities and GET /opportunities/:id (Protected)
+###   5. Profiles: POST /profiles (configureProfileTech, configureProfileCivilInfra) (Protected)
+###   6. Recommendations Feed: GET /profiles/:id/recommendations (Protected)
+###   7. Recommendation Feedback & Undo: POST/DELETE /recommendations/:id/feedback (Protected)
+###   8. Watchlist & Profile Summary: POST/DELETE /profiles/:id/watches/:opportunityId, GET /profiles/:id/watches, GET /profiles/:id/summary (Protected)
+###   9. Alerts: POST /alerts/review-follow-up (Protected)
+###  10. Negative cases: invalid body (400), unknown profileId (404), unauthenticated (401)
 ### ==============================================================================
 
 ### Variables for request chaining
 @baseUrl = http://localhost:3000
+@accessToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.dummy
+@refreshToken = 550e8400-e29b-41d4-a716-446655440000
 @profileId = d9b2d63d-a232-4d2c-8cb4-e5e6b72a44f1
 @opportunityId = 9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d
 @recommendationId = 3bfc62c2-5918-426b-a908-660eb2e5a662
 
 ### ==============================================================================
-### 1. API Documentation & OpenAPI Specification
+### 1. API Documentation & OpenAPI Specification (Public)
 ### ==============================================================================
 
 # Validates OpenAPI 3.0 specification generation from NestJS decorators
@@ -41,7 +44,55 @@ GET {{baseUrl}}/reference
 Accept: text/html
 
 ### ==============================================================================
-### 2. Opportunities Ingestion (SECOP II Sync)
+### 2. User Authentication & Session Management (Public)
+### ==============================================================================
+
+# Registers a new user account with email and password (minimum 10 characters)
+# @name registerUser
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "email": "contratista.colombia@techinnovations.com",
+  "password": "SecurePassword2026!"
+}
+
+###
+
+# Logs in an existing user and returns accessToken (15m) and refreshToken (7d)
+# @name loginUser
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "contratista.colombia@techinnovations.com",
+  "password": "SecurePassword2026!"
+}
+
+###
+
+# Refreshes access token with single-use token rotation (old refresh token is revoked)
+# @name refreshToken
+POST {{baseUrl}}/auth/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "{{refreshToken}}"
+}
+
+###
+
+# Logs out and revokes the provided refresh token
+# @name logoutUser
+POST {{baseUrl}}/auth/logout
+Content-Type: application/json
+
+{
+  "refreshToken": "{{refreshToken}}"
+}
+
+### ==============================================================================
+### 3. Opportunities Ingestion (SECOP II Sync)
 ### ==============================================================================
 
 # Validates ingestion of procurement processes from SECOP II / Socrata API,
@@ -49,6 +100,7 @@ Accept: text/html
 # persisting them in PostgreSQL, and enqueuing async AI analysis jobs in BullMQ.
 # @name syncOpportunitiesWithDate
 POST {{baseUrl}}/opportunities/sync
+Authorization: Bearer {{accessToken}}
 Content-Type: application/json
 
 {
@@ -60,18 +112,20 @@ Content-Type: application/json
 # Validates full synchronization without a date boundary (syncs latest available tenders)
 # @name syncOpportunitiesFull
 POST {{baseUrl}}/opportunities/sync
+Authorization: Bearer {{accessToken}}
 Content-Type: application/json
 
 {}
 
 ### ==============================================================================
-### 3. Opportunities List & Detail (Paginated, Hybrid & Structured)
+### 4. Opportunities List & Detail (Paginated, Hybrid & Structured)
 ### ==============================================================================
 
 # Validates hybrid search combining natural language semantic query with structured
 # filters (UNSPSC prefix, department, and budget range) using pgvector and RRF.
 # @name listOpportunitiesHybrid
 GET {{baseUrl}}/opportunities?q=Desarrollo+de+software+a+la+medida&categoryPrefix=V1.8011&department=Cundinamarca&minAmount=50000000&maxAmount=500000000&pageSize=10
+Authorization: Bearer {{accessToken}}
 Accept: application/json
 
 ###
@@ -79,6 +133,7 @@ Accept: application/json
 # Validates free-text semantic query with relevance sort and custom pagination
 # @name listOpportunitiesSemantic
 GET {{baseUrl}}/opportunities?q=Mantenimiento+preventivo+y+correctivo&pageSize=5&sort=relevance&order=desc
+Authorization: Bearer {{accessToken}}
 Accept: application/json
 
 ###
@@ -86,6 +141,7 @@ Accept: application/json
 # Validates relational filtered query with COUNT(*) OVER() pagination and sort by published date
 # @name listOpportunitiesStructuredOnly
 GET {{baseUrl}}/opportunities?categoryPrefix=V1.8111&department=Antioquia&minAmount=20000000&maxAmount=300000000&page=1&pageSize=10&sort=publishedAt&order=desc
+Authorization: Bearer {{accessToken}}
 Accept: application/json
 
 ###
@@ -93,10 +149,11 @@ Accept: application/json
 # Validates opportunity detail retrieval with lazy LLM summary enqueuing
 # @name getOpportunityDetail
 GET {{baseUrl}}/opportunities/{{opportunityId}}
+Authorization: Bearer {{accessToken}}
 Accept: application/json
 
 ### ==============================================================================
-### 4. Contractor Profiles Management (CRUD)
+### 5. Contractor Profiles Management (CRUD)
 ### ==============================================================================
 
 # Validates contractor profile creation with an explicit UUID (@profileId),
@@ -104,6 +161,7 @@ Accept: application/json
 # budget bounds, and UNSPSC category preferences for subsequent recommendation matching.
 # @name configureProfileTech
 POST {{baseUrl}}/profiles
+Authorization: Bearer {{accessToken}}
 Content-Type: application/json
 
 {
@@ -158,6 +216,7 @@ Content-Type: application/json
 # Validates listing profiles filtered by ownerId
 # @name getProfilesByOwner
 GET {{baseUrl}}/profiles?ownerId=usr-tech-innovations-01
+Authorization: Bearer {{accessToken}}
 Accept: application/json
 
 ###
@@ -165,6 +224,7 @@ Accept: application/json
 # Validates retrieving a single profile by ID
 # @name getProfileById
 GET {{baseUrl}}/profiles/{{profileId}}
+Authorization: Bearer {{accessToken}}
 Accept: application/json
 
 ###
@@ -172,6 +232,7 @@ Accept: application/json
 # Validates replacing an existing contractor profile by ID
 # @name replaceProfile
 PUT {{baseUrl}}/profiles/{{profileId}}
+Authorization: Bearer {{accessToken}}
 Content-Type: application/json
 
 {
@@ -212,6 +273,7 @@ Content-Type: application/json
 # (Civil Engineering / Infrastructure contractor, higher budget bracket, regional scope).
 # @name configureProfileCivilInfra
 POST {{baseUrl}}/profiles
+Authorization: Bearer {{accessToken}}
 Content-Type: application/json
 
 {
@@ -262,7 +324,7 @@ Content-Type: application/json
 }
 
 ### ==============================================================================
-### 5. Recommendation Feed (Filtered, Paginated, Single SQL Join)
+### 6. Recommendation Feed (Filtered, Paginated, Single SQL Join)
 ### ==============================================================================
 
 # Validates retrieving paginated recommendation feed for a contractor profile,
@@ -270,6 +332,7 @@ Content-Type: application/json
 # and returning opportunity summaries with match explanations and run metadata in a single query.
 # @name getRecommendationsFeedNew
 GET {{baseUrl}}/profiles/{{profileId}}/recommendations?state=new&pageSize=10
+Authorization: Bearer {{accessToken}}
 Accept: application/json
 
 ###
@@ -277,16 +340,18 @@ Accept: application/json
 # Validates retrieving all recommendations for the profile with minScore threshold
 # @name getRecommendationsFeedAll
 GET {{baseUrl}}/profiles/{{profileId}}/recommendations?state=all&minScore=0.7&page=1&pageSize=20
+Authorization: Bearer {{accessToken}}
 Accept: application/json
 
 ### ==============================================================================
-### 6. Recommendation Feedback & Undo (Atomic Watch Synchronization)
+### 7. Recommendation Feedback & Undo (Atomic Watch Synchronization)
 ### ==============================================================================
 
 # Validates recording user decision ('Participate') on a specific recommendation,
 # which updates recommendation feedback and atomically adds the opportunity to watchlist.
 # @name registerFeedbackParticipate
 POST {{baseUrl}}/recommendations/{{recommendationId}}/feedback
+Authorization: Bearer {{accessToken}}
 Content-Type: application/json
 
 {
@@ -299,6 +364,7 @@ Content-Type: application/json
 # and removing the opportunity from watchlist if previously marked Participate.
 # @name undoFeedback
 DELETE {{baseUrl}}/recommendations/{{recommendationId}}/feedback
+Authorization: Bearer {{accessToken}}
 Accept: application/json
 
 ###
@@ -307,6 +373,7 @@ Accept: application/json
 # from watchlist if present and records the discard decision.
 # @name registerFeedbackDiscard
 POST {{baseUrl}}/recommendations/{{recommendationId}}/feedback
+Authorization: Bearer {{accessToken}}
 Content-Type: application/json
 
 {
@@ -314,12 +381,13 @@ Content-Type: application/json
 }
 
 ### ==============================================================================
-### 7. Watchlist & Profile Summary
+### 8. Watchlist & Profile Summary
 ### ==============================================================================
 
 # Validates manually adding an opportunity to the contractor profile's watchlist
 # @name addOpportunityToWatchlist
 POST {{baseUrl}}/profiles/{{profileId}}/watches/{{opportunityId}}
+Authorization: Bearer {{accessToken}}
 Accept: application/json
 
 ###
@@ -327,6 +395,7 @@ Accept: application/json
 # Validates retrieving paginated watchlist with opportunity details and last 10 changes
 # @name getWatchedOpportunities
 GET {{baseUrl}}/profiles/{{profileId}}/watches?page=1&pageSize=10
+Authorization: Bearer {{accessToken}}
 Accept: application/json
 
 ###
@@ -335,6 +404,7 @@ Accept: application/json
 # closing soon within 7 days, unread alerts)
 # @name getProfileSummary
 GET {{baseUrl}}/profiles/{{profileId}}/summary
+Authorization: Bearer {{accessToken}}
 Accept: application/json
 
 ###
@@ -342,10 +412,11 @@ Accept: application/json
 # Validates removing an opportunity from the contractor profile's watchlist
 # @name removeOpportunityFromWatchlist
 DELETE {{baseUrl}}/profiles/{{profileId}}/watches/{{opportunityId}}
+Authorization: Bearer {{accessToken}}
 Accept: application/json
 
 ### ==============================================================================
-### 8. Alerts & Follow-up Monitoring
+### 9. Alerts & Follow-up Monitoring
 ### ==============================================================================
 
 # Validates scanning undelivered alerts (amendments/adendas and upcoming deadlines),
@@ -353,18 +424,27 @@ Accept: application/json
 # and returning the count of dispatched notifications.
 # @name reviewFollowUpAlerts
 POST {{baseUrl}}/alerts/review-follow-up
+Authorization: Bearer {{accessToken}}
 Content-Type: application/json
 
 {}
 
 ### ==============================================================================
-### 9. Negative Test Cases & Validation Errors (Expect 400 / 404)
+### 10. Negative Test Cases & Security Errors (Expect 400 / 401 / 404)
 ### ==============================================================================
+
+# Validates global AuthGuard: unauthenticated request to protected endpoint (Expect HTTP 401 Unauthorized)
+# @name negativeUnauthenticatedRequest
+GET {{baseUrl}}/opportunities
+Accept: application/json
+
+###
 
 # Validates input validation error handling (Expect HTTP 400 Bad Request):
 # minAmount cannot exceed maxAmount in budget preferences.
 # @name negativeProfileInvalidAmountRange
 POST {{baseUrl}}/profiles
+Authorization: Bearer {{accessToken}}
 Content-Type: application/json
 
 {
@@ -388,6 +468,7 @@ Content-Type: application/json
 # Looking up recommendation feed for a non-registered profile ID.
 # @name negativeRecommendationsUnknownProfile
 GET {{baseUrl}}/profiles/00000000-0000-0000-0000-000000000000/recommendations
+Authorization: Bearer {{accessToken}}
 Accept: application/json
 
 ###
@@ -396,9 +477,9 @@ Accept: application/json
 # Decision must strictly be 'Participate' or 'Discard'.
 # @name negativeFeedbackInvalidDecision
 POST {{baseUrl}}/recommendations/{{recommendationId}}/feedback
+Authorization: Bearer {{accessToken}}
 Content-Type: application/json
 
 {
   "decision": "MaybeLater"
 }
-

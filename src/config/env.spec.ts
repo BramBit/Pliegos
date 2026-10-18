@@ -9,6 +9,7 @@ const validEnv: NodeJS.ProcessEnv = {
   OLLAMA_CHAT_MODEL: 'llama3.1',
   SYNC_OPPORTUNITIES_CRON: '0 0-23/4 * * *',
   REVIEW_FOLLOW_UP_CRON: '0 08 * * *',
+  JWT_SECRET: 'a-very-long-and-secure-jwt-secret-key-32-chars-minimum',
 };
 
 describe('loadEnv', () => {
@@ -18,6 +19,9 @@ describe('loadEnv', () => {
     expect(env.DATABASE_URL).toBe(validEnv.DATABASE_URL);
     expect(env.NODE_ENV).toBe('development');
     expect(env.PORT).toBe(3000);
+    expect(env.JWT_SECRET).toBe(validEnv.JWT_SECRET);
+    expect(env.JWT_ACCESS_TTL).toBe('15m');
+    expect(env.JWT_REFRESH_TTL).toBe('7d');
     expect(env.SECOP_PAGE_SIZE).toBe(1000);
     expect(env.SECOP_SYNC_MAX_RECORDS).toBe(5000);
     expect(env.SECOP_SYNC_WINDOW_DAYS).toBe(14);
@@ -70,5 +74,12 @@ describe('loadEnv', () => {
       const problems = (error as EnvValidationError).problems;
       expect(problems).toHaveLength(2);
     }
+  });
+
+  it('fails when JWT_SECRET is missing or less than 32 characters', () => {
+    const { JWT_SECRET: _omitted, ...withoutSecret } = validEnv;
+    expect(() => loadEnv(withoutSecret)).toThrow(EnvValidationError);
+
+    expect(() => loadEnv({ ...validEnv, JWT_SECRET: 'short-secret' })).toThrow(EnvValidationError);
   });
 });
