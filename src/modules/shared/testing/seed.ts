@@ -5,11 +5,15 @@ import { Pool } from 'pg';
  * foreign keys require (recommendations and alerts reference profiles and
  * opportunities). Safe to call repeatedly.
  */
-export async function seedProfile(pool: Pool, id: string): Promise<void> {
+export async function seedProfile(
+  pool: Pool,
+  id: string,
+  ownerId: string = '00000000-0000-0000-0000-000000000001',
+): Promise<void> {
   await pool.query(
-    `INSERT INTO profiles (id, owner_id, sector) VALUES ($1, 'test-owner', 'test-sector')
-     ON CONFLICT (id) DO NOTHING`,
-    [id],
+    `INSERT INTO profiles (id, owner_id, sector) VALUES ($1, $2, 'test-sector')
+     ON CONFLICT (id) DO UPDATE SET owner_id = EXCLUDED.owner_id`,
+    [id, ownerId],
   );
 }
 

@@ -27,6 +27,11 @@ import {
   toWatchedOpportunityDto,
 } from '../../../shared/infrastructure/http/response.dtos';
 import {
+  CurrentUser,
+  CurrentUserPayload,
+} from '../../../auth/infrastructure/security/current-user.decorator';
+import { ProfileAccessService } from '../../../profile/application/services/profile-access.service';
+import {
   RecommendationFeedQuery,
   recommendationFeedQuerySchema,
 } from './dtos/recommendation-feed.dto';
@@ -44,6 +49,7 @@ export class ProfileRecommendationsController {
     private readonly unwatchOpportunityUseCase: UnwatchOpportunityUseCase,
     private readonly getWatchedOpportunitiesUseCase: GetWatchedOpportunitiesUseCase,
     private readonly getProfileSummaryUseCase: GetProfileSummaryUseCase,
+    private readonly profileAccessService: ProfileAccessService,
   ) {}
 
   @Get(':id/recommendations')
@@ -98,9 +104,12 @@ export class ProfileRecommendationsController {
   })
   async getRecommendationFeed(
     @Param('id') id: string,
+    @CurrentUser() user: CurrentUserPayload,
     @Query(new ZodValidationPipe(recommendationFeedQuerySchema))
     query: RecommendationFeedQuery,
   ): Promise<RecommendationPageDto> {
+    await this.profileAccessService.assertOwner(asProfileId(id), user);
+
     const result = await this.getRecommendationFeedUseCase.execute({
       profileId: asProfileId(id),
       options: {
@@ -167,7 +176,12 @@ export class ProfileRecommendationsController {
     description: 'El perfil solicitado no existe',
     type: ErrorEnvelopeDto,
   })
-  async getProfileSummary(@Param('id') id: string): Promise<ProfileSummaryDto> {
+  async getProfileSummary(
+    @Param('id') id: string,
+    @CurrentUser() user: CurrentUserPayload,
+  ): Promise<ProfileSummaryDto> {
+    await this.profileAccessService.assertOwner(asProfileId(id), user);
+
     const result = await this.getProfileSummaryUseCase.execute({
       profileId: asProfileId(id),
     });
@@ -215,9 +229,12 @@ export class ProfileRecommendationsController {
   })
   async getWatchedOpportunities(
     @Param('id') id: string,
+    @CurrentUser() user: CurrentUserPayload,
     @Query(new ZodValidationPipe(listWatchesQuerySchema))
     query: ListWatchesQuery,
   ): Promise<WatchedOpportunityPageDto> {
+    await this.profileAccessService.assertOwner(asProfileId(id), user);
+
     const result = await this.getWatchedOpportunitiesUseCase.execute({
       profileId: asProfileId(id),
       page: query.page,
@@ -267,7 +284,10 @@ export class ProfileRecommendationsController {
   async watchOpportunity(
     @Param('id') id: string,
     @Param('opportunityId') opportunityId: string,
+    @CurrentUser() user: CurrentUserPayload,
   ): Promise<RegisterFeedbackResponseDto> {
+    await this.profileAccessService.assertOwner(asProfileId(id), user);
+
     const result = await this.watchOpportunityUseCase.execute({
       profileId: asProfileId(id),
       opportunityId: asOpportunityId(opportunityId),
@@ -309,7 +329,10 @@ export class ProfileRecommendationsController {
   async unwatchOpportunity(
     @Param('id') id: string,
     @Param('opportunityId') opportunityId: string,
+    @CurrentUser() user: CurrentUserPayload,
   ): Promise<RegisterFeedbackResponseDto> {
+    await this.profileAccessService.assertOwner(asProfileId(id), user);
+
     const result = await this.unwatchOpportunityUseCase.execute({
       profileId: asProfileId(id),
       opportunityId: asOpportunityId(opportunityId),

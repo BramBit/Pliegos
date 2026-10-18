@@ -3,12 +3,13 @@ import {
   RecommendationNotFoundError,
   createRecommendationNotFoundError,
 } from '../../../shared/domain/errors';
-import { RecommendationId } from '../../../shared/domain/typed-id';
+import { RecommendationId, UserId } from '../../../shared/domain/typed-id';
 import { RecommendationRepositoryPort } from '../../domain/ports/recommendation.repository.port';
 
 export interface IUndoFeedbackUseCase {
   execute(input: {
     recommendationId: RecommendationId;
+    userId?: UserId;
   }): Promise<Result<void, RecommendationNotFoundError>>;
 }
 
@@ -19,10 +20,12 @@ export class UndoFeedbackUseCase implements IUndoFeedbackUseCase {
 
   async execute(input: {
     recommendationId: RecommendationId;
+    userId?: UserId;
   }): Promise<Result<void, RecommendationNotFoundError>> {
     if (this.recommendationRepository.clearFeedbackWithWatch) {
       const updated = await this.recommendationRepository.clearFeedbackWithWatch(
         input.recommendationId,
+        input.userId,
       );
       if (!updated) {
         return err(createRecommendationNotFoundError(input.recommendationId));
@@ -32,6 +35,7 @@ export class UndoFeedbackUseCase implements IUndoFeedbackUseCase {
 
     const recommendation = await this.recommendationRepository.findById(
       input.recommendationId,
+      input.userId,
     );
 
     if (!recommendation) {

@@ -4,6 +4,7 @@ import { AlertRepositoryPort } from '../../../domain/ports/alert.repository.port
 import { Alert, AlertTrigger } from '../../../domain/entities/alert.entity';
 import {
   AlertId,
+  UserId,
   asAlertId,
   asProfileId,
   asOpportunityId,
@@ -52,5 +53,24 @@ export class PostgresAlertRepository implements AlertRepositoryPort {
       trigger: row.trigger as AlertTrigger,
       deliveredAt: row.delivered_at ? new Date(row.delivered_at) : null,
     }));
+  }
+
+  async findById(id: AlertId, userId?: UserId): Promise<Alert | null> {
+    const query = userId
+      ? `SELECT a.* FROM alerts a
+         JOIN profiles p ON p.id = a.profile_id
+         WHERE a.id = $1 AND p.owner_id = $2;`
+      : 'SELECT * FROM alerts WHERE id = $1;';
+    const params = userId ? [id, userId] : [id];
+    const res: QueryResult<AlertRow> = await this.pool.query(query, params);
+    if (res.rows.length === 0) return null;
+    const row = res.rows[0];
+    return {
+      id: asAlertId(row.id),
+      profileId: asProfileId(row.profile_id),
+      opportunityId: asOpportunityId(row.opportunity_id),
+      trigger: row.trigger as AlertTrigger,
+      deliveredAt: row.delivered_at ? new Date(row.delivered_at) : null,
+    };
   }
 }

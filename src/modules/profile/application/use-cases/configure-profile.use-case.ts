@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
-import { Result, ok } from '../../../shared/domain/result';
-import { ValidationError } from '../../../shared/domain/errors';
+import { Result, ok, err } from '../../../shared/domain/result';
+import { ValidationError, createValidationError } from '../../../shared/domain/errors';
 import { ProfileId, asProfileId } from '../../../shared/domain/typed-id';
 import { ProfileRepositoryPort } from '../../domain/ports/profile.repository.port';
 import { Profile, createProfile } from '../../domain/entities/profile.entity';
@@ -18,12 +18,33 @@ export class ConfigureProfileUseCase implements IConfigureProfileUseCase {
   constructor(
     private readonly profileRepository: ProfileRepositoryPort,
     private readonly refreshQueue?: RecommendationRefreshQueuePort,
+    private readonly maxProfilesPerUser: number = 5,
   ) {}
 
   async execute(input: {
     profileId: ProfileId | null;
     data: Omit<Profile, 'id'>;
   }): Promise<Result<Profile, ValidationError>> {
+    let isExisting = false;
+    if (input.profileId) {
+      const existing = await this.profileRepository.findById(input.profileId);
+      if (existing) {
+        isExisting = true;
+      }
+    }
+
+    if (!isExisting && this.profileRepository.findByOwner) {
+      const currentProfiles = await this.profileRepository.findByOwner(input.data.ownerId);
+      if (currentProfiles.length >= this.maxProfilesPerUser) {
+        return err(
+          createValidationError(
+            ['profiles'],
+            `Maximum profiles limit reached (${this.maxProfilesPerUser})`,
+          ),
+        );
+      }
+    }
+
     const id = input.profileId ?? asProfileId(randomUUID());
 
     const prefResult = createProfilePreferences({

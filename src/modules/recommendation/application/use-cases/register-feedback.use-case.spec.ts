@@ -4,6 +4,7 @@ import { Recommendation } from '../../domain/entities/recommendation.entity';
 import {
   RecommendationId,
   ProfileId,
+  UserId,
   asRecommendationId,
   asProfileId,
   asOpportunityId,
@@ -20,7 +21,7 @@ class FakeRecommendationRepository implements RecommendationRepositoryPort {
     return Array.from(this.store.values()).filter((r) => r.profileId === profileId);
   }
 
-  async findById(id: RecommendationId): Promise<Recommendation | null> {
+  async findById(id: RecommendationId, _userId?: UserId): Promise<Recommendation | null> {
     return this.store.get(id) ?? null;
   }
 }

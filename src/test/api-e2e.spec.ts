@@ -469,11 +469,10 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
       expect(response.body.statusCode).toBe(400);
     });
 
-    it('GET /profiles?ownerId= returns profiles for the specified owner', async () => {
+    it('GET /profiles returns profiles for the authenticated user', async () => {
       const response = await request(app.getHttpServer())
         .get('/profiles')
         .set('Authorization', `Bearer ${authToken}`)
-        .query({ ownerId: '00000000-0000-0000-0000-000000000001' })
         .expect(200);
 
       expect(Array.isArray(response.body)).toBe(true);
@@ -1027,6 +1026,250 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
       await request(app.getHttpServer())
         .get('/reference')
         .expect(200);
+    });
+  });
+
+  describe('Resource Ownership & Multi-user Isolation (P4.2)', () => {
+    let tokenUserA: string;
+    let tokenUserB: string;
+    let profileAId: string;
+    let recAId: string;
+    const oppIsoId = 'opp-iso-42-01';
+
+    beforeAll(async () => {
+      // 1. Register User A and User B
+      await request(app.getHttpServer())
+        .post('/auth/register')
+        .send({ email: 'userA.isolation@pliegos.test', password: 'PasswordUserA123!' })
+        .expect(201);
+
+      await request(app.getHttpServer())
+        .post('/auth/register')
+        .send({ email: 'userB.isolation@pliegos.test', password: 'PasswordUserB123!' })
+        .expect(201);
+
+      // Login to get tokens
+      const loginA = await request(app.getHttpServer())
+        .post('/auth/login')
+        .send({ email: 'userA.isolation@pliegos.test', password: 'PasswordUserA123!' })
+        .expect(200);
+      tokenUserA = loginA.body.accessToken;
+
+      const loginB = await request(app.getHttpServer())
+        .post('/auth/login')
+        .send({ email: 'userB.isolation@pliegos.test', password: 'PasswordUserB123!' })
+        .expect(200);
+      tokenUserB = loginB.body.accessToken;
+
+      // Seed opportunity for recommendations and watches
+      await seedOpportunity(pool, oppIsoId);
+
+      // User A creates Profile A
+      const createProfA = await request(app.getHttpServer())
+        .post('/profiles')
+        .set('Authorization', `Bearer ${tokenUserA}`)
+        .send({
+          name: 'Perfil Aislamiento Usuario A',
+          contactEmail: 'userA.isolation@pliegos.test',
+          alertsEnabled: true,
+          deadlineAlertDays: 3,
+          sector: 'Tecnología',
+          capabilities: [{ name: 'Desarrollo', yearsOfExperience: 5 }],
+          preferences: {
+            categoryCodes: ['V1.80111600'],
+            keywords: ['software'],
+            amountRange: { min: 10000000, max: 200000000 },
+            departments: ['Cundinamarca'],
+          },
+        })
+        .expect(200);
+      profileAId = createProfA.body.id;
+
+      // Seed recommendation for Profile A and oppIsoId
+      recAId = 'rec-iso-42-01';
+      const scoreResult = createRelevanceScore(0.95);
+      if (!scoreResult.ok) throw new Error(scoreResult.error.message);
+      const recResult = createRecommendation({
+        id: asRecommendationId(recAId),
+        profileId: asProfileId(profileAId),
+        opportunityId: asOpportunityId(oppIsoId),
+        score: scoreResult.value,
+        explanation: {
+          summary: 'Gran compatibilidad',
+          matchedFactors: [{ factor: 'semanticSimilarity', score: 0.95, description: 'Alta afinidad' }],
+        },
+      });
+      if (!recResult.ok) throw new Error(recResult.error.message);
+      await recRepo.save(recResult.value);
+
+      // User A adds a watch on oppIsoId
+      await request(app.getHttpServer())
+        .post(`/profiles/${profileAId}/watches/${oppIsoId}`)
+        .set('Authorization', `Bearer ${tokenUserA}`)
+        .expect(200);
+    });
+
+    it('User B gets 404 when attempting to read User A profile (GET /profiles/:id)', async () => {
+      const res = await request(app.getHttpServer())
+        .get(`/profiles/${profileAId}`)
+        .set('Authorization', `Bearer ${tokenUserB}`)
+        .expect(404);
+      expect(res.body.error).toBe('ProfileNotFoundError');
+    });
+
+    it('User B gets 404 when attempting to update User A profile (PUT /profiles/:id)', async () => {
+      const res = await request(app.getHttpServer())
+        .put(`/profiles/${profileAId}`)
+        .set('Authorization', `Bearer ${tokenUserB}`)
+        .send({
+          name: 'Perfil Modificado Ilícitamente',
+          contactEmail: 'userB@pliegos.test',
+          alertsEnabled: false,
+          deadlineAlertDays: 1,
+          sector: 'Hacked',
+          capabilities: [],
+          preferences: {
+            categoryCodes: [],
+            keywords: [],
+            amountRange: { min: 0, max: 100 },
+            departments: ['Bogota'],
+          },
+        })
+        .expect(404);
+      expect(res.body.error).toBe('ProfileNotFoundError');
+    });
+
+    it('User B gets 404 when attempting to delete User A profile (DELETE /profiles/:id)', async () => {
+      const res = await request(app.getHttpServer())
+        .delete(`/profiles/${profileAId}`)
+        .set('Authorization', `Bearer ${tokenUserB}`)
+        .expect(404);
+      expect(res.body.error).toBe('ProfileNotFoundError');
+    });
+
+    it('User B gets 404 when accessing recommendations of User A profile (GET /profiles/:id/recommendations)', async () => {
+      const res = await request(app.getHttpServer())
+        .get(`/profiles/${profileAId}/recommendations`)
+        .set('Authorization', `Bearer ${tokenUserB}`)
+        .expect(404);
+      expect(res.body.error).toBe('ProfileNotFoundError');
+    });
+
+    it('User B gets 404 when accessing watches of User A profile (GET /profiles/:id/watches)', async () => {
+      const res = await request(app.getHttpServer())
+        .get(`/profiles/${profileAId}/watches`)
+        .set('Authorization', `Bearer ${tokenUserB}`)
+        .expect(404);
+      expect(res.body.error).toBe('ProfileNotFoundError');
+    });
+
+    it('User B gets 404 when adding watch to User A profile (POST /profiles/:id/watches/:opportunityId)', async () => {
+      const res = await request(app.getHttpServer())
+        .post(`/profiles/${profileAId}/watches/${oppIsoId}`)
+        .set('Authorization', `Bearer ${tokenUserB}`)
+        .expect(404);
+      expect(res.body.error).toBe('ProfileNotFoundError');
+    });
+
+    it('User B gets 404 when deleting watch from User A profile (DELETE /profiles/:id/watches/:opportunityId)', async () => {
+      const res = await request(app.getHttpServer())
+        .delete(`/profiles/${profileAId}/watches/${oppIsoId}`)
+        .set('Authorization', `Bearer ${tokenUserB}`)
+        .expect(404);
+      expect(res.body.error).toBe('ProfileNotFoundError');
+    });
+
+    it('User B gets 404 when accessing summary of User A profile (GET /profiles/:id/summary)', async () => {
+      const res = await request(app.getHttpServer())
+        .get(`/profiles/${profileAId}/summary`)
+        .set('Authorization', `Bearer ${tokenUserB}`)
+        .expect(404);
+      expect(res.body.error).toBe('ProfileNotFoundError');
+    });
+
+    it('User B gets 404 when submitting feedback on User A recommendation (POST /recommendations/:id/feedback)', async () => {
+      const res = await request(app.getHttpServer())
+        .post(`/recommendations/${recAId}/feedback`)
+        .set('Authorization', `Bearer ${tokenUserB}`)
+        .send({ decision: 'Participate' })
+        .expect(404);
+      expect(res.body.error).toBe('RecommendationNotFoundError');
+    });
+
+    it('User B gets 404 when undoing feedback on User A recommendation (DELETE /recommendations/:id/feedback)', async () => {
+      const res = await request(app.getHttpServer())
+        .delete(`/recommendations/${recAId}/feedback`)
+        .set('Authorization', `Bearer ${tokenUserB}`)
+        .expect(404);
+      expect(res.body.error).toBe('RecommendationNotFoundError');
+    });
+
+    it('GET /profiles returns isolated profiles for each user', async () => {
+      const resA = await request(app.getHttpServer())
+        .get('/profiles')
+        .set('Authorization', `Bearer ${tokenUserA}`)
+        .expect(200);
+      expect(resA.body).toHaveLength(1);
+      expect(resA.body[0].id).toBe(profileAId);
+
+      const resB = await request(app.getHttpServer())
+        .get('/profiles')
+        .set('Authorization', `Bearer ${tokenUserB}`)
+        .expect(200);
+      expect(resB.body).toHaveLength(0);
+    });
+
+    it('Enforces MAX_PROFILES_PER_USER: 5 profiles succeed, 6th is rejected with 400', async () => {
+      for (let i = 1; i <= 5; i++) {
+        await request(app.getHttpServer())
+          .post('/profiles')
+          .set('Authorization', `Bearer ${tokenUserB}`)
+          .send({
+            name: `Perfil Usuario B #${i}`,
+            contactEmail: `userB.${i}@pliegos.test`,
+            alertsEnabled: true,
+            deadlineAlertDays: 3,
+            sector: 'Tecnología',
+            capabilities: [],
+            preferences: {
+              categoryCodes: [],
+              keywords: ['software'],
+              amountRange: { min: 1000, max: 2000 },
+              departments: ['Antioquia'],
+            },
+          })
+          .expect(200);
+      }
+
+      // 6th profile creation attempt should fail with 400 (ValidationError)
+      const res6th = await request(app.getHttpServer())
+        .post('/profiles')
+        .set('Authorization', `Bearer ${tokenUserB}`)
+        .send({
+          name: 'Perfil Usuario B #6 Excedente',
+          contactEmail: 'userB.6@pliegos.test',
+          alertsEnabled: true,
+          deadlineAlertDays: 3,
+          sector: 'Tecnología',
+          capabilities: [],
+          preferences: {
+            categoryCodes: [],
+            keywords: ['software'],
+            amountRange: { min: 1000, max: 2000 },
+            departments: ['Antioquia'],
+          },
+        })
+        .expect(400);
+
+      expect(res6th.body.error).toBe('ValidationError');
+      expect(res6th.body.message).toContain('Maximum profiles limit reached');
+
+      // Verify GET /profiles for User B returns exactly 5 profiles
+      const listB = await request(app.getHttpServer())
+        .get('/profiles')
+        .set('Authorization', `Bearer ${tokenUserB}`)
+        .expect(200);
+      expect(listB.body).toHaveLength(5);
     });
   });
 });

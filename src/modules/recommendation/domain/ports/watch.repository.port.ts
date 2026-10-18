@@ -1,4 +1,4 @@
-import { OpportunityId, ProfileId } from '../../../shared/domain/typed-id';
+import { OpportunityId, ProfileId, UserId } from '../../../shared/domain/typed-id';
 import { Opportunity } from '../../../opportunity/domain/entities/opportunity.entity';
 import { Change } from '../../../opportunity/domain/value-objects/opportunity.value-objects';
 
@@ -23,15 +23,16 @@ export interface ProfileSummary {
 }
 
 export interface WatchRepositoryPort {
-  addWatch(profileId: ProfileId, opportunityId: OpportunityId): Promise<void>;
-  removeWatch(profileId: ProfileId, opportunityId: OpportunityId): Promise<boolean>;
-  isWatching(profileId: ProfileId, opportunityId: OpportunityId): Promise<boolean>;
+  addWatch(profileId: ProfileId, opportunityId: OpportunityId, userId?: UserId): Promise<void>;
+  removeWatch(profileId: ProfileId, opportunityId: OpportunityId, userId?: UserId): Promise<boolean>;
+  isWatching(profileId: ProfileId, opportunityId: OpportunityId, userId?: UserId): Promise<boolean>;
   findWatchedPaged(
     profileId: ProfileId,
     page?: number,
     pageSize?: number,
+    userId?: UserId,
   ): Promise<PagedWatchedOpportunities>;
-  getProfileSummary(profileId: ProfileId): Promise<ProfileSummary | null>;
+  getProfileSummary(profileId: ProfileId, userId?: UserId): Promise<ProfileSummary | null>;
 }
 
 export const WATCH_REPOSITORY_PORT = Symbol('WATCH_REPOSITORY_PORT');

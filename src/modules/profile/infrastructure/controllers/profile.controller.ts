@@ -33,6 +33,8 @@ import {
   CurrentUserPayload,
 } from '../../../auth/infrastructure/security/current-user.decorator';
 
+import { ProfileAccessService } from '../../application/services/profile-access.service';
+
 @ApiTags('Profiles')
 @Controller('profiles')
 export class ProfileController {
@@ -41,31 +43,26 @@ export class ProfileController {
     private readonly getProfileByIdUseCase?: GetProfileByIdUseCase,
     private readonly getProfilesByOwnerUseCase?: GetProfilesByOwnerUseCase,
     private readonly deleteProfileUseCase?: DeleteProfileUseCase,
+    private readonly profileAccessService?: ProfileAccessService,
   ) {}
 
   @Get()
   @ApiOperation({
-    summary: 'Listar perfiles de contratista',
+    summary: 'Listar perfiles del contratista autenticado',
     description:
-      'Retorna los perfiles pertenecientes al propietario especificado en el parámetro `ownerId`.',
-  })
-  @ApiQuery({
-    name: 'ownerId',
-    required: false,
-    description: 'Identificador del usuario propietario de los perfiles',
-    example: 'user-contractor-01',
+      'Retorna todos los perfiles pertenecientes al usuario autenticado.',
   })
   @ApiResponse({
     status: HttpStatus.OK,
-    description: 'Lista de perfiles asociados al usuario',
+    description: 'Lista de perfiles asociados al usuario autenticado',
     type: [ProfileDto],
   })
-  async list(@Query('ownerId') ownerId?: string): Promise<ProfileDto[]> {
-    if (!ownerId || !this.getProfilesByOwnerUseCase) {
+  async list(@CurrentUser() user: CurrentUserPayload): Promise<ProfileDto[]> {
+    if (!this.getProfilesByOwnerUseCase) {
       return [];
     }
     const result = await this.getProfilesByOwnerUseCase.execute({
-      ownerId: asUserId(ownerId),
+      ownerId: asUserId(user.sub),
     });
     if (!result.ok) {
       return [];
@@ -76,7 +73,7 @@ export class ProfileController {
   @Get(':id')
   @ApiOperation({
     summary: 'Obtener un perfil por ID',
-    description: 'Retorna el perfil completo de un contratista.',
+    description: 'Retorna el perfil completo de un contratista perteneciente al usuario autenticado.',
   })
   @ApiParam({
     name: 'id',
@@ -93,7 +90,15 @@ export class ProfileController {
     description: 'El perfil solicitado no existe',
     type: ErrorEnvelopeDto,
   })
-  async getById(@Param('id') id: string): Promise<ProfileDto> {
+  async getById(
+    @Param('id') id: string,
+    @CurrentUser() user: CurrentUserPayload,
+  ): Promise<ProfileDto> {
+    if (this.profileAccessService) {
+      const profile = await this.profileAccessService.assertOwner(asProfileId(id), user);
+      return toProfileDto(profile);
+    }
+
     if (!this.getProfileByIdUseCase) {
       throw new DomainErrorException(createProfileNotFoundError(asProfileId(id)));
     }
@@ -190,12 +195,13 @@ export class ProfileController {
   })
   async replace(
     @Param('id') id: string,
-    @CurrentUser() user: CurrentUserPayload | undefined,
+    @CurrentUser() user: CurrentUserPayload,
     @Body(new ZodValidationPipe(configureProfileSchema))
     body: ConfigureProfileDto,
   ): Promise<ProfileDto> {
-    const ownerId = user?.sub || body.ownerId || '';
-    if (this.getProfileByIdUseCase) {
+    if (this.profileAccessService) {
+      await this.profileAccessService.assertOwner(asProfileId(id), user);
+    } else if (this.getProfileByIdUseCase) {
       const existing = await this.getProfileByIdUseCase.execute({
         profileId: asProfileId(id),
       });
@@ -204,6 +210,7 @@ export class ProfileController {
       }
     }
 
+    const ownerId = user?.sub || body.ownerId || '';
     const result = await this.configureProfileUseCase.execute({
       profileId: asProfileId(id),
       data: {
@@ -253,7 +260,14 @@ export class ProfileController {
     description: 'El perfil no existe',
     type: ErrorEnvelopeDto,
   })
-  async delete(@Param('id') id: string): Promise<void> {
+  async delete(
+    @Param('id') id: string,
+    @CurrentUser() user: CurrentUserPayload,
+  ): Promise<void> {
+    if (this.profileAccessService) {
+      await this.profileAccessService.assertOwner(asProfileId(id), user);
+    }
+
     if (!this.deleteProfileUseCase) {
       return;
     }

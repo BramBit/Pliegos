@@ -213,9 +213,9 @@ Content-Type: application/json
 
 ###
 
-# Validates listing profiles filtered by ownerId
-# @name getProfilesByOwner
-GET {{baseUrl}}/profiles?ownerId=usr-tech-innovations-01
+# Validates listing profiles for current authenticated user
+# @name getProfiles
+GET {{baseUrl}}/profiles
 Authorization: Bearer {{accessToken}}
 Accept: application/json
 

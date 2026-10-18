@@ -82,4 +82,15 @@ describe('loadEnv', () => {
 
     expect(() => loadEnv({ ...validEnv, JWT_SECRET: 'short-secret' })).toThrow(EnvValidationError);
   });
+
+  it('handles MAX_PROFILES_PER_USER defaults, overrides and validations', () => {
+    const envDefault = loadEnv(validEnv);
+    expect(envDefault.MAX_PROFILES_PER_USER).toBe(5);
+
+    const envCustom = loadEnv({ ...validEnv, MAX_PROFILES_PER_USER: '8' });
+    expect(envCustom.MAX_PROFILES_PER_USER).toBe(8);
+
+    expect(() => loadEnv({ ...validEnv, MAX_PROFILES_PER_USER: '-1' })).toThrow(EnvValidationError);
+    expect(() => loadEnv({ ...validEnv, MAX_PROFILES_PER_USER: 'invalid' })).toThrow(EnvValidationError);
+  });
 });

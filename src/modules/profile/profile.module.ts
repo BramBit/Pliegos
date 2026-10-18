@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { BullModule, getQueueToken } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { Pool } from 'pg';
@@ -12,6 +13,7 @@ import { ConfigureProfileUseCase } from './application/use-cases/configure-profi
 import { GetProfileByIdUseCase } from './application/use-cases/get-profile-by-id.use-case';
 import { GetProfilesByOwnerUseCase } from './application/use-cases/get-profiles-by-owner.use-case';
 import { DeleteProfileUseCase } from './application/use-cases/delete-profile.use-case';
+import { ProfileAccessService } from './application/services/profile-access.service';
 import { ProfileController } from './infrastructure/controllers/profile.controller';
 import {
   RECOMMENDATION_REFRESH_QUEUE_PORT,
@@ -39,9 +41,15 @@ import {
     },
     {
       provide: ConfigureProfileUseCase,
-      useFactory: (repo: ProfileRepositoryPort, refreshQueue: RecommendationRefreshQueuePort) =>
-        new ConfigureProfileUseCase(repo, refreshQueue),
-      inject: [PROFILE_REPOSITORY_PORT, RECOMMENDATION_REFRESH_QUEUE_PORT],
+      useFactory: (
+        repo: ProfileRepositoryPort,
+        refreshQueue: RecommendationRefreshQueuePort,
+        config: ConfigService,
+      ) => {
+        const maxProfiles = config.get<number>('MAX_PROFILES_PER_USER') ?? 5;
+        return new ConfigureProfileUseCase(repo, refreshQueue, maxProfiles);
+      },
+      inject: [PROFILE_REPOSITORY_PORT, RECOMMENDATION_REFRESH_QUEUE_PORT, ConfigService],
     },
     {
       provide: GetProfileByIdUseCase,
@@ -58,10 +66,16 @@ import {
       useFactory: (repo: ProfileRepositoryPort) => new DeleteProfileUseCase(repo),
       inject: [PROFILE_REPOSITORY_PORT],
     },
+    {
+      provide: ProfileAccessService,
+      useFactory: (repo: ProfileRepositoryPort) => new ProfileAccessService(repo),
+      inject: [PROFILE_REPOSITORY_PORT],
+    },
   ],
   exports: [
     PROFILE_REPOSITORY_PORT,
     RECOMMENDATION_REFRESH_QUEUE_PORT,
+    ProfileAccessService,
     ConfigureProfileUseCase,
     GetProfileByIdUseCase,
     GetProfilesByOwnerUseCase,

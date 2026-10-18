@@ -305,23 +305,12 @@
     },
     "/profiles": {
       "get": {
-        "description": "Retorna los perfiles pertenecientes al propietario especificado en el parámetro `ownerId`.",
+        "description": "Retorna todos los perfiles pertenecientes al usuario autenticado.",
         "operationId": "ProfileController_list",
-        "parameters": [
-          {
-            "name": "ownerId",
-            "required": false,
-            "in": "query",
-            "description": "Identificador del usuario propietario de los perfiles",
-            "schema": {
-              "example": "user-contractor-01",
-              "type": "string"
-            }
-          }
-        ],
+        "parameters": [],
         "responses": {
           "200": {
-            "description": "Lista de perfiles asociados al usuario",
+            "description": "Lista de perfiles asociados al usuario autenticado",
             "content": {
               "application/json": {
                 "schema": {
@@ -334,7 +323,7 @@
             }
           }
         },
-        "summary": "Listar perfiles de contratista",
+        "summary": "Listar perfiles del contratista autenticado",
         "tags": [
           "Profiles"
         ]
@@ -383,7 +372,7 @@
     },
     "/profiles/{id}": {
       "get": {
-        "description": "Retorna el perfil completo de un contratista.",
+        "description": "Retorna el perfil completo de un contratista perteneciente al usuario autenticado.",
         "operationId": "ProfileController_getById",
         "parameters": [
           {

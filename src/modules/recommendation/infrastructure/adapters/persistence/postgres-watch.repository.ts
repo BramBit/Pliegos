@@ -6,7 +6,7 @@ import {
   ProfileSummary,
   WatchedOpportunityItem,
 } from '../../../domain/ports/watch.repository.port';
-import { ProfileId, OpportunityId, asOpportunityId } from '../../../../shared/domain/typed-id';
+import { ProfileId, OpportunityId, UserId, asOpportunityId } from '../../../../shared/domain/typed-id';
 import { Opportunity } from '../../../../opportunity/domain/entities/opportunity.entity';
 import {
   OpportunityStatus,
@@ -48,30 +48,56 @@ interface WatchedRow {
 export class PostgresWatchRepository implements WatchRepositoryPort {
   constructor(private readonly pool: Pool) {}
 
-  async addWatch(profileId: ProfileId, opportunityId: OpportunityId): Promise<void> {
-    const query = `
-      INSERT INTO watches (profile_id, opportunity_id, created_at)
-      VALUES ($1, $2, CURRENT_TIMESTAMP)
-      ON CONFLICT (profile_id, opportunity_id) DO NOTHING;
-    `;
-    await this.pool.query(query, [profileId, opportunityId]);
+  async addWatch(
+    profileId: ProfileId,
+    opportunityId: OpportunityId,
+    userId?: UserId,
+  ): Promise<void> {
+    const query = userId
+      ? `INSERT INTO watches (profile_id, opportunity_id, created_at)
+         SELECT p.id, $2, CURRENT_TIMESTAMP
+         FROM profiles p
+         WHERE p.id = $1 AND p.owner_id = $3
+         ON CONFLICT (profile_id, opportunity_id) DO NOTHING;`
+      : `INSERT INTO watches (profile_id, opportunity_id, created_at)
+         VALUES ($1, $2, CURRENT_TIMESTAMP)
+         ON CONFLICT (profile_id, opportunity_id) DO NOTHING;`;
+    const params = userId ? [profileId, opportunityId, userId] : [profileId, opportunityId];
+    await this.pool.query(query, params);
   }
 
-  async removeWatch(profileId: ProfileId, opportunityId: OpportunityId): Promise<boolean> {
-    const query = `
-      DELETE FROM watches
-      WHERE profile_id = $1 AND opportunity_id = $2;
-    `;
-    const res = await this.pool.query(query, [profileId, opportunityId]);
+  async removeWatch(
+    profileId: ProfileId,
+    opportunityId: OpportunityId,
+    userId?: UserId,
+  ): Promise<boolean> {
+    const query = userId
+      ? `DELETE FROM watches w
+         USING profiles p
+         WHERE w.profile_id = p.id
+           AND p.id = $1
+           AND p.owner_id = $2
+           AND w.opportunity_id = $3;`
+      : `DELETE FROM watches
+         WHERE profile_id = $1 AND opportunity_id = $2;`;
+    const params = userId ? [profileId, userId, opportunityId] : [profileId, opportunityId];
+    const res = await this.pool.query(query, params);
     return (res.rowCount ?? 0) > 0;
   }
 
-  async isWatching(profileId: ProfileId, opportunityId: OpportunityId): Promise<boolean> {
-    const query = `
-      SELECT 1 FROM watches
-      WHERE profile_id = $1 AND opportunity_id = $2;
-    `;
-    const res = await this.pool.query(query, [profileId, opportunityId]);
+  async isWatching(
+    profileId: ProfileId,
+    opportunityId: OpportunityId,
+    userId?: UserId,
+  ): Promise<boolean> {
+    const query = userId
+      ? `SELECT 1 FROM watches w
+         JOIN profiles p ON p.id = w.profile_id
+         WHERE w.profile_id = $1 AND p.owner_id = $2 AND w.opportunity_id = $3;`
+      : `SELECT 1 FROM watches
+         WHERE profile_id = $1 AND opportunity_id = $2;`;
+    const params = userId ? [profileId, userId, opportunityId] : [profileId, opportunityId];
+    const res = await this.pool.query(query, params);
     return res.rows.length > 0;
   }
 
@@ -79,6 +105,7 @@ export class PostgresWatchRepository implements WatchRepositoryPort {
     profileId: ProfileId,
     page: number = 1,
     pageSize: number = 20,
+    userId?: UserId,
   ): Promise<PagedWatchedOpportunities> {
     const safePage = Math.max(1, Math.trunc(page));
     const safeSize = Math.min(50, Math.max(1, Math.trunc(pageSize)));
@@ -91,7 +118,8 @@ export class PostgresWatchRepository implements WatchRepositoryPort {
         COUNT(*) OVER() AS total_count
       FROM watches w
       JOIN opportunities o ON o.id = w.opportunity_id
-      WHERE w.profile_id = $1
+      JOIN profiles p ON p.id = w.profile_id
+      WHERE w.profile_id = $1 AND ($4::text IS NULL OR p.owner_id = $4)
       ORDER BY w.created_at DESC
       LIMIT $2 OFFSET $3;
     `;
@@ -100,13 +128,17 @@ export class PostgresWatchRepository implements WatchRepositoryPort {
       profileId,
       safeSize,
       offset,
+      userId ?? null,
     ]);
 
     let total = res.rows.length > 0 ? Number(res.rows[0].total_count) : 0;
     if (res.rows.length === 0 && offset > 0) {
       const countRes = await this.pool.query<{ count: string | number }>(
-        'SELECT COUNT(*) AS count FROM watches WHERE profile_id = $1;',
-        [profileId],
+        `SELECT COUNT(*) AS count
+         FROM watches w
+         JOIN profiles p ON p.id = w.profile_id
+         WHERE w.profile_id = $1 AND ($2::text IS NULL OR p.owner_id = $2);`,
+        [profileId, userId ?? null],
       );
       total = Number(countRes.rows[0]?.count ?? 0);
     }
@@ -129,15 +161,27 @@ export class PostgresWatchRepository implements WatchRepositoryPort {
     };
   }
 
-  async getProfileSummary(profileId: ProfileId): Promise<ProfileSummary | null> {
+  async getProfileSummary(profileId: ProfileId, userId?: UserId): Promise<ProfileSummary | null> {
     const query = `
       SELECT
-        (EXISTS(SELECT 1 FROM profiles WHERE id = $1)) AS profile_exists,
-        (SELECT COUNT(*) FROM recommendations WHERE profile_id = $1 AND feedback IS NULL) AS new_recommendations,
-        (SELECT COUNT(*) FROM watches WHERE profile_id = $1) AS watching,
-        (SELECT COUNT(*) FROM watches w
-         JOIN opportunities o ON o.id = w.opportunity_id
+        (EXISTS(SELECT 1 FROM profiles WHERE id = $1 AND ($2::text IS NULL OR owner_id = $2))) AS profile_exists,
+        (SELECT COUNT(*)
+         FROM recommendations r
+         JOIN profiles p ON p.id = r.profile_id
+         WHERE r.profile_id = $1
+           AND ($2::text IS NULL OR p.owner_id = $2)
+           AND r.feedback IS NULL) AS new_recommendations,
+        (SELECT COUNT(*)
+         FROM watches w
+         JOIN profiles p ON p.id = w.profile_id
          WHERE w.profile_id = $1
+           AND ($2::text IS NULL OR p.owner_id = $2)) AS watching,
+        (SELECT COUNT(*)
+         FROM watches w
+         JOIN opportunities o ON o.id = w.opportunity_id
+         JOIN profiles p ON p.id = w.profile_id
+         WHERE w.profile_id = $1
+           AND ($2::text IS NULL OR p.owner_id = $2)
            AND o.closing_date IS NOT NULL
            AND o.closing_date >= CURRENT_TIMESTAMP
            AND o.closing_date <= CURRENT_TIMESTAMP + interval '7 days') AS closing_soon,
@@ -150,7 +194,7 @@ export class PostgresWatchRepository implements WatchRepositoryPort {
       watching: string | number;
       closing_soon: string | number;
       unread_alerts: string | number;
-    }>(query, [profileId]);
+    }>(query, [profileId, userId ?? null]);
 
     const row = res.rows[0];
     if (!row || !row.profile_exists) {

@@ -19,6 +19,7 @@ import {
 import {
   RecommendationId,
   ProfileId,
+  UserId,
   asRecommendationId,
   asProfileId,
   asOpportunityId,
@@ -196,11 +197,14 @@ export class PostgresRecommendationRepository implements RecommendationRepositor
     };
   }
 
-  async findById(id: RecommendationId): Promise<Recommendation | null> {
-    const res: QueryResult<RecommendationRow> = await this.pool.query(
-      'SELECT * FROM recommendations WHERE id = $1;',
-      [id],
-    );
+  async findById(id: RecommendationId, userId?: UserId): Promise<Recommendation | null> {
+    const sql = userId
+      ? `SELECT r.* FROM recommendations r
+         JOIN profiles p ON p.id = r.profile_id
+         WHERE r.id = $1 AND p.owner_id = $2;`
+      : 'SELECT * FROM recommendations WHERE id = $1;';
+    const params = userId ? [id, userId] : [id];
+    const res: QueryResult<RecommendationRow> = await this.pool.query(sql, params);
 
     if (res.rows.length === 0) return null;
     return this.mapRowToEntity(res.rows[0]);
@@ -311,14 +315,23 @@ export class PostgresRecommendationRepository implements RecommendationRepositor
   async recordFeedbackWithWatch(
     id: RecommendationId,
     decision: 'Participate' | 'Discard',
+    userId?: UserId,
   ): Promise<Recommendation | null> {
     const client = await this.pool.connect();
     try {
       await client.query('BEGIN');
 
+      const selectQuery = userId
+        ? `SELECT r.* FROM recommendations r
+           JOIN profiles p ON p.id = r.profile_id
+           WHERE r.id = $1 AND p.owner_id = $2
+           FOR UPDATE OF r;`
+        : 'SELECT * FROM recommendations WHERE id = $1 FOR UPDATE;';
+      const selectParams = userId ? [id, userId] : [id];
+
       const findRes: QueryResult<RecommendationRow> = await client.query(
-        'SELECT * FROM recommendations WHERE id = $1 FOR UPDATE;',
-        [id],
+        selectQuery,
+        selectParams,
       );
 
       if (findRes.rows.length === 0) {
@@ -362,14 +375,25 @@ export class PostgresRecommendationRepository implements RecommendationRepositor
     }
   }
 
-  async clearFeedbackWithWatch(id: RecommendationId): Promise<Recommendation | null> {
+  async clearFeedbackWithWatch(
+    id: RecommendationId,
+    userId?: UserId,
+  ): Promise<Recommendation | null> {
     const client = await this.pool.connect();
     try {
       await client.query('BEGIN');
 
+      const selectQuery = userId
+        ? `SELECT r.* FROM recommendations r
+           JOIN profiles p ON p.id = r.profile_id
+           WHERE r.id = $1 AND p.owner_id = $2
+           FOR UPDATE OF r;`
+        : 'SELECT * FROM recommendations WHERE id = $1 FOR UPDATE;';
+      const selectParams = userId ? [id, userId] : [id];
+
       const findRes: QueryResult<RecommendationRow> = await client.query(
-        'SELECT * FROM recommendations WHERE id = $1 FOR UPDATE;',
-        [id],
+        selectQuery,
+        selectParams,
       );
 
       if (findRes.rows.length === 0) {

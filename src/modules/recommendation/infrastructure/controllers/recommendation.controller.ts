@@ -10,9 +10,13 @@ import {
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { RegisterFeedbackUseCase } from '../../application/use-cases/register-feedback.use-case';
 import { UndoFeedbackUseCase } from '../../application/use-cases/undo-feedback.use-case';
-import { asRecommendationId } from '../../../shared/domain/typed-id';
+import { asRecommendationId, asUserId } from '../../../shared/domain/typed-id';
 import { ZodValidationPipe } from '../../../shared/infrastructure/http/zod-validation.pipe';
 import { DomainErrorException } from '../../../shared/infrastructure/http/global-exception.filter';
+import {
+  CurrentUser,
+  CurrentUserPayload,
+} from '../../../auth/infrastructure/security/current-user.decorator';
 import {
   ErrorEnvelopeDto,
   RegisterFeedbackResponseDto,
@@ -59,12 +63,14 @@ export class RecommendationController {
   })
   async registerFeedback(
     @Param('id') id: string,
+    @CurrentUser() user: CurrentUserPayload | undefined,
     @Body(new ZodValidationPipe(registerFeedbackSchema))
     body: RegisterFeedbackDto,
   ): Promise<RegisterFeedbackResponseDto> {
     const result = await this.registerFeedbackUseCase.execute({
       recommendationId: asRecommendationId(id),
       decision: body.decision,
+      userId: user?.sub ? asUserId(user.sub) : undefined,
     });
 
     if (!result.ok) {
@@ -98,9 +104,11 @@ export class RecommendationController {
   })
   async undoFeedback(
     @Param('id') id: string,
+    @CurrentUser() user: CurrentUserPayload | undefined,
   ): Promise<RegisterFeedbackResponseDto> {
     const result = await this.undoFeedbackUseCase.execute({
       recommendationId: asRecommendationId(id),
+      userId: user?.sub ? asUserId(user.sub) : undefined,
     });
 
     if (!result.ok) {

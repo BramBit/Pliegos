@@ -3,7 +3,7 @@ import {
   RecommendationNotFoundError,
   createRecommendationNotFoundError,
 } from '../../../shared/domain/errors';
-import { RecommendationId } from '../../../shared/domain/typed-id';
+import { RecommendationId, UserId } from '../../../shared/domain/typed-id';
 import { RecommendationRepositoryPort } from '../../domain/ports/recommendation.repository.port';
 import { withRecommendationFeedback } from '../../domain/entities/recommendation.entity';
 import { FeedbackDecision } from '../../../opportunity/domain/value-objects/opportunity.value-objects';
@@ -12,6 +12,7 @@ export interface IRegisterFeedbackUseCase {
   execute(input: {
     recommendationId: RecommendationId;
     decision: FeedbackDecision;
+    userId?: UserId;
   }): Promise<Result<void, RecommendationNotFoundError>>;
 }
 
@@ -23,11 +24,13 @@ export class RegisterFeedbackUseCase implements IRegisterFeedbackUseCase {
   async execute(input: {
     recommendationId: RecommendationId;
     decision: FeedbackDecision;
+    userId?: UserId;
   }): Promise<Result<void, RecommendationNotFoundError>> {
     if (this.recommendationRepository.recordFeedbackWithWatch) {
       const updated = await this.recommendationRepository.recordFeedbackWithWatch(
         input.recommendationId,
         input.decision,
+        input.userId,
       );
       if (!updated) {
         return err(createRecommendationNotFoundError(input.recommendationId));
@@ -37,6 +40,7 @@ export class RegisterFeedbackUseCase implements IRegisterFeedbackUseCase {
 
     const recommendation = await this.recommendationRepository.findById(
       input.recommendationId,
+      input.userId,
     );
 
     if (!recommendation) {

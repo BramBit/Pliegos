@@ -142,6 +142,35 @@ describe('Profile Use Cases', () => {
         expect(result.error.fields).toContain('preferences.departments');
       }
     });
+
+    it('enforces maxProfilesPerUser limit when creating new profiles', async () => {
+      const limitedUseCase = new ConfigureProfileUseCase(repository, refreshQueue, 2);
+
+      // 1st profile -> success
+      const res1 = await limitedUseCase.execute({ profileId: null, data: validProfileData });
+      expect(res1.ok).toBe(true);
+
+      // 2nd profile -> success
+      const res2 = await limitedUseCase.execute({ profileId: null, data: validProfileData });
+      expect(res2.ok).toBe(true);
+
+      // 3rd profile -> rejected
+      const res3 = await limitedUseCase.execute({ profileId: null, data: validProfileData });
+      expect(res3.ok).toBe(false);
+      if (!res3.ok) {
+        expect(res3.error.type).toBe('ValidationError');
+        expect(res3.error.message).toContain('Maximum profiles limit reached');
+      }
+
+      // Updating an existing profile succeeds and does not increment count
+      if (res1.ok) {
+        const updateRes = await limitedUseCase.execute({
+          profileId: res1.value.id,
+          data: { ...validProfileData, name: 'Updated Name' },
+        });
+        expect(updateRes.ok).toBe(true);
+      }
+    });
   });
 
   describe('GetProfileByIdUseCase', () => {

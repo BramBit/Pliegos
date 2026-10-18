@@ -41,6 +41,8 @@ const envSchema = z.object({
   JWT_SECRET: z.string().min(32, 'must be at least 32 characters long'),
   JWT_ACCESS_TTL: nonEmpty.default('15m'),
   JWT_REFRESH_TTL: nonEmpty.default('7d'),
+
+  MAX_PROFILES_PER_USER: positiveInt.default(5),
 });
 
 export type Env = z.infer<typeof envSchema>;
