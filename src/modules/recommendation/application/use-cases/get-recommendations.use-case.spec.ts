@@ -1,7 +1,13 @@
-import { GetRecommendationsUseCase } from './get-recommendations.use-case';
+import { GetRecommendationsUseCase, CANDIDATE_POOL_SIZE } from './get-recommendations.use-case';
 import { ProfileRepositoryPort } from '../../../profile/domain/ports/profile.repository.port';
 import { OpportunityRepositoryPort } from '../../../opportunity/domain/ports/opportunity.repository.port';
-import { SearchIndexPort } from '../../../opportunity/domain/ports/search-index.port';
+import {
+  SearchIndexPort,
+  CandidateRetrievalQuery,
+  CandidateRetrievalFilters,
+  CandidateRetrievalResult,
+  reciprocalRankFusion,
+} from '../../../opportunity/domain/ports/search-index.port';
 import { RecommendationRepositoryPort } from '../../domain/ports/recommendation.repository.port';
 import { MatchingService, cosine } from '../../domain/services/matching.service';
 import { Profile } from '../../../profile/domain/entities/profile.entity';
@@ -84,7 +90,9 @@ class FakeRecommendationRepo implements RecommendationRepositoryPort {
 
 class FakeSearchIndex implements SearchIndexPort {
   public vectorsByOppId: Map<OpportunityId, number[]> = new Map();
-  public similaritiesCalls = 0;
+  public retrieveCalls = 0;
+  public lastFilters?: CandidateRetrievalFilters;
+  public lastLimit?: number;
 
   constructor(private readonly embedder: HashEmbedder) {}
 
@@ -104,7 +112,6 @@ class FakeSearchIndex implements SearchIndexPort {
     profileVector: number[],
     opportunityIds: OpportunityId[],
   ): Promise<Map<OpportunityId, number>> {
-    this.similaritiesCalls += 1;
     const result = new Map<OpportunityId, number>();
     for (const id of opportunityIds) {
       const vec = this.vectorsByOppId.get(id);
@@ -113,6 +120,36 @@ class FakeSearchIndex implements SearchIndexPort {
       }
     }
     return result;
+  }
+
+  async retrieveCandidates(
+    query: CandidateRetrievalQuery,
+    filters: CandidateRetrievalFilters,
+    limit: number,
+  ): Promise<CandidateRetrievalResult> {
+    this.retrieveCalls += 1;
+    this.lastFilters = filters;
+    this.lastLimit = limit;
+
+    const vectorList: Array<{ id: OpportunityId; cosine: number }> = [];
+    for (const [id, vec] of this.vectorsByOppId.entries()) {
+      vectorList.push({ id, cosine: cosine(query.vector, vec) });
+    }
+    vectorList.sort((a, b) => b.cosine - a.cosine);
+
+    const fused = reciprocalRankFusion([vectorList], 60, limit);
+    const cosById = new Map(vectorList.map((v) => [v.id, v.cosine]));
+
+    return {
+      items: fused.map((f) => ({
+        id: f.id,
+        cosine: cosById.get(f.id) ?? null,
+        textRank: null,
+        fusedScore: f.fusedScore,
+      })),
+      level: 'hybrid',
+      degraded: false,
+    };
   }
 }
 
@@ -210,7 +247,7 @@ describe('GetRecommendationsUseCase', () => {
     }
   });
 
-  it('embeds profile text once, calls similarities once, scores and ranks descending', async () => {
+  it('embeds profile text once, calls retrieveCandidates once for 200 items, scores and ranks descending', async () => {
     await profileRepo.save(testProfile);
     await oppRepo.save(oppLow);
     await oppRepo.save(oppHigh);
@@ -223,7 +260,9 @@ describe('GetRecommendationsUseCase', () => {
     });
 
     expect(embedder.calls).toBe(1);
-    expect(searchIndex.similaritiesCalls).toBe(1);
+    expect(searchIndex.retrieveCalls).toBe(1);
+    expect(searchIndex.lastLimit).toBe(CANDIDATE_POOL_SIZE);
+    expect(searchIndex.lastLimit).toBe(200);
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.value).toHaveLength(2);
@@ -235,13 +274,16 @@ describe('GetRecommendationsUseCase', () => {
     expect(recRepo.recommendations).toHaveLength(2);
   });
 
-  it('requests only actionable candidates from the repository', async () => {
+  it('asks for 200 candidates with only onlyCompetitive and actionable as filters', async () => {
     await profileRepo.save(testProfile);
-    const spy = jest.spyOn(oppRepo, 'findByFilters');
 
     await useCase.execute({ profileId: testProfile.id });
 
-    expect(spy).toHaveBeenCalledWith(expect.objectContaining({ actionableOnly: true }));
+    expect(searchIndex.lastFilters).toEqual({
+      onlyCompetitive: true,
+      actionable: true,
+    });
+    expect(searchIndex.lastLimit).toBe(200);
   });
 
   it('reuses recommendation id and feedback on repeated calls (no duplicates)', async () => {

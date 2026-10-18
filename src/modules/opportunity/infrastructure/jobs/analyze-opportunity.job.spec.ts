@@ -147,6 +147,11 @@ describe('BullMQ Analysis Queue & Job Processing', () => {
         }),
         semanticSearch: jest.fn().mockResolvedValue([]),
         similarities: jest.fn().mockResolvedValue(new Map()),
+        retrieveCandidates: jest.fn().mockResolvedValue({
+          items: [],
+          level: 'hybrid',
+          degraded: false,
+        }),
       };
 
       processor = new AnalyzeOpportunityJob(

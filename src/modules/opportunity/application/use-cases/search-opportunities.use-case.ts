@@ -5,6 +5,8 @@ import { OpportunityRepositoryPort } from '../../domain/ports/opportunity.reposi
 import { SearchIndexPort } from '../../domain/ports/search-index.port';
 import { EmbedderPort } from '../../../recommendation/domain/ports/ai-provider.port';
 
+export const DEFAULT_OPPORTUNITY_SEARCH_LIMIT = 20;
+
 export interface ISearchOpportunitiesUseCase {
   execute(input: {
     query?: string;
@@ -24,17 +26,30 @@ export class SearchOpportunitiesUseCase implements ISearchOpportunitiesUseCase {
     filters?: OpportunityFilters;
   }): Promise<Result<Opportunity[], never>> {
     const trimmedQuery = input.query?.trim();
+    const filters = input.filters ?? {};
 
     if (trimmedQuery && trimmedQuery.length > 0) {
       const [queryVector] = await this.embedder.embed([trimmedQuery]);
-      const matchedIds = await this.searchIndex.semanticSearch(
-        queryVector,
-        input.filters ?? {},
+      const retrieved = await this.searchIndex.retrieveCandidates(
+        {
+          text: trimmedQuery,
+          vector: queryVector,
+          mode: 'user',
+        },
+        {
+          actionable: filters.actionableOnly,
+          department: filters.department,
+          categoryCode: filters.categoryCode,
+          contractType: filters.contractType,
+          amountMin: filters.amountMin,
+          amountMax: filters.amountMax,
+        },
+        filters.limit ?? DEFAULT_OPPORTUNITY_SEARCH_LIMIT,
       );
 
       const opportunities: Opportunity[] = [];
-      for (const id of matchedIds) {
-        const opp = await this.repository.findById(id);
+      for (const item of retrieved.items) {
+        const opp = await this.repository.findById(item.id);
         if (opp) {
           opportunities.push(opp);
         }
@@ -43,7 +58,7 @@ export class SearchOpportunitiesUseCase implements ISearchOpportunitiesUseCase {
       return ok(opportunities);
     }
 
-    const filtered = await this.repository.findByFilters(input.filters ?? {});
+    const filtered = await this.repository.findByFilters(filters);
     return ok(filtered);
   }
 }

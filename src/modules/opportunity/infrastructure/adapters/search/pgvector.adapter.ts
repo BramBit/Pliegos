@@ -1,11 +1,21 @@
 import { createHash } from 'node:crypto';
 import { Injectable, Logger, LoggerService } from '@nestjs/common';
 import { Pool, QueryResult } from 'pg';
-import { SearchIndexPort } from '../../../domain/ports/search-index.port';
+import {
+  SearchIndexPort,
+  CandidateRetrievalQuery,
+  CandidateRetrievalFilters,
+  CandidateRetrievalResult,
+  RetrievalLevel,
+  reciprocalRankFusion,
+  buildProfileOrTsQuery,
+} from '../../../domain/ports/search-index.port';
 import { Opportunity, buildIndexText } from '../../../domain/entities/opportunity.entity';
 import { OpportunityFilters } from '../../../domain/value-objects/opportunity-filters';
 import { OpportunityId, asOpportunityId } from '../../../../shared/domain/typed-id';
 import { EmbedderPort } from '../../../../recommendation/domain/ports/ai-provider.port';
+
+export { reciprocalRankFusion, buildProfileOrTsQuery };
 
 export const PGVECTOR_DIMENSIONS = 768;
 export const DEFAULT_SEARCH_LIMIT = 20;
@@ -235,5 +245,197 @@ export class PgVectorAdapter implements SearchIndexPort {
       out.set(asOpportunityId(row.opportunity_id), Number(row.cosine));
     }
     return out;
+  }
+
+  /**
+   * Hybrid candidate retrieval combining pgvector cosine search and Spanish full-text search
+   * via Reciprocal Rank Fusion (RRF), with graceful degradation when one branch fails.
+   */
+  async retrieveCandidates(
+    query: CandidateRetrievalQuery,
+    filters: CandidateRetrievalFilters = {},
+    limit: number = DEFAULT_SEARCH_LIMIT,
+  ): Promise<CandidateRetrievalResult> {
+    const branchLimit = Math.max(1, limit) * 3;
+
+    const [vectorOutcome, fulltextOutcome] = await Promise.allSettled([
+      this.runVectorCandidateQuery(query.vector, filters, branchLimit),
+      this.runFullTextCandidateQuery(query, filters, branchLimit),
+    ]);
+
+    if (vectorOutcome.status === 'rejected' && fulltextOutcome.status === 'rejected') {
+      throw vectorOutcome.reason ?? fulltextOutcome.reason;
+    }
+
+    const cosineById = new Map<string, number>();
+    const textRankById = new Map<string, number>();
+    const listsToFuse: Array<Array<{ id: string }>> = [];
+    let level: RetrievalLevel = 'hybrid';
+    let degraded = false;
+
+    if (vectorOutcome.status === 'fulfilled') {
+      for (const row of vectorOutcome.value) {
+        cosineById.set(row.id, row.cosine);
+      }
+      listsToFuse.push(vectorOutcome.value);
+    } else {
+      degraded = true;
+      level = 'fulltext';
+      this.logger.warn(
+        `PgVectorAdapter.retrieveCandidates: vector query failed (${(vectorOutcome.reason as Error)?.message ?? vectorOutcome.reason}); degrading to fulltext.`,
+      );
+    }
+
+    if (fulltextOutcome.status === 'fulfilled') {
+      for (const row of fulltextOutcome.value) {
+        textRankById.set(row.id, row.textRank);
+      }
+      listsToFuse.push(fulltextOutcome.value);
+    } else {
+      degraded = true;
+      level = 'vector';
+      this.logger.warn(
+        `PgVectorAdapter.retrieveCandidates: full-text query failed (${(fulltextOutcome.reason as Error)?.message ?? fulltextOutcome.reason}); degrading to vector.`,
+      );
+    }
+
+    const fused = reciprocalRankFusion(listsToFuse, 60, limit);
+    const items = fused.map((entry) => ({
+      id: asOpportunityId(entry.id),
+      cosine: cosineById.get(entry.id) ?? null,
+      textRank: textRankById.get(entry.id) ?? null,
+      fusedScore: entry.fusedScore,
+    }));
+
+    return {
+      items,
+      level,
+      degraded,
+    };
+  }
+
+  private buildOpportunityFilterClauses(
+    filters: CandidateRetrievalFilters,
+    params: unknown[],
+  ): string[] {
+    const clauses: string[] = [];
+
+    if (filters.actionable) {
+      clauses.push(
+        `o.status IN ('Published', 'Amended')`,
+        `o.is_competitive = TRUE`,
+        `(o.closing_date IS NULL OR o.closing_date >= NOW())`,
+      );
+    } else if (filters.onlyCompetitive) {
+      clauses.push(`o.is_competitive = TRUE`);
+    }
+
+    if (filters.department && filters.department.trim() !== '') {
+      params.push(filters.department.trim());
+      clauses.push(`o.department = $${params.length}`);
+    }
+
+    if (filters.categoryCode && filters.categoryCode.trim() !== '') {
+      params.push(`${filters.categoryCode.trim()}%`);
+      clauses.push(`o.category_code LIKE $${params.length}`);
+    }
+
+    if (filters.contractType && filters.contractType.trim() !== '') {
+      params.push(filters.contractType.trim());
+      clauses.push(`o.contract_type = $${params.length}`);
+    }
+
+    if (typeof filters.amountMin === 'number' && Number.isFinite(filters.amountMin)) {
+      params.push(filters.amountMin);
+      clauses.push(`o.amount >= $${params.length}`);
+    }
+
+    if (typeof filters.amountMax === 'number' && Number.isFinite(filters.amountMax)) {
+      params.push(filters.amountMax);
+      clauses.push(`o.amount <= $${params.length}`);
+    }
+
+    return clauses;
+  }
+
+  private async runVectorCandidateQuery(
+    queryVector: number[],
+    filters: CandidateRetrievalFilters,
+    limit: number,
+  ): Promise<Array<{ id: string; cosine: number }>> {
+    if (!queryVector || queryVector.length !== PGVECTOR_DIMENSIONS) {
+      throw new Error(
+        `PgVectorAdapter: query vector dimension mismatch. Expected ${PGVECTOR_DIMENSIONS} dimensions, received ${queryVector?.length ?? 0}.`,
+      );
+    }
+
+    const vectorString = `[${queryVector.join(',')}]`;
+    const params: unknown[] = [vectorString, this.embeddingModel];
+    const whereClauses: string[] = [
+      'e.embedding_model = $2',
+      ...this.buildOpportunityFilterClauses(filters, params),
+    ];
+
+    params.push(limit);
+    const limitIdx = params.length;
+
+    const sql = `
+      SELECT e.opportunity_id AS id, 1 - (e.embedding <=> $1::vector) AS cosine
+      FROM ${this.tableName} e
+      JOIN opportunities o ON o.id = e.opportunity_id
+      WHERE ${whereClauses.join(' AND ')}
+      ORDER BY e.embedding <=> $1::vector ASC
+      LIMIT $${limitIdx};
+    `;
+
+    const result: QueryResult<{ id: string; cosine: number | string }> =
+      await this.pool.query(sql, params);
+
+    return result.rows.map((r) => ({
+      id: r.id,
+      cosine: Number(r.cosine),
+    }));
+  }
+
+  private async runFullTextCandidateQuery(
+    query: CandidateRetrievalQuery,
+    filters: CandidateRetrievalFilters,
+    limit: number,
+  ): Promise<Array<{ id: string; textRank: number }>> {
+    const mode = query.mode ?? 'profile';
+    const tsQueryFn = mode === 'user' ? 'websearch_to_tsquery' : 'to_tsquery';
+    const queryArg =
+      mode === 'user'
+        ? (query.text ?? '').trim()
+        : buildProfileOrTsQuery(query.text ?? '');
+
+    if (!queryArg) {
+      return [];
+    }
+
+    const params: unknown[] = [queryArg];
+    const whereClauses: string[] = [
+      'o.search_tsv @@ q.tsq',
+      ...this.buildOpportunityFilterClauses(filters, params),
+    ];
+
+    params.push(limit);
+    const limitIdx = params.length;
+
+    const sql = `
+      SELECT o.id, ts_rank_cd(o.search_tsv, q.tsq) AS text_rank
+      FROM opportunities o, ${tsQueryFn}('spanish', $1) AS q(tsq)
+      WHERE ${whereClauses.join(' AND ')}
+      ORDER BY text_rank DESC
+      LIMIT $${limitIdx};
+    `;
+
+    const result: QueryResult<{ id: string; text_rank: number | string }> =
+      await this.pool.query(sql, params);
+
+    return result.rows.map((r) => ({
+      id: r.id,
+      textRank: Number(r.text_rank),
+    }));
   }
 }

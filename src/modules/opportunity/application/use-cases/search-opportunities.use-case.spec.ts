@@ -1,6 +1,11 @@
 import { SearchOpportunitiesUseCase } from './search-opportunities.use-case';
 import { OpportunityRepositoryPort } from '../../domain/ports/opportunity.repository.port';
-import { SearchIndexPort } from '../../domain/ports/search-index.port';
+import {
+  SearchIndexPort,
+  CandidateRetrievalQuery,
+  CandidateRetrievalFilters,
+  CandidateRetrievalResult,
+} from '../../domain/ports/search-index.port';
 import { Opportunity } from '../../domain/entities/opportunity.entity';
 import { OpportunityFilters } from '../../domain/value-objects/opportunity-filters';
 import { OpportunityId, asOpportunityId } from '../../../shared/domain/typed-id';
@@ -54,19 +59,18 @@ class FakeRepo implements OpportunityRepositoryPort {
 class FakeSearchIndex implements SearchIndexPort {
   public indexed: Opportunity[] = [];
   public returnIds: OpportunityId[] = [];
-  public lastVector: number[] = [];
-  public lastFilters: OpportunityFilters = {};
+  public lastQuery?: CandidateRetrievalQuery;
+  public lastFilters: CandidateRetrievalFilters = {};
+  public lastLimit = 0;
 
   async indexOpportunity(opportunity: Opportunity): Promise<void> {
     this.indexed.push(opportunity);
   }
 
   async semanticSearch(
-    queryVector: number[],
-    filters: OpportunityFilters,
+    _queryVector: number[],
+    _filters: OpportunityFilters,
   ): Promise<OpportunityId[]> {
-    this.lastVector = queryVector;
-    this.lastFilters = filters;
     return this.returnIds;
   }
 
@@ -75,6 +79,27 @@ class FakeSearchIndex implements SearchIndexPort {
     _opportunityIds: OpportunityId[],
   ): Promise<Map<OpportunityId, number>> {
     return new Map();
+  }
+
+  async retrieveCandidates(
+    query: CandidateRetrievalQuery,
+    filters: CandidateRetrievalFilters,
+    limit: number,
+  ): Promise<CandidateRetrievalResult> {
+    this.lastQuery = query;
+    this.lastFilters = filters;
+    this.lastLimit = limit;
+
+    return {
+      items: this.returnIds.map((id, i) => ({
+        id,
+        cosine: 0.7,
+        textRank: 0.5,
+        fusedScore: 1 / (60 + i + 1),
+      })),
+      level: 'hybrid',
+      degraded: false,
+    };
   }
 }
 
@@ -144,11 +169,11 @@ describe('SearchOpportunitiesUseCase', () => {
       expect(result.value).toHaveLength(1);
       expect(result.value[0].id).toBe('opp-1');
     }
-    expect(searchIndex.lastVector).toHaveLength(0);
+    expect(searchIndex.lastQuery).toBeUndefined();
     expect(embedder.calls).toBe(0);
   });
 
-  it('performs semantic search when query is provided, returning ranked opportunities', async () => {
+  it('performs hybrid candidate retrieval when query is provided, returning ranked opportunities', async () => {
     searchIndex.returnIds = [asOpportunityId('opp-2'), asOpportunityId('opp-1')];
 
     const result = await useCase.execute({
@@ -162,10 +187,12 @@ describe('SearchOpportunitiesUseCase', () => {
       expect(result.value[1].id).toBe('opp-1');
     }
 
-    expect(searchIndex.lastVector).toHaveLength(768);
+    expect(searchIndex.lastQuery?.text).toBe('laptops y hardware para oficina');
+    expect(searchIndex.lastQuery?.mode).toBe('user');
+    expect(searchIndex.lastQuery?.vector).toHaveLength(768);
   });
 
-  it('passes structured filters alongside semantic query vector', async () => {
+  it('passes structured filters alongside hybrid query', async () => {
     searchIndex.returnIds = [asOpportunityId('opp-1')];
 
     const filters: OpportunityFilters = { categoryCode: 'V1.43230000' };
@@ -175,6 +202,8 @@ describe('SearchOpportunitiesUseCase', () => {
     });
 
     expect(result.ok).toBe(true);
-    expect(searchIndex.lastFilters).toEqual(filters);
+    expect(searchIndex.lastFilters).toEqual(
+      expect.objectContaining({ categoryCode: 'V1.43230000' }),
+    );
   });
 });
