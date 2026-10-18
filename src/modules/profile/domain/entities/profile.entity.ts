@@ -6,6 +6,10 @@ import { ValidationError, createValidationError } from '../../../shared/domain/e
 export interface Profile {
   readonly id: ProfileId;
   readonly ownerId: UserId;
+  readonly name?: string | null;
+  readonly contactEmail?: string | null;
+  readonly alertsEnabled?: boolean;
+  readonly deadlineAlertDays?: number;
   readonly sector: string;
   readonly capabilities: Capability[];
   readonly preferences: ProfilePreferences;
@@ -14,10 +18,16 @@ export interface Profile {
 export interface CreateProfileProps {
   readonly id: ProfileId;
   readonly ownerId: UserId;
+  readonly name?: string | null;
+  readonly contactEmail?: string | null;
+  readonly alertsEnabled?: boolean;
+  readonly deadlineAlertDays?: number;
   readonly sector: string;
   readonly capabilities?: Capability[];
   readonly preferences: ProfilePreferences;
 }
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export const createProfile = (props: CreateProfileProps): Result<Profile, ValidationError> => {
   const missingFields: string[] = [];
@@ -44,10 +54,34 @@ export const createProfile = (props: CreateProfileProps): Result<Profile, Valida
     );
   }
 
+  const trimmedEmail = props.contactEmail ? props.contactEmail.trim() : null;
+  if (trimmedEmail && !EMAIL_REGEX.test(trimmedEmail)) {
+    return err(
+      createValidationError(
+        ['contactEmail'],
+        `Invalid contactEmail: "${trimmedEmail}". Must be a valid email address.`,
+      ),
+    );
+  }
+
+  const deadlineDays = props.deadlineAlertDays ?? 3;
+  if (!Number.isInteger(deadlineDays) || deadlineDays < 1) {
+    return err(
+      createValidationError(
+        ['deadlineAlertDays'],
+        'deadlineAlertDays must be an integer greater than or equal to 1',
+      ),
+    );
+  }
+
   return ok({
     id: props.id,
     ownerId: props.ownerId,
-    sector: props.sector,
+    name: props.name?.trim() || null,
+    contactEmail: trimmedEmail,
+    alertsEnabled: props.alertsEnabled ?? true,
+    deadlineAlertDays: deadlineDays,
+    sector: props.sector.trim(),
     capabilities: props.capabilities ?? [],
     preferences: props.preferences,
   });
@@ -78,4 +112,3 @@ export function buildProfileQuery(profile: Profile): string {
   }
   return parts.join('. ');
 }
-

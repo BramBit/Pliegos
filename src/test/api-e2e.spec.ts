@@ -140,6 +140,7 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
       expect(response.body.paths).toHaveProperty('/opportunities');
       expect(response.body.paths).not.toHaveProperty('/opportunities/search');
       expect(response.body.paths).toHaveProperty('/profiles');
+      expect(response.body.paths).toHaveProperty('/profiles/{id}');
       expect(response.body.paths).toHaveProperty('/recommendations/{profileId}');
       expect(response.body.paths).toHaveProperty('/recommendations/{id}/feedback');
       expect(response.body.paths).toHaveProperty('/alerts/review-follow-up');
@@ -318,9 +319,15 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
   });
 
   describe('ProfileController', () => {
-    it('POST /profiles creates a new contractor profile', async () => {
+    let createdProfileId: string;
+
+    it('POST /profiles creates a new contractor profile with canonicalized departments and notification preferences', async () => {
       const profilePayload = {
         ownerId: 'user-e2e-contractor-01',
+        name: 'Tech & AI Solutions SAS',
+        contactEmail: 'licitaciones@techai.co',
+        alertsEnabled: true,
+        deadlineAlertDays: 4,
         sector: 'Tecnología e Inteligencia Artificial',
         capabilities: [
           { name: 'Desarrollo Fullstack y Arquitectura Hexagonal', yearsOfExperience: 6 },
@@ -329,7 +336,7 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
           categoryCodes: ['V1.80111600'],
           keywords: ['software', 'inteligencia artificial', 'cloud'],
           amountRange: { min: 50000000, max: 300000000 },
-          departments: ['Cundinamarca', 'Antioquia'],
+          departments: ['antioquia', 'BOGOTA'],
         },
       };
 
@@ -339,9 +346,37 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
         .expect(200);
 
       expect(response.body.id).toBeDefined();
+      createdProfileId = response.body.id;
       expect(response.body.ownerId).toBe(profilePayload.ownerId);
+      expect(response.body.name).toBe(profilePayload.name);
+      expect(response.body.contactEmail).toBe(profilePayload.contactEmail);
+      expect(response.body.alertsEnabled).toBe(true);
+      expect(response.body.deadlineAlertDays).toBe(4);
       expect(response.body.sector).toBe(profilePayload.sector);
       expect(response.body.capabilities.length).toBe(1);
+      // Canonicalized departments
+      expect(response.body.preferences.departments).toEqual(['Antioquia', 'Bogotá D.C.']);
+    });
+
+    it('POST /profiles rejects unknown departments with 400 (Zod)', async () => {
+      const invalidPayload = {
+        ownerId: 'user-invalid-dept',
+        sector: 'Consultoría',
+        capabilities: [],
+        preferences: {
+          categoryCodes: [],
+          keywords: [],
+          departments: ['Antioquia', 'Narnia'],
+        },
+      };
+
+      const response = await request(app.getHttpServer())
+        .post('/profiles')
+        .send(invalidPayload)
+        .expect(400);
+
+      expect(response.body.statusCode).toBe(400);
+      expect(response.body.message).toBe('Validation failed');
     });
 
     it('POST /profiles rejects payload when amountRange min > max with 400 (Zod)', async () => {
@@ -364,6 +399,99 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
 
       expect(response.body.statusCode).toBe(400);
       expect(response.body.message).toBe('Validation failed');
+    });
+
+    it('POST /profiles rejects invalid contactEmail with 400', async () => {
+      const invalidPayload = {
+        ownerId: 'user-invalid-email',
+        contactEmail: 'not-an-email',
+        sector: 'Tecnología',
+        capabilities: [],
+        preferences: {
+          categoryCodes: [],
+          keywords: [],
+          departments: [],
+        },
+      };
+
+      const response = await request(app.getHttpServer())
+        .post('/profiles')
+        .send(invalidPayload)
+        .expect(400);
+
+      expect(response.body.statusCode).toBe(400);
+    });
+
+    it('GET /profiles?ownerId= returns profiles for the specified owner', async () => {
+      const response = await request(app.getHttpServer())
+        .get('/profiles')
+        .query({ ownerId: 'user-e2e-contractor-01' })
+        .expect(200);
+
+      expect(Array.isArray(response.body)).toBe(true);
+      expect(response.body.length).toBeGreaterThanOrEqual(1);
+      expect(response.body.some((p: any) => p.id === createdProfileId)).toBe(true);
+    });
+
+    it('GET /profiles/:id returns profile detail for existing profile and 404 for unknown', async () => {
+      const response = await request(app.getHttpServer())
+        .get(`/profiles/${createdProfileId}`)
+        .expect(200);
+
+      expect(response.body.id).toBe(createdProfileId);
+      expect(response.body.name).toBe('Tech & AI Solutions SAS');
+
+      await request(app.getHttpServer())
+        .get('/profiles/00000000-0000-0000-0000-000000000000')
+        .expect(404);
+    });
+
+    it('PUT /profiles/:id replaces profile and returns updated entity', async () => {
+      const updatedPayload = {
+        ownerId: 'user-e2e-contractor-01',
+        name: 'Tech & AI Solutions Colombia SAS',
+        contactEmail: 'gerencia@techai.co',
+        alertsEnabled: false,
+        deadlineAlertDays: 7,
+        sector: 'Inteligencia Artificial y Cloud',
+        capabilities: [
+          { name: 'Arquitectura Cloud', yearsOfExperience: 8 },
+        ],
+        preferences: {
+          categoryCodes: ['V1.80111600'],
+          keywords: ['cloud', 'ia'],
+          amountRange: { min: 80000000, max: 400000000 },
+          departments: ['valle'],
+        },
+      };
+
+      const response = await request(app.getHttpServer())
+        .put(`/profiles/${createdProfileId}`)
+        .send(updatedPayload)
+        .expect(200);
+
+      expect(response.body.id).toBe(createdProfileId);
+      expect(response.body.name).toBe('Tech & AI Solutions Colombia SAS');
+      expect(response.body.contactEmail).toBe('gerencia@techai.co');
+      expect(response.body.alertsEnabled).toBe(false);
+      expect(response.body.deadlineAlertDays).toBe(7);
+      expect(response.body.preferences.departments).toEqual(['Valle del Cauca']);
+    });
+
+    it('DELETE /profiles/:id deletes the profile and returns 204', async () => {
+      await request(app.getHttpServer())
+        .delete(`/profiles/${createdProfileId}`)
+        .expect(204);
+
+      // Verify it no longer exists
+      await request(app.getHttpServer())
+        .get(`/profiles/${createdProfileId}`)
+        .expect(404);
+
+      // Deleting again returns 404
+      await request(app.getHttpServer())
+        .delete(`/profiles/${createdProfileId}`)
+        .expect(404);
     });
   });
 

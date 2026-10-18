@@ -299,6 +299,18 @@ export class ProfileDto {
   @ApiProperty({ example: 'user-contractor-01' })
   ownerId!: string;
 
+  @ApiPropertyOptional({ type: String, nullable: true, example: 'Contratista Demo SAS' })
+  name!: string | null;
+
+  @ApiPropertyOptional({ type: String, nullable: true, example: 'contacto@contratista.com' })
+  contactEmail!: string | null;
+
+  @ApiProperty({ example: true, default: true })
+  alertsEnabled!: boolean;
+
+  @ApiProperty({ example: 3, default: 3 })
+  deadlineAlertDays!: number;
+
   @ApiProperty({ example: 'Tecnología e Inteligencia Artificial' })
   sector!: string;
 
@@ -532,6 +544,10 @@ export function toProfileDto(profile: Profile): ProfileDto {
   return {
     id: profile.id,
     ownerId: profile.ownerId,
+    name: profile.name ?? null,
+    contactEmail: profile.contactEmail ?? null,
+    alertsEnabled: profile.alertsEnabled ?? true,
+    deadlineAlertDays: profile.deadlineAlertDays ?? 3,
     sector: profile.sector,
     capabilities: profile.capabilities.map((c) => ({
       name: c.name,

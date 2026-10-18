@@ -1,6 +1,7 @@
 import { Result, ok, err } from '../../../shared/domain/result';
 import { ValidationError, createValidationError } from '../../../shared/domain/errors';
 import { normalizeUnspsc } from '../../../opportunity/infrastructure/adapters/secop/normalizers';
+import { canonicalizeDepartment } from './colombian-departments';
 
 export interface AmountRange {
   readonly min: number;
@@ -52,10 +53,31 @@ export const createProfilePreferences = (props: {
     .map((code) => normalizeUnspsc(code))
     .filter((code): code is string => code !== null);
 
+  const canonicalDepartments: string[] = [];
+  const unknownDepartments: string[] = [];
+
+  for (const dept of props.departments ?? []) {
+    const canonical = canonicalizeDepartment(dept);
+    if (!canonical) {
+      unknownDepartments.push(dept);
+    } else if (!canonicalDepartments.includes(canonical)) {
+      canonicalDepartments.push(canonical);
+    }
+  }
+
+  if (unknownDepartments.length > 0) {
+    return err(
+      createValidationError(
+        ['preferences.departments'],
+        `Unknown Colombian department(s): ${unknownDepartments.map((d) => `"${d}"`).join(', ')}. Must be one of the 33 canonical departments (including Bogotá D.C.).`,
+      ),
+    );
+  }
+
   return ok({
     categoryCodes,
     keywords: props.keywords ?? [],
     amountRange: props.amountRange ?? null,
-    departments: props.departments ?? [],
+    departments: canonicalDepartments,
   });
 };

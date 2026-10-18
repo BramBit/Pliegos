@@ -95,12 +95,12 @@ GET {{baseUrl}}/opportunities/{{opportunityId}}
 Accept: application/json
 
 ### ==============================================================================
-### 4. Contractor Profiles Configuration
+### 4. Contractor Profiles Management (CRUD)
 ### ==============================================================================
 
 # Validates contractor profile creation with an explicit UUID (@profileId),
-# registering IT/Software capabilities, non-negative experience years, budget bounds,
-# and UNSPSC category preferences for subsequent recommendation matching.
+# registering name, contactEmail, alertsEnabled, deadlineAlertDays, IT/Software capabilities,
+# budget bounds, and UNSPSC category preferences for subsequent recommendation matching.
 # @name configureProfileTech
 POST {{baseUrl}}/profiles
 Content-Type: application/json
@@ -108,6 +108,10 @@ Content-Type: application/json
 {
   "profileId": "{{profileId}}",
   "ownerId": "usr-tech-innovations-01",
+  "name": "Tech Innovations SAS",
+  "contactEmail": "licitaciones@techinnovations.com",
+  "alertsEnabled": true,
+  "deadlineAlertDays": 3,
   "sector": "Tecnologías de la Información y Desarrollo de Software",
   "capabilities": [
     {
@@ -141,9 +145,62 @@ Content-Type: application/json
       "max": 500000000
     },
     "departments": [
-      "Distrito Capital de Bogotá",
+      "Bogotá D.C.",
       "Cundinamarca",
       "Antioquia"
+    ]
+  }
+}
+
+###
+
+# Validates listing profiles filtered by ownerId
+# @name getProfilesByOwner
+GET {{baseUrl}}/profiles?ownerId=usr-tech-innovations-01
+Accept: application/json
+
+###
+
+# Validates retrieving a single profile by ID
+# @name getProfileById
+GET {{baseUrl}}/profiles/{{profileId}}
+Accept: application/json
+
+###
+
+# Validates replacing an existing contractor profile by ID
+# @name replaceProfile
+PUT {{baseUrl}}/profiles/{{profileId}}
+Content-Type: application/json
+
+{
+  "ownerId": "usr-tech-innovations-01",
+  "name": "Tech Innovations Colombia SAS",
+  "contactEmail": "proyectos@techinnovations.com",
+  "alertsEnabled": true,
+  "deadlineAlertDays": 5,
+  "sector": "Tecnologías de la Información y Desarrollo Cloud",
+  "capabilities": [
+    {
+      "name": "Desarrollo de Software Fullstack y Cloud",
+      "yearsOfExperience": 8
+    }
+  ],
+  "preferences": {
+    "categoryCodes": [
+      "V1.81111500"
+    ],
+    "keywords": [
+      "cloud",
+      "software"
+    ],
+    "amountRange": {
+      "min": 100000000,
+      "max": 600000000
+    },
+    "departments": [
+      "Antioquia",
+      "Bogotá D.C."
     ]
   }
 }
@@ -158,6 +215,10 @@ Content-Type: application/json
 
 {
   "ownerId": "usr-infra-colombia-02",
+  "name": "Consorcio Infraestructura Andina",
+  "contactEmail": "licitaciones@infraandina.com",
+  "alertsEnabled": true,
+  "deadlineAlertDays": 3,
   "sector": "Infraestructura, Construcción y Obras Civiles",
   "capabilities": [
     {

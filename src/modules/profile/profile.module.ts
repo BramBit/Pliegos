@@ -3,9 +3,15 @@ import { BullModule, getQueueToken } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { Pool } from 'pg';
 import { DATABASE_POOL } from '../shared/infrastructure/persistence/database.module';
-import { PROFILE_REPOSITORY_PORT } from './domain/ports/profile.repository.port';
+import {
+  PROFILE_REPOSITORY_PORT,
+  ProfileRepositoryPort,
+} from './domain/ports/profile.repository.port';
 import { PostgresProfileRepository } from './infrastructure/adapters/persistence/postgres-profile.repository';
 import { ConfigureProfileUseCase } from './application/use-cases/configure-profile.use-case';
+import { GetProfileByIdUseCase } from './application/use-cases/get-profile-by-id.use-case';
+import { GetProfilesByOwnerUseCase } from './application/use-cases/get-profiles-by-owner.use-case';
+import { DeleteProfileUseCase } from './application/use-cases/delete-profile.use-case';
 import { ProfileController } from './infrastructure/controllers/profile.controller';
 import {
   RECOMMENDATION_REFRESH_QUEUE_PORT,
@@ -33,15 +39,33 @@ import {
     },
     {
       provide: ConfigureProfileUseCase,
-      useFactory: (repo, refreshQueue: RecommendationRefreshQueuePort) =>
+      useFactory: (repo: ProfileRepositoryPort, refreshQueue: RecommendationRefreshQueuePort) =>
         new ConfigureProfileUseCase(repo, refreshQueue),
       inject: [PROFILE_REPOSITORY_PORT, RECOMMENDATION_REFRESH_QUEUE_PORT],
+    },
+    {
+      provide: GetProfileByIdUseCase,
+      useFactory: (repo: ProfileRepositoryPort) => new GetProfileByIdUseCase(repo),
+      inject: [PROFILE_REPOSITORY_PORT],
+    },
+    {
+      provide: GetProfilesByOwnerUseCase,
+      useFactory: (repo: ProfileRepositoryPort) => new GetProfilesByOwnerUseCase(repo),
+      inject: [PROFILE_REPOSITORY_PORT],
+    },
+    {
+      provide: DeleteProfileUseCase,
+      useFactory: (repo: ProfileRepositoryPort) => new DeleteProfileUseCase(repo),
+      inject: [PROFILE_REPOSITORY_PORT],
     },
   ],
   exports: [
     PROFILE_REPOSITORY_PORT,
     RECOMMENDATION_REFRESH_QUEUE_PORT,
     ConfigureProfileUseCase,
+    GetProfileByIdUseCase,
+    GetProfilesByOwnerUseCase,
+    DeleteProfileUseCase,
   ],
 })
 export class ProfileModule {}

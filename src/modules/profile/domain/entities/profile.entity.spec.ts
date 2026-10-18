@@ -42,6 +42,34 @@ describe('Profile Entity & Value Objects', () => {
         expect(prefs.value.categoryCodes).toEqual(['43230000', '81111500']);
       }
     });
+
+    it('canonicalizes departments accent-insensitively ("antioquia" -> "Antioquia", "BOGOTA" -> "Bogotá D.C.")', () => {
+      const prefs = createProfilePreferences({
+        departments: ['antioquia', 'BOGOTA', 'cundinamarca', 'VALLE'],
+      });
+
+      expect(prefs.ok).toBe(true);
+      if (prefs.ok) {
+        expect(prefs.value.departments).toEqual([
+          'Antioquia',
+          'Bogotá D.C.',
+          'Cundinamarca',
+          'Valle del Cauca',
+        ]);
+      }
+    });
+
+    it('rejects unknown departments with ValidationError', () => {
+      const prefs = createProfilePreferences({
+        departments: ['Antioquia', 'Narnia', 'Miami'],
+      });
+
+      expect(prefs.ok).toBe(false);
+      if (!prefs.ok) {
+        expect(prefs.error.fields).toContain('preferences.departments');
+        expect(prefs.error.message).toContain('Unknown Colombian department');
+      }
+    });
   });
 
   describe('Profile Entity', () => {
@@ -75,9 +103,42 @@ describe('Profile Entity & Value Objects', () => {
         expect(profile.value.capabilities).toHaveLength(2);
         expect(profile.value.preferences.categoryCodes).toEqual(['43230000', '81111500']);
         expect(profile.value.preferences.departments).toContain('Bogotá D.C.');
+        expect(profile.value.alertsEnabled).toBe(true);
+        expect(profile.value.deadlineAlertDays).toBe(3);
         expect(buildProfileQuery(profile.value)).toBe(
           'Tecnología e Informática. Desarrollo Web, Ciberseguridad. inteligencia artificial, software',
         );
+      }
+    });
+
+    it('validates contactEmail format when provided', () => {
+      const preferences = createProfilePreferences({ keywords: ['test'] });
+      if (!preferences.ok) throw new Error('Prefs failed');
+
+      const invalidEmail = createProfile({
+        id: asProfileId('profile-002'),
+        ownerId: asUserId('user-002'),
+        sector: 'Tecnología',
+        contactEmail: 'not-an-email',
+        preferences: preferences.value,
+      });
+
+      expect(invalidEmail.ok).toBe(false);
+      if (!invalidEmail.ok) {
+        expect(invalidEmail.error.fields).toContain('contactEmail');
+      }
+
+      const validEmail = createProfile({
+        id: asProfileId('profile-003'),
+        ownerId: asUserId('user-003'),
+        sector: 'Tecnología',
+        contactEmail: 'contacto@empresa.com',
+        preferences: preferences.value,
+      });
+
+      expect(validEmail.ok).toBe(true);
+      if (validEmail.ok) {
+        expect(validEmail.value.contactEmail).toBe('contacto@empresa.com');
       }
     });
 

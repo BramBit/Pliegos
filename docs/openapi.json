@@ -132,9 +132,44 @@
       }
     },
     "/profiles": {
+      "get": {
+        "description": "Retorna los perfiles pertenecientes al propietario especificado en el parámetro `ownerId`.",
+        "operationId": "ProfileController_list",
+        "parameters": [
+          {
+            "name": "ownerId",
+            "required": false,
+            "in": "query",
+            "description": "Identificador del usuario propietario de los perfiles",
+            "schema": {
+              "example": "user-contractor-01",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de perfiles asociados al usuario",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ProfileDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Listar perfiles de contratista",
+        "tags": [
+          "Profiles"
+        ]
+      },
       "post": {
-        "description": "Registra las capacidades técnicas, sector y preferencias de contratación de una empresa u oferente, utilizadas por el motor de priorización para generar recomendaciones explicadas.",
-        "operationId": "ProfileController_configure",
+        "description": "Crea un nuevo perfil con capacidades técnicas, preferencias territoriales canónicas de Colombia, rango de cuantía y preferencias de notificación. Encola automáticamente el job de cálculo de recomendaciones.",
+        "operationId": "ProfileController_create",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -148,7 +183,7 @@
         },
         "responses": {
           "200": {
-            "description": "Perfil guardado exitosamente en el repositorio",
+            "description": "Perfil guardado exitosamente y trabajo de recomendación encolado",
             "content": {
               "application/json": {
                 "schema": {
@@ -158,7 +193,7 @@
             }
           },
           "400": {
-            "description": "Parámetros o invariantes de perfil inválidos",
+            "description": "Datos de perfil inválidos o departamento no reconocido",
             "content": {
               "application/json": {
                 "schema": {
@@ -168,7 +203,148 @@
             }
           }
         },
-        "summary": "Configurar o actualizar perfil de contratista",
+        "summary": "Crear perfil de contratista",
+        "tags": [
+          "Profiles"
+        ]
+      }
+    },
+    "/profiles/{id}": {
+      "get": {
+        "description": "Retorna el perfil completo de un contratista.",
+        "operationId": "ProfileController_getById",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Identificador único del perfil",
+            "schema": {
+              "example": "d9b2d63d-a232-4d2c-8cb4-e5e6b72a44f1",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Perfil de contratista encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "El perfil solicitado no existe",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelopeDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Obtener un perfil por ID",
+        "tags": [
+          "Profiles"
+        ]
+      },
+      "put": {
+        "description": "Reemplaza íntegramente los datos de un perfil existente identificado por ID y refresca sus recomendaciones.",
+        "operationId": "ProfileController_replace",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Identificador único del perfil a reemplazar",
+            "schema": {
+              "example": "d9b2d63d-a232-4d2c-8cb4-e5e6b72a44f1",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfigureProfileDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Perfil reemplazado exitosamente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos de perfil inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelopeDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "El perfil a actualizar no existe",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelopeDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Reemplazar perfil de contratista",
+        "tags": [
+          "Profiles"
+        ]
+      },
+      "delete": {
+        "description": "Elimina el perfil especificado por ID. La eliminación se propaga en cascada a recomendaciones y alertas.",
+        "operationId": "ProfileController_delete",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Identificador único del perfil a eliminar",
+            "schema": {
+              "example": "d9b2d63d-a232-4d2c-8cb4-e5e6b72a44f1",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Perfil eliminado exitosamente"
+          },
+          "404": {
+            "description": "El perfil no existe",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelopeDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Eliminar un perfil de contratista",
         "tags": [
           "Profiles"
         ]
@@ -953,12 +1129,10 @@
         "properties": {
           "name": {
             "type": "string",
-            "description": "Nombre o denominación de la capacidad técnica",
-            "example": "Desarrollo Cloud y DevOps"
+            "example": "Desarrollo de Software y Cloud"
           },
           "yearsOfExperience": {
             "type": "number",
-            "description": "Años de experiencia demostrable",
             "example": 5
           }
         },
@@ -972,13 +1146,11 @@
         "properties": {
           "min": {
             "type": "number",
-            "description": "Monto mínimo en COP",
-            "example": 10000000
+            "example": 50000000
           },
           "max": {
             "type": "number",
-            "description": "Monto máximo en COP",
-            "example": 200000000
+            "example": 500000000
           }
         },
         "required": [
@@ -990,10 +1162,8 @@
         "type": "object",
         "properties": {
           "categoryCodes": {
-            "description": "Códigos UNSPSC de interés para contratación",
             "example": [
-              "V1.80111600",
-              "V1.81111500"
+              "80111600"
             ],
             "type": "array",
             "items": {
@@ -1001,11 +1171,9 @@
             }
           },
           "keywords": {
-            "description": "Palabras clave libres que alimentan la similitud semántica con IA",
             "example": [
               "software",
-              "ciberseguridad",
-              "consultoría ti"
+              "arquitectura"
             ],
             "type": "array",
             "items": {
@@ -1013,7 +1181,8 @@
             }
           },
           "amountRange": {
-            "description": "Rango de cuantía deseada en COP",
+            "nullable": true,
+            "type": "object",
             "allOf": [
               {
                 "$ref": "#/components/schemas/AmountRangeDto"
@@ -1021,10 +1190,9 @@
             ]
           },
           "departments": {
-            "description": "Departamentos de interés geográfico (vacío = sin preferencia)",
             "example": [
-              "Antioquia",
-              "Cundinamarca"
+              "Bogotá D.C.",
+              "Antioquia"
             ],
             "type": "array",
             "items": {
@@ -1035,7 +1203,63 @@
         "required": [
           "categoryCodes",
           "keywords",
+          "amountRange",
           "departments"
+        ]
+      },
+      "ProfileDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "d9b2d63d-a232-4d2c-8cb4-e5e6b72a44f1"
+          },
+          "ownerId": {
+            "type": "string",
+            "example": "user-contractor-01"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true,
+            "example": "Contratista Demo SAS"
+          },
+          "contactEmail": {
+            "type": "string",
+            "nullable": true,
+            "example": "contacto@contratista.com"
+          },
+          "alertsEnabled": {
+            "type": "boolean",
+            "example": true,
+            "default": true
+          },
+          "deadlineAlertDays": {
+            "type": "number",
+            "example": 3,
+            "default": 3
+          },
+          "sector": {
+            "type": "string",
+            "example": "Tecnología e Inteligencia Artificial"
+          },
+          "capabilities": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CapabilityDto"
+            }
+          },
+          "preferences": {
+            "$ref": "#/components/schemas/ProfilePreferencesDto"
+          }
+        },
+        "required": [
+          "id",
+          "ownerId",
+          "alertsEnabled",
+          "deadlineAlertDays",
+          "sector",
+          "capabilities",
+          "preferences"
         ]
       },
       "ConfigureProfileDto": {
@@ -1043,13 +1267,35 @@
         "properties": {
           "profileId": {
             "type": "string",
-            "description": "ID único del perfil en caso de actualización (omite para crear uno nuevo)",
+            "description": "ID único del perfil en caso de actualización (omite para generar uno nuevo automáticamente)",
             "example": "d9b2d63d-a232-4d2c-8cb4-e5e6b72a44f1"
           },
           "ownerId": {
             "type": "string",
             "description": "Identificador del usuario propietario del perfil",
             "example": "user-empresa-123"
+          },
+          "name": {
+            "type": "object",
+            "description": "Nombre comercial o razón social del contratista",
+            "example": "Tech Solutions SAS"
+          },
+          "contactEmail": {
+            "type": "object",
+            "description": "Correo electrónico de contacto para notificaciones y alertas",
+            "example": "licitaciones@techsolutions.com"
+          },
+          "alertsEnabled": {
+            "type": "boolean",
+            "description": "Indica si las alertas automáticas están activadas",
+            "example": true,
+            "default": true
+          },
+          "deadlineAlertDays": {
+            "type": "number",
+            "description": "Anticipación en días para alertar sobre cierre de convocatorias",
+            "example": 3,
+            "default": 3
           },
           "sector": {
             "type": "string",
@@ -1073,39 +1319,6 @@
           }
         },
         "required": [
-          "ownerId",
-          "sector",
-          "capabilities",
-          "preferences"
-        ]
-      },
-      "ProfileDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "example": "d9b2d63d-a232-4d2c-8cb4-e5e6b72a44f1"
-          },
-          "ownerId": {
-            "type": "string",
-            "example": "user-contractor-01"
-          },
-          "sector": {
-            "type": "string",
-            "example": "Tecnología e Inteligencia Artificial"
-          },
-          "capabilities": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/CapabilityDto"
-            }
-          },
-          "preferences": {
-            "$ref": "#/components/schemas/ProfilePreferencesDto"
-          }
-        },
-        "required": [
-          "id",
           "ownerId",
           "sector",
           "capabilities",
