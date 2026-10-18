@@ -1,6 +1,22 @@
 import { INestApplication } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { apiReference } from '@scalar/nestjs-api-reference';
+import { resolveRequestId } from './modules/shared/infrastructure/http/request-id.middleware';
+import {
+  AlertDto,
+  AlertPageDto,
+  ErrorEnvelopeDto,
+  OpportunityDetail,
+  OpportunitySummary,
+  OpportunitySummaryPageDto,
+  Page,
+  ProfileDto,
+  RecommendationDto,
+  RecommendationPageDto,
+  RegisterFeedbackResponseDto,
+  ReviewFollowUpResponseDto,
+  SyncOpportunitiesResponseDto,
+} from './modules/shared/infrastructure/http/response.dtos';
 
 export function setupSwaggerAndScalar(app: INestApplication) {
   const config = new DocumentBuilder()
@@ -15,11 +31,29 @@ export function setupSwaggerAndScalar(app: INestApplication) {
     .addTag('Alerts', 'Monitoreo de adendas, fechas límite y notificaciones')
     .build();
 
-  const document = SwaggerModule.createDocument(app, config);
+  const document = SwaggerModule.createDocument(app, config, {
+    extraModels: [
+      OpportunitySummary,
+      OpportunityDetail,
+      RecommendationDto,
+      ProfileDto,
+      AlertDto,
+      Page,
+      OpportunitySummaryPageDto,
+      RecommendationPageDto,
+      AlertPageDto,
+      ErrorEnvelopeDto,
+      SyncOpportunitiesResponseDto,
+      RegisterFeedbackResponseDto,
+      ReviewFollowUpResponseDto,
+    ],
+  });
 
   // Exponer el JSON OpenAPI crudo exclusivamente en /api-json
   const httpAdapter = app.getHttpAdapter();
-  httpAdapter.get('/api-json', (_req: any, res: any) => {
+  httpAdapter.get('/api-json', (req: any, res: any) => {
+    const reqId = resolveRequestId(req);
+    res.setHeader('X-Request-Id', reqId);
     res.json(document);
   });
 

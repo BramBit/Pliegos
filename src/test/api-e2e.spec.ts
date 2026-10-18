@@ -1,3 +1,5 @@
+import { writeFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { seedOpportunity, seedProfile } from '../modules/shared/testing/seed';
 import { requireTestDatabaseUrl } from '../modules/shared/testing/test-database-url';
 import { Test, TestingModule } from '@nestjs/testing';
@@ -123,18 +125,29 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
   });
 
   describe('API Documentation Surfaces', () => {
-    it('GET /api-json returns valid OpenAPI 3.0 specification', async () => {
-      const response = await request(app.getHttpServer()).get('/api-json').expect(200);
+    it('GET /api-json returns valid OpenAPI 3.0 specification and saves docs/openapi.json', async () => {
+      const response = await request(app.getHttpServer())
+        .get('/api-json')
+        .set('X-Request-Id', 'e2e-openapi-req-1')
+        .expect(200);
 
+      expect(response.headers['x-request-id']).toBe('e2e-openapi-req-1');
       expect(response.body).toBeDefined();
       expect(response.body.openapi).toMatch(/^3\./);
       expect(response.body.info.title).toBe('Pliegos API');
+      expect(response.body.paths).toHaveProperty('/opportunities/{id}');
       expect(response.body.paths).toHaveProperty('/opportunities/sync');
       expect(response.body.paths).toHaveProperty('/opportunities/search');
       expect(response.body.paths).toHaveProperty('/profiles');
       expect(response.body.paths).toHaveProperty('/recommendations/{profileId}');
       expect(response.body.paths).toHaveProperty('/recommendations/{id}/feedback');
       expect(response.body.paths).toHaveProperty('/alerts/review-follow-up');
+
+      writeFileSync(
+        resolve(process.cwd(), 'docs/openapi.json'),
+        JSON.stringify(response.body, null, 2) + '\n',
+        'utf8',
+      );
     });
 
     it('GET /reference mounts Scalar interactive reference HTML', async () => {
@@ -157,15 +170,20 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
       expect(typeof response.body.updated).toBe('number');
     });
 
-    it('POST /opportunities/sync rejects invalid date with 400 (Zod)', async () => {
+    it('POST /opportunities/sync rejects invalid date with 400 (Zod) and error envelope', async () => {
       const response = await request(app.getHttpServer())
         .post('/opportunities/sync')
+        .set('X-Request-Id', 'req-sync-invalid-400')
         .send({ since: 'not-a-valid-date' })
         .expect(400);
 
+      expect(response.headers['x-request-id']).toBe('req-sync-invalid-400');
       expect(response.body.statusCode).toBe(400);
+      expect(response.body.error).toBe('ValidationError');
       expect(response.body.message).toBe('Validation failed');
+      expect(response.body.details).toBeDefined();
       expect(response.body.errors).toBeDefined();
+      expect(response.body.requestId).toBe('req-sync-invalid-400');
     });
 
     it('POST /opportunities/search executes structured and semantic query', async () => {

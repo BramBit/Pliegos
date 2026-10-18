@@ -1,6 +1,10 @@
 import { Controller, Post, HttpCode, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { ReviewFollowUpUseCase } from '../../application/use-cases/review-follow-up.use-case';
+import {
+  ErrorEnvelopeDto,
+  ReviewFollowUpResponseDto,
+} from '../../../shared/infrastructure/http/response.dtos';
 
 @ApiTags('Alerts')
 @Controller('alerts')
@@ -19,14 +23,14 @@ export class AlertController {
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Revisión y envío de alertas completado exitosamente',
-    schema: {
-      type: 'object',
-      properties: {
-        alertsSent: { type: 'number', example: 5 },
-      },
-    },
+    type: ReviewFollowUpResponseDto,
   })
-  async reviewFollowUp() {
+  @ApiResponse({
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+    description: 'Error interno al procesar alertas',
+    type: ErrorEnvelopeDto,
+  })
+  async reviewFollowUp(): Promise<ReviewFollowUpResponseDto> {
     const result = await this.reviewFollowUpUseCase.execute();
     if (result.ok) {
       return result.value;

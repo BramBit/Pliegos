@@ -7,13 +7,19 @@ import {
   Body,
   HttpCode,
   HttpStatus,
-  NotFoundException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { GetRecommendationsUseCase } from '../../application/use-cases/get-recommendations.use-case';
 import { RegisterFeedbackUseCase } from '../../application/use-cases/register-feedback.use-case';
 import { asProfileId, asRecommendationId } from '../../../shared/domain/typed-id';
 import { ZodValidationPipe } from '../../../shared/infrastructure/http/zod-validation.pipe';
+import { DomainErrorException } from '../../../shared/infrastructure/http/global-exception.filter';
+import {
+  ErrorEnvelopeDto,
+  RecommendationDto,
+  RegisterFeedbackResponseDto,
+  toRecommendationDto,
+} from '../../../shared/infrastructure/http/response.dtos';
 import {
   RegisterFeedbackDto,
   registerFeedbackSchema,
@@ -32,7 +38,7 @@ export class RecommendationController {
   @ApiOperation({
     summary: 'Obtener recomendaciones priorizadas para un perfil',
     description:
-      'Calcula el score de afinidad de todas las oportunidades candidatas frente al perfil indicado usando MatchingService (similitud semántica, UNSPSC, monto y ubicación) y retorna el ranking con razones explicadas.',
+      'Retorna las recomendaciones precalculadas para el perfil indicado ordenadas descendentemente por score con sus factores explicados.',
   })
   @ApiParam({
     name: 'profileId',
@@ -42,15 +48,17 @@ export class RecommendationController {
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Lista de recomendaciones ordenadas descendentemente por score',
+    type: [RecommendationDto],
   })
   @ApiResponse({
     status: HttpStatus.NOT_FOUND,
     description: 'El perfil solicitado no existe',
+    type: ErrorEnvelopeDto,
   })
   async getRecommendations(
     @Param('profileId') profileId: string,
     @Query('limit') limit?: string,
-  ) {
+  ): Promise<RecommendationDto[]> {
     const parsedLimit = Number.parseInt(limit ?? '', 10);
     const result = await this.getRecommendationsUseCase.execute({
       profileId: asProfileId(profileId),
@@ -58,14 +66,10 @@ export class RecommendationController {
     });
 
     if (!result.ok) {
-      throw new NotFoundException({
-        statusCode: HttpStatus.NOT_FOUND,
-        error: result.error.type,
-        message: `Perfil no encontrado: ${result.error.profileId}`,
-      });
+      throw new DomainErrorException(result.error);
     }
 
-    return result.value;
+    return result.value.map((rec) => toRecommendationDto(rec));
   }
 
   @Post(':id/feedback')
@@ -83,31 +87,30 @@ export class RecommendationController {
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Decisión de feedback guardada exitosamente',
-  })
-  @ApiResponse({
-    status: HttpStatus.NOT_FOUND,
-    description: 'La recomendación no fue encontrada',
+    type: RegisterFeedbackResponseDto,
   })
   @ApiResponse({
     status: HttpStatus.BAD_REQUEST,
     description: 'Decisión inválida (debe ser Participate o Discard)',
+    type: ErrorEnvelopeDto,
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'La recomendación no fue encontrada',
+    type: ErrorEnvelopeDto,
   })
   async registerFeedback(
     @Param('id') id: string,
     @Body(new ZodValidationPipe(registerFeedbackSchema))
     body: RegisterFeedbackDto,
-  ) {
+  ): Promise<RegisterFeedbackResponseDto> {
     const result = await this.registerFeedbackUseCase.execute({
       recommendationId: asRecommendationId(id),
       decision: body.decision,
     });
 
     if (!result.ok) {
-      throw new NotFoundException({
-        statusCode: HttpStatus.NOT_FOUND,
-        error: result.error.type,
-        message: `Recomendación no encontrada: ${result.error.recommendationId}`,
-      });
+      throw new DomainErrorException(result.error);
     }
 
     return { success: true, message: 'Feedback recorded successfully' };

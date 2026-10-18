@@ -6,15 +6,23 @@ import {
   Body,
   HttpCode,
   HttpStatus,
-  BadGatewayException,
-  NotFoundException,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { asOpportunityId } from '../../../shared/domain/typed-id';
+import { createOpportunityNotFoundError } from '../../../shared/domain/errors';
 import { SyncOpportunitiesUseCase } from '../../application/use-cases/sync-opportunities.use-case';
 import { SearchOpportunitiesUseCase } from '../../application/use-cases/search-opportunities.use-case';
 import { GetOpportunityByIdUseCase } from '../../application/use-cases/get-opportunity-by-id.use-case';
 import { ZodValidationPipe } from '../../../shared/infrastructure/http/zod-validation.pipe';
+import { DomainErrorException } from '../../../shared/infrastructure/http/global-exception.filter';
+import {
+  ErrorEnvelopeDto,
+  OpportunityDetail,
+  OpportunitySummary,
+  SyncOpportunitiesResponseDto,
+  toOpportunityDetailDto,
+  toOpportunitySummaryDto,
+} from '../../../shared/infrastructure/http/response.dtos';
 import {
   SyncOpportunitiesDto,
   syncOpportunitiesSchema,
@@ -39,17 +47,24 @@ export class OpportunityController {
     description:
       'Retorna el detalle de una oportunidad de contratación. Si aún no cuenta con resumen analítico, encola el trabajo de generación bajo demanda y responde con summaryStatus = "pending".',
   })
+  @ApiParam({
+    name: 'id',
+    description: 'Identificador único de la oportunidad',
+    example: '9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d',
+  })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Detalle de la oportunidad con estado de resumen (pending | ready | fallback | unavailable)',
+    type: OpportunityDetail,
   })
   @ApiResponse({
     status: HttpStatus.NOT_FOUND,
     description: 'La oportunidad solicitada no existe',
+    type: ErrorEnvelopeDto,
   })
-  async getById(@Param('id') id: string) {
+  async getById(@Param('id') id: string): Promise<OpportunityDetail> {
     if (!this.getOpportunityByIdUseCase) {
-      throw new NotFoundException(`Oportunidad no encontrada: ${id}`);
+      throw new DomainErrorException(createOpportunityNotFoundError(asOpportunityId(id)));
     }
 
     const result = await this.getOpportunityByIdUseCase.execute({
@@ -57,17 +72,10 @@ export class OpportunityController {
     });
 
     if (!result.ok) {
-      throw new NotFoundException({
-        statusCode: HttpStatus.NOT_FOUND,
-        error: result.error.type,
-        message: `Oportunidad no encontrada: ${result.error.opportunityId}`,
-      });
+      throw new DomainErrorException(result.error);
     }
 
-    return {
-      ...result.value.opportunity,
-      summaryStatus: result.value.summaryStatus,
-    };
+    return toOpportunityDetailDto(result.value.opportunity, result.value.summaryStatus);
   }
 
   @Post('sync')
@@ -80,22 +88,22 @@ export class OpportunityController {
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Procesos sincronizados e indexados en cola correctamente',
-    schema: {
-      type: 'object',
-      properties: {
-        created: { type: 'number', example: 12 },
-        updated: { type: 'number', example: 3 },
-      },
-    },
+    type: SyncOpportunitiesResponseDto,
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Parámetros de sincronización inválidos',
+    type: ErrorEnvelopeDto,
   })
   @ApiResponse({
     status: HttpStatus.BAD_GATEWAY,
     description: 'Error de conectividad o respuesta inválida del endpoint de SECOP II',
+    type: ErrorEnvelopeDto,
   })
   async sync(
     @Body(new ZodValidationPipe(syncOpportunitiesSchema))
     body: SyncOpportunitiesDto,
-  ) {
+  ): Promise<SyncOpportunitiesResponseDto> {
     const sinceDate = body.since ? new Date(body.since) : undefined;
     const result = await this.syncOpportunitiesUseCase.execute({
       since: sinceDate,
@@ -103,11 +111,7 @@ export class OpportunityController {
     });
 
     if (!result.ok) {
-      throw new BadGatewayException({
-        statusCode: HttpStatus.BAD_GATEWAY,
-        error: result.error.type,
-        message: `Fuente de contratación no disponible: ${result.error.sourceName}`,
-      });
+      throw new DomainErrorException(result.error);
     }
 
     return result.value;
@@ -123,11 +127,17 @@ export class OpportunityController {
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Lista de oportunidades coincidentes con la consulta y filtros',
+    type: [OpportunitySummary],
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Filtros de búsqueda inválidos',
+    type: ErrorEnvelopeDto,
   })
   async search(
     @Body(new ZodValidationPipe(searchOpportunitiesSchema))
     body: SearchOpportunitiesDto,
-  ) {
+  ): Promise<OpportunitySummary[]> {
     const result = await this.searchOpportunitiesUseCase.execute({
       query: body.query,
       filters: {
@@ -139,7 +149,7 @@ export class OpportunityController {
     });
 
     if (result.ok) {
-      return result.value;
+      return result.value.map((opp) => toOpportunitySummaryDto(opp));
     }
     return [];
   }

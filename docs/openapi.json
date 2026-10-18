@@ -1,0 +1,1466 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/opportunities/{id}": {
+      "get": {
+        "description": "Retorna el detalle de una oportunidad de contratación. Si aún no cuenta con resumen analítico, encola el trabajo de generación bajo demanda y responde con summaryStatus = \"pending\".",
+        "operationId": "OpportunityController_getById",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Identificador único de la oportunidad",
+            "schema": {
+              "example": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Detalle de la oportunidad con estado de resumen (pending | ready | fallback | unavailable)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpportunityDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "La oportunidad solicitada no existe",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelopeDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Obtener detalle de una oportunidad por ID",
+        "tags": [
+          "Opportunities"
+        ]
+      }
+    },
+    "/opportunities/sync": {
+      "post": {
+        "description": "Consulta la API pública de SECOP II (Socrata), normaliza los procesos hacia el modelo de dominio Opportunity, detecta cambios o nuevas convocatorias y encola los trabajos de indexación asíncrona.",
+        "operationId": "OpportunityController_sync",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SyncOpportunitiesDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Procesos sincronizados e indexados en cola correctamente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SyncOpportunitiesResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Parámetros de sincronización inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelopeDto"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Error de conectividad o respuesta inválida del endpoint de SECOP II",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelopeDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Sincronizar oportunidades desde SECOP II",
+        "tags": [
+          "Opportunities"
+        ]
+      }
+    },
+    "/opportunities/search": {
+      "post": {
+        "description": "Realiza una búsqueda combinada en el índice de pgvector: si se especifica query en lenguaje natural, ejecuta ordenamiento por distancia coseno; además aplica filtros por categoría UNSPSC, departamento y rango de cuantía.",
+        "operationId": "OpportunityController_search",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SearchOpportunitiesDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Lista de oportunidades coincidentes con la consulta y filtros",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/OpportunitySummary"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Filtros de búsqueda inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelopeDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Búsqueda estructurada y semántica de oportunidades",
+        "tags": [
+          "Opportunities"
+        ]
+      }
+    },
+    "/profiles": {
+      "post": {
+        "description": "Registra las capacidades técnicas, sector y preferencias de contratación de una empresa u oferente, utilizadas por el motor de priorización para generar recomendaciones explicadas.",
+        "operationId": "ProfileController_configure",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfigureProfileDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Perfil guardado exitosamente en el repositorio",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Parámetros o invariantes de perfil inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelopeDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Configurar o actualizar perfil de contratista",
+        "tags": [
+          "Profiles"
+        ]
+      }
+    },
+    "/recommendations/{profileId}": {
+      "get": {
+        "description": "Retorna las recomendaciones precalculadas para el perfil indicado ordenadas descendentemente por score con sus factores explicados.",
+        "operationId": "RecommendationController_getRecommendations",
+        "parameters": [
+          {
+            "name": "profileId",
+            "required": true,
+            "in": "path",
+            "description": "Identificador único del perfil de contratista",
+            "schema": {
+              "example": "d9b2d63d-a232-4d2c-8cb4-e5e6b72a44f1",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de recomendaciones ordenadas descendentemente por score",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RecommendationDto"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "El perfil solicitado no existe",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelopeDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Obtener recomendaciones priorizadas para un perfil",
+        "tags": [
+          "Recommendations"
+        ]
+      }
+    },
+    "/recommendations/{id}/feedback": {
+      "post": {
+        "description": "Guarda la decisión del usuario (Participate o Discard) respecto a una recomendación específica para alimentar el ciclo de aprendizaje de la plataforma.",
+        "operationId": "RecommendationController_registerFeedback",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Identificador único de la recomendación",
+            "schema": {
+              "example": "rec-123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterFeedbackDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Decisión de feedback guardada exitosamente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegisterFeedbackResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Decisión inválida (debe ser Participate o Discard)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelopeDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "La recomendación no fue encontrada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelopeDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Registrar feedback sobre una recomendación",
+        "tags": [
+          "Recommendations"
+        ]
+      }
+    },
+    "/alerts/review-follow-up": {
+      "post": {
+        "description": "Recorre todas las alertas no entregadas en la base de datos (adendas, cambios de estado o plazos críticos), envía las notificaciones por correo electrónico a través de NotificationPort y las marca como entregadas.",
+        "operationId": "AlertController_reviewFollowUp",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Revisión y envío de alertas completado exitosamente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewFollowUpResponseDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error interno al procesar alertas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelopeDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Ejecutar revisión de seguimiento de alertas",
+        "tags": [
+          "Alerts"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "Pliegos API",
+    "description": "Pliegos — Inteligencia de contratación pública. Descubre, analiza, prioriza con explicaciones y monitorea oportunidades de contratación estatal en Colombia (SECOP).",
+    "version": "1.0.0",
+    "contact": {}
+  },
+  "tags": [
+    {
+      "name": "Opportunities",
+      "description": "Ingesta desde SECOP II, normalización y búsqueda híbrida"
+    },
+    {
+      "name": "Profiles",
+      "description": "Perfiles de contratistas, capacidades y preferencias"
+    },
+    {
+      "name": "Recommendations",
+      "description": "Motor de priorización con explicaciones y registro de feedback"
+    },
+    {
+      "name": "Alerts",
+      "description": "Monitoreo de adendas, fechas límite y notificaciones"
+    }
+  ],
+  "servers": [],
+  "components": {
+    "schemas": {
+      "ContractingEntityDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Ministerio de Tecnologías de la Información y las Comunicaciones"
+          },
+          "taxId": {
+            "type": "string",
+            "example": "899999053-1"
+          }
+        },
+        "required": [
+          "name",
+          "taxId"
+        ]
+      },
+      "LocationDto": {
+        "type": "object",
+        "properties": {
+          "city": {
+            "type": "string",
+            "nullable": true,
+            "example": "Bogotá"
+          },
+          "department": {
+            "type": "string",
+            "nullable": true,
+            "example": "Bogotá D.C."
+          }
+        },
+        "required": [
+          "city",
+          "department"
+        ]
+      },
+      "SourceReferenceDto": {
+        "type": "object",
+        "properties": {
+          "sourceName": {
+            "type": "string",
+            "enum": [
+              "SECOP"
+            ],
+            "example": "SECOP"
+          },
+          "externalId": {
+            "type": "string",
+            "example": "CO1.REQ.2577563"
+          },
+          "humanReference": {
+            "type": "string",
+            "example": "MINTIC-LP-012-2026"
+          },
+          "originalUrl": {
+            "type": "string",
+            "example": "https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=CO1.NTC.1"
+          }
+        },
+        "required": [
+          "sourceName",
+          "externalId",
+          "humanReference",
+          "originalUrl"
+        ]
+      },
+      "RequirementDto": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "example": "Experiencia específica en desarrollo web"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "technical",
+              "financial",
+              "legal"
+            ],
+            "example": "technical"
+          }
+        },
+        "required": [
+          "text",
+          "type"
+        ]
+      },
+      "AnalysisDto": {
+        "type": "object",
+        "properties": {
+          "summary": {
+            "type": "string",
+            "nullable": true,
+            "example": "Resumen analítico conciso del proceso."
+          },
+          "summaryStatus": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "ready",
+              "fallback",
+              "unavailable"
+            ],
+            "example": "ready"
+          },
+          "requirements": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RequirementDto"
+            }
+          },
+          "embeddingGeneratedAt": {
+            "type": "string",
+            "nullable": true,
+            "example": "2026-10-10T12:05:00.000Z"
+          }
+        },
+        "required": [
+          "summary",
+          "summaryStatus",
+          "requirements",
+          "embeddingGeneratedAt"
+        ]
+      },
+      "ChangeDto": {
+        "type": "object",
+        "properties": {
+          "field": {
+            "type": "string",
+            "example": "closingDate"
+          },
+          "previousValue": {
+            "type": "string",
+            "example": "2026-10-25T17:00:00.000Z"
+          },
+          "newValue": {
+            "type": "string",
+            "example": "2026-10-30T17:00:00.000Z"
+          },
+          "detectedAt": {
+            "type": "string",
+            "example": "2026-10-15T09:00:00.000Z"
+          },
+          "material": {
+            "type": "boolean",
+            "example": true
+          }
+        },
+        "required": [
+          "field",
+          "previousValue",
+          "newValue",
+          "detectedAt",
+          "material"
+        ]
+      },
+      "OpportunityDetail": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d"
+          },
+          "title": {
+            "type": "string",
+            "example": "Servicio de desarrollo de software a la medida"
+          },
+          "description": {
+            "type": "string",
+            "example": "Desarrollo e implementación de plataforma web en arquitectura hexagonal"
+          },
+          "contractingEntity": {
+            "$ref": "#/components/schemas/ContractingEntityDto"
+          },
+          "entityName": {
+            "type": "string",
+            "example": "Ministerio de Tecnologías de la Información y las Comunicaciones"
+          },
+          "location": {
+            "$ref": "#/components/schemas/LocationDto"
+          },
+          "city": {
+            "type": "string",
+            "nullable": true,
+            "example": "Bogotá"
+          },
+          "department": {
+            "type": "string",
+            "nullable": true,
+            "example": "Bogotá D.C."
+          },
+          "amount": {
+            "type": "number",
+            "nullable": true,
+            "description": "Amount in COP, or null when the opportunity does not declare a known amount",
+            "example": 150000000
+          },
+          "amountKnown": {
+            "type": "boolean",
+            "example": true
+          },
+          "currency": {
+            "type": "string",
+            "example": "COP"
+          },
+          "contractType": {
+            "type": "string",
+            "example": "Prestación de servicios"
+          },
+          "procurementModality": {
+            "type": "string",
+            "example": "Licitación pública"
+          },
+          "isCompetitive": {
+            "type": "boolean",
+            "example": true
+          },
+          "categoryCode": {
+            "type": "string",
+            "nullable": true,
+            "example": "80111600"
+          },
+          "publishedAt": {
+            "type": "string",
+            "example": "2026-10-01T08:00:00.000Z"
+          },
+          "lastPublishedAt": {
+            "type": "string",
+            "example": "2026-10-10T12:00:00.000Z"
+          },
+          "closingDate": {
+            "type": "string",
+            "nullable": true,
+            "example": "2026-10-30T17:00:00.000Z"
+          },
+          "daysToClose": {
+            "type": "number",
+            "nullable": true,
+            "description": "Whole days remaining until closingDate, or null when closingDate is null",
+            "example": 12
+          },
+          "isOpenForSubmission": {
+            "type": "boolean",
+            "example": true
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "Draft",
+              "Published",
+              "Amended",
+              "Closed",
+              "Awarded",
+              "Cancelled",
+              "Unknown"
+            ],
+            "example": "Published"
+          },
+          "source": {
+            "$ref": "#/components/schemas/SourceReferenceDto"
+          },
+          "sourceUrl": {
+            "type": "string",
+            "example": "https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=CO1.NTC.1"
+          },
+          "summaryStatus": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "ready",
+              "fallback",
+              "unavailable"
+            ],
+            "example": "ready"
+          },
+          "summary": {
+            "type": "string",
+            "nullable": true,
+            "example": "Resumen analítico conciso del proceso."
+          },
+          "analysis": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AnalysisDto"
+              }
+            ]
+          },
+          "changeHistory": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChangeDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "description",
+          "contractingEntity",
+          "entityName",
+          "location",
+          "city",
+          "department",
+          "amount",
+          "amountKnown",
+          "currency",
+          "contractType",
+          "procurementModality",
+          "isCompetitive",
+          "categoryCode",
+          "publishedAt",
+          "lastPublishedAt",
+          "closingDate",
+          "daysToClose",
+          "isOpenForSubmission",
+          "status",
+          "source",
+          "sourceUrl",
+          "summaryStatus",
+          "summary",
+          "analysis",
+          "changeHistory"
+        ]
+      },
+      "ErrorEnvelopeDto": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "example": 400
+          },
+          "error": {
+            "type": "string",
+            "example": "ValidationError"
+          },
+          "message": {
+            "type": "string",
+            "example": "Validation failed"
+          },
+          "details": {
+            "type": "object",
+            "description": "Optional structured details about the error",
+            "nullable": true
+          },
+          "requestId": {
+            "type": "string",
+            "example": "c42d8e41-29a4-4f6a-9870-8d65e32b5011"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message",
+          "requestId"
+        ]
+      },
+      "SyncOpportunitiesDto": {
+        "type": "object",
+        "properties": {
+          "since": {
+            "type": "string",
+            "description": "Fecha ISO 8601 a partir de la cual sincronizar procesos modificados o nuevos",
+            "example": "2026-01-01T00:00:00Z"
+          },
+          "maxRecords": {
+            "type": "number",
+            "description": "Máximo de procesos a traer (paginado de a 1000). Por defecto SECOP_SYNC_MAX_RECORDS o 5000.",
+            "example": 5000
+          }
+        }
+      },
+      "SyncOpportunitiesResponseDto": {
+        "type": "object",
+        "properties": {
+          "created": {
+            "type": "number",
+            "example": 12
+          },
+          "updated": {
+            "type": "number",
+            "example": 3
+          },
+          "unchanged": {
+            "type": "number",
+            "example": 185
+          },
+          "skipped": {
+            "type": "number",
+            "example": 0
+          },
+          "unknownStatuses": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "number"
+            },
+            "example": {}
+          },
+          "durationMs": {
+            "type": "number",
+            "example": 845
+          },
+          "refreshTriggered": {
+            "type": "boolean",
+            "example": true
+          }
+        },
+        "required": [
+          "created",
+          "updated",
+          "unchanged",
+          "skipped",
+          "unknownStatuses",
+          "durationMs"
+        ]
+      },
+      "SearchOpportunitiesDto": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "Consulta en lenguaje natural para búsqueda semántica vectorial",
+            "example": "Desarrollo de software y mantenimiento de plataformas web"
+          },
+          "categoryCodePrefix": {
+            "type": "string",
+            "description": "Prefijo de código UNSPSC para filtrar categorías (ej. V1.8011)",
+            "example": "V1.8011"
+          },
+          "department": {
+            "type": "string",
+            "description": "Departamento de ejecución de la contratación",
+            "example": "Antioquia"
+          },
+          "minAmount": {
+            "type": "number",
+            "description": "Monto mínimo en COP para filtrar oportunidades",
+            "example": 50000000
+          },
+          "maxAmount": {
+            "type": "number",
+            "description": "Monto máximo en COP para filtrar oportunidades",
+            "example": 500000000
+          },
+          "limit": {
+            "type": "number",
+            "description": "Límite máximo de resultados a retornar (1-100, default 20)",
+            "example": 20,
+            "default": 20
+          }
+        }
+      },
+      "OpportunitySummary": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d"
+          },
+          "title": {
+            "type": "string",
+            "example": "Servicio de desarrollo de software a la medida"
+          },
+          "description": {
+            "type": "string",
+            "example": "Desarrollo e implementación de plataforma web en arquitectura hexagonal"
+          },
+          "contractingEntity": {
+            "$ref": "#/components/schemas/ContractingEntityDto"
+          },
+          "entityName": {
+            "type": "string",
+            "example": "Ministerio de Tecnologías de la Información y las Comunicaciones"
+          },
+          "location": {
+            "$ref": "#/components/schemas/LocationDto"
+          },
+          "city": {
+            "type": "string",
+            "nullable": true,
+            "example": "Bogotá"
+          },
+          "department": {
+            "type": "string",
+            "nullable": true,
+            "example": "Bogotá D.C."
+          },
+          "amount": {
+            "type": "number",
+            "nullable": true,
+            "description": "Amount in COP, or null when the opportunity does not declare a known amount",
+            "example": 150000000
+          },
+          "amountKnown": {
+            "type": "boolean",
+            "example": true
+          },
+          "currency": {
+            "type": "string",
+            "example": "COP"
+          },
+          "contractType": {
+            "type": "string",
+            "example": "Prestación de servicios"
+          },
+          "procurementModality": {
+            "type": "string",
+            "example": "Licitación pública"
+          },
+          "isCompetitive": {
+            "type": "boolean",
+            "example": true
+          },
+          "categoryCode": {
+            "type": "string",
+            "nullable": true,
+            "example": "80111600"
+          },
+          "publishedAt": {
+            "type": "string",
+            "example": "2026-10-01T08:00:00.000Z"
+          },
+          "lastPublishedAt": {
+            "type": "string",
+            "example": "2026-10-10T12:00:00.000Z"
+          },
+          "closingDate": {
+            "type": "string",
+            "nullable": true,
+            "example": "2026-10-30T17:00:00.000Z"
+          },
+          "daysToClose": {
+            "type": "number",
+            "nullable": true,
+            "description": "Whole days remaining until closingDate, or null when closingDate is null",
+            "example": 12
+          },
+          "isOpenForSubmission": {
+            "type": "boolean",
+            "example": true
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "Draft",
+              "Published",
+              "Amended",
+              "Closed",
+              "Awarded",
+              "Cancelled",
+              "Unknown"
+            ],
+            "example": "Published"
+          },
+          "source": {
+            "$ref": "#/components/schemas/SourceReferenceDto"
+          },
+          "sourceUrl": {
+            "type": "string",
+            "example": "https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=CO1.NTC.1"
+          },
+          "summaryStatus": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "ready",
+              "fallback",
+              "unavailable"
+            ],
+            "example": "ready"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "description",
+          "contractingEntity",
+          "entityName",
+          "location",
+          "city",
+          "department",
+          "amount",
+          "amountKnown",
+          "currency",
+          "contractType",
+          "procurementModality",
+          "isCompetitive",
+          "categoryCode",
+          "publishedAt",
+          "lastPublishedAt",
+          "closingDate",
+          "daysToClose",
+          "isOpenForSubmission",
+          "status",
+          "source",
+          "sourceUrl",
+          "summaryStatus"
+        ]
+      },
+      "CapabilityDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Nombre o denominación de la capacidad técnica",
+            "example": "Desarrollo Cloud y DevOps"
+          },
+          "yearsOfExperience": {
+            "type": "number",
+            "description": "Años de experiencia demostrable",
+            "example": 5
+          }
+        },
+        "required": [
+          "name",
+          "yearsOfExperience"
+        ]
+      },
+      "AmountRangeDto": {
+        "type": "object",
+        "properties": {
+          "min": {
+            "type": "number",
+            "description": "Monto mínimo en COP",
+            "example": 10000000
+          },
+          "max": {
+            "type": "number",
+            "description": "Monto máximo en COP",
+            "example": 200000000
+          }
+        },
+        "required": [
+          "min",
+          "max"
+        ]
+      },
+      "ProfilePreferencesDto": {
+        "type": "object",
+        "properties": {
+          "categoryCodes": {
+            "description": "Códigos UNSPSC de interés para contratación",
+            "example": [
+              "V1.80111600",
+              "V1.81111500"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "keywords": {
+            "description": "Palabras clave libres que alimentan la similitud semántica con IA",
+            "example": [
+              "software",
+              "ciberseguridad",
+              "consultoría ti"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "amountRange": {
+            "description": "Rango de cuantía deseada en COP",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AmountRangeDto"
+              }
+            ]
+          },
+          "departments": {
+            "description": "Departamentos de interés geográfico (vacío = sin preferencia)",
+            "example": [
+              "Antioquia",
+              "Cundinamarca"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "categoryCodes",
+          "keywords",
+          "departments"
+        ]
+      },
+      "ConfigureProfileDto": {
+        "type": "object",
+        "properties": {
+          "profileId": {
+            "type": "string",
+            "description": "ID único del perfil en caso de actualización (omite para crear uno nuevo)",
+            "example": "d9b2d63d-a232-4d2c-8cb4-e5e6b72a44f1"
+          },
+          "ownerId": {
+            "type": "string",
+            "description": "Identificador del usuario propietario del perfil",
+            "example": "user-empresa-123"
+          },
+          "sector": {
+            "type": "string",
+            "description": "Sector económico principal del contratista",
+            "example": "Tecnología e Información"
+          },
+          "capabilities": {
+            "description": "Listado de capacidades y experiencia del contratista",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CapabilityDto"
+            }
+          },
+          "preferences": {
+            "description": "Preferencias de contratación para el motor de priorización",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProfilePreferencesDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "ownerId",
+          "sector",
+          "capabilities",
+          "preferences"
+        ]
+      },
+      "ProfileDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "d9b2d63d-a232-4d2c-8cb4-e5e6b72a44f1"
+          },
+          "ownerId": {
+            "type": "string",
+            "example": "user-contractor-01"
+          },
+          "sector": {
+            "type": "string",
+            "example": "Tecnología e Inteligencia Artificial"
+          },
+          "capabilities": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CapabilityDto"
+            }
+          },
+          "preferences": {
+            "$ref": "#/components/schemas/ProfilePreferencesDto"
+          }
+        },
+        "required": [
+          "id",
+          "ownerId",
+          "sector",
+          "capabilities",
+          "preferences"
+        ]
+      },
+      "MatchedFactorDto": {
+        "type": "object",
+        "properties": {
+          "factor": {
+            "type": "string",
+            "enum": [
+              "semanticSimilarity",
+              "categoryMatch",
+              "amountFit",
+              "locationMatch"
+            ],
+            "example": "semanticSimilarity"
+          },
+          "score": {
+            "type": "number",
+            "example": 0.85
+          },
+          "description": {
+            "type": "string",
+            "example": "Coincidencia semántica con tu perfil (85%)"
+          }
+        },
+        "required": [
+          "factor",
+          "score",
+          "description"
+        ]
+      },
+      "ExplanationDto": {
+        "type": "object",
+        "properties": {
+          "summary": {
+            "type": "string",
+            "example": "Afinidad del 82% basada en 3 factores evaluados."
+          },
+          "matchedFactors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MatchedFactorDto"
+            }
+          },
+          "unavailableFactors": {
+            "example": [
+              "La oportunidad no declara categoría UNSPSC"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "summary",
+          "matchedFactors",
+          "unavailableFactors"
+        ]
+      },
+      "FeedbackDto": {
+        "type": "object",
+        "properties": {
+          "decision": {
+            "type": "string",
+            "enum": [
+              "Participate",
+              "Discard"
+            ],
+            "example": "Participate"
+          },
+          "recordedAt": {
+            "type": "string",
+            "example": "2026-10-16T10:30:00.000Z"
+          }
+        },
+        "required": [
+          "decision",
+          "recordedAt"
+        ]
+      },
+      "RecommendationDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "rec-123e4567-e89b-12d3-a456-426614174000"
+          },
+          "profileId": {
+            "type": "string",
+            "example": "d9b2d63d-a232-4d2c-8cb4-e5e6b72a44f1"
+          },
+          "opportunityId": {
+            "type": "string",
+            "example": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d"
+          },
+          "score": {
+            "type": "number",
+            "example": 0.82
+          },
+          "explanation": {
+            "$ref": "#/components/schemas/ExplanationDto"
+          },
+          "feedback": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FeedbackDto"
+              }
+            ]
+          },
+          "opportunity": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OpportunitySummary"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "profileId",
+          "opportunityId",
+          "score",
+          "explanation",
+          "feedback",
+          "opportunity"
+        ]
+      },
+      "RegisterFeedbackDto": {
+        "type": "object",
+        "properties": {
+          "decision": {
+            "type": "string",
+            "description": "Decisión tomada por el contratista respecto a la recomendación",
+            "enum": [
+              "Participate",
+              "Discard"
+            ],
+            "example": "Participate"
+          }
+        },
+        "required": [
+          "decision"
+        ]
+      },
+      "RegisterFeedbackResponseDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "message": {
+            "type": "string",
+            "example": "Feedback recorded successfully"
+          }
+        },
+        "required": [
+          "success",
+          "message"
+        ]
+      },
+      "ReviewFollowUpResponseDto": {
+        "type": "object",
+        "properties": {
+          "alertsSent": {
+            "type": "number",
+            "example": 5
+          }
+        },
+        "required": [
+          "alertsSent"
+        ]
+      },
+      "AlertDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "alert-01"
+          },
+          "profileId": {
+            "type": "string",
+            "example": "d9b2d63d-a232-4d2c-8cb4-e5e6b72a44f1"
+          },
+          "opportunityId": {
+            "type": "string",
+            "example": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d"
+          },
+          "trigger": {
+            "type": "string",
+            "enum": [
+              "Amendment",
+              "DeadlineApproaching",
+              "StatusChange"
+            ],
+            "example": "Amendment"
+          },
+          "deliveredAt": {
+            "type": "string",
+            "nullable": true,
+            "example": "2026-10-16T08:01:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "profileId",
+          "opportunityId",
+          "trigger",
+          "deliveredAt"
+        ]
+      },
+      "Page": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "array"
+            }
+          },
+          "total": {
+            "type": "number",
+            "example": 42
+          },
+          "page": {
+            "type": "number",
+            "example": 1
+          },
+          "pageSize": {
+            "type": "number",
+            "example": 20
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "pageSize"
+        ]
+      },
+      "OpportunitySummaryPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OpportunitySummary"
+            }
+          },
+          "total": {
+            "type": "number",
+            "example": 42
+          },
+          "page": {
+            "type": "number",
+            "example": 1
+          },
+          "pageSize": {
+            "type": "number",
+            "example": 20
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "pageSize"
+        ]
+      },
+      "RecommendationPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RecommendationDto"
+            }
+          },
+          "total": {
+            "type": "number",
+            "example": 42
+          },
+          "page": {
+            "type": "number",
+            "example": 1
+          },
+          "pageSize": {
+            "type": "number",
+            "example": 20
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "pageSize"
+        ]
+      },
+      "AlertPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AlertDto"
+            }
+          },
+          "total": {
+            "type": "number",
+            "example": 42
+          },
+          "page": {
+            "type": "number",
+            "example": 1
+          },
+          "pageSize": {
+            "type": "number",
+            "example": 20
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "pageSize"
+        ]
+      }
+    }
+  }
+}
