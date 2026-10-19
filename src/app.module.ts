@@ -1,7 +1,8 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
-import { APP_FILTER } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import { BullModule } from '@nestjs/bullmq';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { DatabaseModule } from './modules/shared/infrastructure/persistence/database.module';
 import { OpportunityModule } from './modules/opportunity/opportunity.module';
 import { ProfileModule } from './modules/profile/profile.module';
@@ -9,6 +10,7 @@ import { RecommendationModule } from './modules/recommendation/recommendation.mo
 import { AlertModule } from './modules/alert/alert.module';
 import { SchedulerModule } from './modules/scheduler/scheduler.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { AdminModule } from './modules/admin/admin.module';
 import { GlobalExceptionFilter } from './modules/shared/infrastructure/http/global-exception.filter';
 import { RequestIdMiddleware } from './modules/shared/infrastructure/http/request-id.middleware';
 
@@ -24,6 +26,13 @@ import { RequestIdMiddleware } from './modules/shared/infrastructure/http/reques
         maxRetriesPerRequest: null,
       },
     }),
+    ThrottlerModule.forRoot([
+      {
+        name: 'default',
+        ttl: 60000,
+        limit: 120,
+      },
+    ]),
     DatabaseModule,
     AuthModule,
     OpportunityModule,
@@ -31,8 +40,13 @@ import { RequestIdMiddleware } from './modules/shared/infrastructure/http/reques
     RecommendationModule,
     AlertModule,
     SchedulerModule,
+    AdminModule,
   ],
   providers: [
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
     {
       provide: APP_FILTER,
       useClass: GlobalExceptionFilter,

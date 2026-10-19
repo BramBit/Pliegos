@@ -43,9 +43,34 @@ const envSchema = z.object({
   JWT_REFRESH_TTL: nonEmpty.default('7d'),
 
   MAX_PROFILES_PER_USER: positiveInt.default(5),
+  CORS_ORIGINS: z.string().default(''),
 });
 
 export type Env = z.infer<typeof envSchema>;
+
+export interface CorsConfig {
+  readonly origin: boolean | string | string[];
+  readonly credentials: false;
+}
+
+export function configureCors(env: { NODE_ENV: string; CORS_ORIGINS?: string }): CorsConfig {
+  const origins = (env.CORS_ORIGINS ?? '')
+    .split(',')
+    .map((o) => o.trim())
+    .filter(Boolean);
+
+  if (origins.length === 0) {
+    if (env.NODE_ENV === 'production') {
+      return { origin: false, credentials: false };
+    }
+    return { origin: true, credentials: false };
+  }
+
+  return {
+    origin: origins.length === 1 ? origins[0] : origins,
+    credentials: false,
+  };
+}
 
 export class EnvValidationError extends Error {
   constructor(public readonly problems: string[]) {

@@ -1,5 +1,9 @@
 import { PipeTransform, ArgumentMetadata, BadRequestException } from '@nestjs/common';
-import { ZodSchema } from 'zod';
+import { z, ZodSchema } from 'zod';
+
+export const uuidParamSchema = z
+  .string()
+  .regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i, 'Invalid UUID');
 
 export class ZodValidationPipe implements PipeTransform {
   constructor(private readonly schema: ZodSchema) {}

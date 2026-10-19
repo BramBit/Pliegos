@@ -15,7 +15,7 @@ import { UnwatchOpportunityUseCase } from '../../application/use-cases/unwatch-o
 import { GetWatchedOpportunitiesUseCase } from '../../application/use-cases/get-watched-opportunities.use-case';
 import { GetProfileSummaryUseCase } from '../../application/use-cases/get-profile-summary.use-case';
 import { asProfileId, asOpportunityId } from '../../../shared/domain/typed-id';
-import { ZodValidationPipe } from '../../../shared/infrastructure/http/zod-validation.pipe';
+import { ZodValidationPipe, uuidParamSchema } from '../../../shared/infrastructure/http/zod-validation.pipe';
 import { DomainErrorException } from '../../../shared/infrastructure/http/global-exception.filter';
 import {
   ErrorEnvelopeDto,
@@ -39,6 +39,7 @@ import {
   ListWatchesQuery,
   listWatchesQuerySchema,
 } from './dtos/list-watches.dto';
+import { z } from 'zod';
 
 @ApiTags('Recommendations')
 @Controller('profiles')
@@ -103,7 +104,7 @@ export class ProfileRecommendationsController {
     type: ErrorEnvelopeDto,
   })
   async getRecommendationFeed(
-    @Param('id') id: string,
+    @Param('id', new ZodValidationPipe(uuidParamSchema)) id: string,
     @CurrentUser() user: CurrentUserPayload,
     @Query(new ZodValidationPipe(recommendationFeedQuerySchema))
     query: RecommendationFeedQuery,
@@ -177,7 +178,7 @@ export class ProfileRecommendationsController {
     type: ErrorEnvelopeDto,
   })
   async getProfileSummary(
-    @Param('id') id: string,
+    @Param('id', new ZodValidationPipe(uuidParamSchema)) id: string,
     @CurrentUser() user: CurrentUserPayload,
   ): Promise<ProfileSummaryDto> {
     await this.profileAccessService.assertOwner(asProfileId(id), user);
@@ -228,7 +229,7 @@ export class ProfileRecommendationsController {
     type: ErrorEnvelopeDto,
   })
   async getWatchedOpportunities(
-    @Param('id') id: string,
+    @Param('id', new ZodValidationPipe(uuidParamSchema)) id: string,
     @CurrentUser() user: CurrentUserPayload,
     @Query(new ZodValidationPipe(listWatchesQuerySchema))
     query: ListWatchesQuery,
@@ -282,8 +283,8 @@ export class ProfileRecommendationsController {
     type: ErrorEnvelopeDto,
   })
   async watchOpportunity(
-    @Param('id') id: string,
-    @Param('opportunityId') opportunityId: string,
+    @Param('id', new ZodValidationPipe(uuidParamSchema)) id: string,
+    @Param('opportunityId', new ZodValidationPipe(z.string().min(1))) opportunityId: string,
     @CurrentUser() user: CurrentUserPayload,
   ): Promise<RegisterFeedbackResponseDto> {
     await this.profileAccessService.assertOwner(asProfileId(id), user);
@@ -327,8 +328,8 @@ export class ProfileRecommendationsController {
     type: ErrorEnvelopeDto,
   })
   async unwatchOpportunity(
-    @Param('id') id: string,
-    @Param('opportunityId') opportunityId: string,
+    @Param('id', new ZodValidationPipe(uuidParamSchema)) id: string,
+    @Param('opportunityId', new ZodValidationPipe(z.string().min(1))) opportunityId: string,
     @CurrentUser() user: CurrentUserPayload,
   ): Promise<RegisterFeedbackResponseDto> {
     await this.profileAccessService.assertOwner(asProfileId(id), user);

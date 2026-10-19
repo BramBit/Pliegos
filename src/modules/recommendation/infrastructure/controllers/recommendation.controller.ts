@@ -11,7 +11,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { RegisterFeedbackUseCase } from '../../application/use-cases/register-feedback.use-case';
 import { UndoFeedbackUseCase } from '../../application/use-cases/undo-feedback.use-case';
 import { asRecommendationId, asUserId } from '../../../shared/domain/typed-id';
-import { ZodValidationPipe } from '../../../shared/infrastructure/http/zod-validation.pipe';
+import { ZodValidationPipe, uuidParamSchema } from '../../../shared/infrastructure/http/zod-validation.pipe';
 import { DomainErrorException } from '../../../shared/infrastructure/http/global-exception.filter';
 import {
   CurrentUser,
@@ -25,6 +25,7 @@ import {
   RegisterFeedbackDto,
   registerFeedbackSchema,
 } from './dtos/register-feedback.dto';
+import { z } from 'zod';
 
 @ApiTags('Recommendations')
 @Controller('recommendations')
@@ -62,7 +63,7 @@ export class RecommendationController {
     type: ErrorEnvelopeDto,
   })
   async registerFeedback(
-    @Param('id') id: string,
+    @Param('id', new ZodValidationPipe(uuidParamSchema)) id: string,
     @CurrentUser() user: CurrentUserPayload | undefined,
     @Body(new ZodValidationPipe(registerFeedbackSchema))
     body: RegisterFeedbackDto,
@@ -90,7 +91,7 @@ export class RecommendationController {
   @ApiParam({
     name: 'id',
     description: 'Identificador único de la recomendación',
-    example: 'rec-123e4567-e89b-12d3-a456-426614174000',
+    example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -103,7 +104,7 @@ export class RecommendationController {
     type: ErrorEnvelopeDto,
   })
   async undoFeedback(
-    @Param('id') id: string,
+    @Param('id', new ZodValidationPipe(uuidParamSchema)) id: string,
     @CurrentUser() user: CurrentUserPayload | undefined,
   ): Promise<RegisterFeedbackResponseDto> {
     const result = await this.undoFeedbackUseCase.execute({

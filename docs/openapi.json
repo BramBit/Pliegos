@@ -250,59 +250,6 @@
         ]
       }
     },
-    "/opportunities/sync": {
-      "post": {
-        "description": "Consulta la API pública de SECOP II (Socrata), normaliza los procesos hacia el modelo de dominio Opportunity, detecta cambios o nuevas convocatorias y encola los trabajos de indexación asíncrona.",
-        "operationId": "OpportunityController_sync",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SyncOpportunitiesDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Procesos sincronizados e indexados en cola correctamente",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SyncOpportunitiesResponseDto"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Parámetros de sincronización inválidos",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelopeDto"
-                }
-              }
-            }
-          },
-          "502": {
-            "description": "Error de conectividad o respuesta inválida del endpoint de SECOP II",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelopeDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Sincronizar oportunidades desde SECOP II",
-        "tags": [
-          "Opportunities"
-        ]
-      }
-    },
     "/profiles": {
       "get": {
         "description": "Retorna todos los perfiles pertenecientes al usuario autenticado.",
@@ -584,7 +531,7 @@
             "in": "path",
             "description": "Identificador único de la recomendación",
             "schema": {
-              "example": "rec-123e4567-e89b-12d3-a456-426614174000",
+              "example": "123e4567-e89b-12d3-a456-426614174000",
               "type": "string"
             }
           }
@@ -918,24 +865,50 @@
         ]
       }
     },
-    "/alerts/review-follow-up": {
+    "/admin/sync": {
       "post": {
-        "description": "Recorre todas las alertas no entregadas en la base de datos (adendas, cambios de estado o plazos críticos), envía las notificaciones por correo electrónico a través de NotificationPort y las marca como entregadas.",
-        "operationId": "AlertController_reviewFollowUp",
+        "description": "Encola un trabajo en segundo plano para sincronizar oportunidades e indexarlas. Responde inmediatamente con 202 Accepted y el jobId asignado.",
+        "operationId": "AdminController_sync",
         "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SyncOpportunitiesDto"
+              }
+            }
+          }
+        },
         "responses": {
-          "200": {
-            "description": "Revisión y envío de alertas completado exitosamente",
+          "202": {
+            "description": "Trabajo de sincronización encolado exitosamente",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ReviewFollowUpResponseDto"
+                  "type": "object",
+                  "properties": {
+                    "jobId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
                 }
               }
             }
           },
-          "500": {
-            "description": "Error interno al procesar alertas",
+          "400": {
+            "description": "Parámetros de sincronización inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelopeDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Acceso denegado: requiere rol admin",
             "content": {
               "application/json": {
                 "schema": {
@@ -945,9 +918,164 @@
             }
           }
         },
-        "summary": "Ejecutar revisión de seguimiento de alertas",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Encolar sincronización operativa de oportunidades desde SECOP II (Solo Admin)",
         "tags": [
-          "Alerts"
+          "Admin"
+        ]
+      }
+    },
+    "/admin/alerts/run": {
+      "post": {
+        "description": "Encola un trabajo en segundo plano para procesar y enviar alertas no entregadas. Responde inmediatamente con 202 Accepted y el jobId asignado.",
+        "operationId": "AdminController_alertsRun",
+        "parameters": [],
+        "responses": {
+          "202": {
+            "description": "Trabajo de procesamiento de alertas encolado exitosamente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "jobId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Acceso denegado: requiere rol admin",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelopeDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Encolar ejecución de seguimiento de alertas (Solo Admin)",
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
+    "/admin/recommendations/refresh": {
+      "post": {
+        "description": "Encola trabajos de recomputación de recomendaciones para todos los perfiles registrados. Responde con 202 Accepted y el jobId asignado.",
+        "operationId": "AdminController_recommendationsRefresh",
+        "parameters": [],
+        "responses": {
+          "202": {
+            "description": "Trabajo de refresco encolado exitosamente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "jobId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Acceso denegado: requiere rol admin",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelopeDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Encolar refresco masivo de recomendaciones para todos los perfiles (Solo Admin)",
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
+    "/admin/jobs/{id}": {
+      "get": {
+        "description": "Retorna el estado de ejecución, progreso y resultado de un trabajo encolado por su identificador UUID.",
+        "operationId": "AdminController_getJob",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "UUID del trabajo",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Estado del trabajo administrativo"
+          },
+          "400": {
+            "description": "El ID proporcionado no es un UUID válido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelopeDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Acceso denegado: requiere rol admin",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelopeDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "El trabajo solicitado no existe",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelopeDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Consultar estado de un trabajo administrativo (Solo Admin)",
+        "tags": [
+          "Admin"
         ]
       }
     }
@@ -974,10 +1102,21 @@
     {
       "name": "Alerts",
       "description": "Monitoreo de adendas, fechas límite y notificaciones"
+    },
+    {
+      "name": "Admin",
+      "description": "Rutas operativas y administrativas exclusivas para rol admin"
     }
   ],
   "servers": [],
   "components": {
+    "securitySchemes": {
+      "bearer": {
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "type": "http"
+      }
+    },
     "schemas": {
       "RegisterDto": {
         "type": "object",
@@ -1621,65 +1760,6 @@
           "changeHistory"
         ]
       },
-      "SyncOpportunitiesDto": {
-        "type": "object",
-        "properties": {
-          "since": {
-            "type": "string",
-            "description": "Fecha ISO 8601 a partir de la cual sincronizar procesos modificados o nuevos",
-            "example": "2026-01-01T00:00:00Z"
-          },
-          "maxRecords": {
-            "type": "number",
-            "description": "Máximo de procesos a traer (paginado de a 1000). Por defecto SECOP_SYNC_MAX_RECORDS o 5000.",
-            "example": 5000
-          }
-        }
-      },
-      "SyncOpportunitiesResponseDto": {
-        "type": "object",
-        "properties": {
-          "created": {
-            "type": "number",
-            "example": 12
-          },
-          "updated": {
-            "type": "number",
-            "example": 3
-          },
-          "unchanged": {
-            "type": "number",
-            "example": 185
-          },
-          "skipped": {
-            "type": "number",
-            "example": 0
-          },
-          "unknownStatuses": {
-            "type": "object",
-            "additionalProperties": {
-              "type": "number"
-            },
-            "example": {}
-          },
-          "durationMs": {
-            "type": "number",
-            "example": 845
-          },
-          "refreshTriggered": {
-            "type": "boolean",
-            "example": true
-          }
-        },
-        "required": [
-          "created",
-          "updated",
-          "unchanged",
-          "skipped",
-          "unknownStatuses",
-          "durationMs"
-        ]
-      },
       "CapabilityDto": {
         "type": "object",
         "properties": {
@@ -2177,17 +2257,20 @@
           "pageSize"
         ]
       },
-      "ReviewFollowUpResponseDto": {
+      "SyncOpportunitiesDto": {
         "type": "object",
         "properties": {
-          "alertsSent": {
+          "since": {
+            "type": "string",
+            "description": "Fecha ISO 8601 a partir de la cual sincronizar procesos modificados o nuevos",
+            "example": "2026-01-01T00:00:00Z"
+          },
+          "maxRecords": {
             "type": "number",
-            "example": 5
+            "description": "Máximo de procesos a traer (paginado de a 1000). Por defecto SECOP_SYNC_MAX_RECORDS o 5000.",
+            "example": 5000
           }
-        },
-        "required": [
-          "alertsSent"
-        ]
+        }
       },
       "AlertDto": {
         "type": "object",
@@ -2283,6 +2366,62 @@
           "total",
           "page",
           "pageSize"
+        ]
+      },
+      "SyncOpportunitiesResponseDto": {
+        "type": "object",
+        "properties": {
+          "created": {
+            "type": "number",
+            "example": 12
+          },
+          "updated": {
+            "type": "number",
+            "example": 3
+          },
+          "unchanged": {
+            "type": "number",
+            "example": 185
+          },
+          "skipped": {
+            "type": "number",
+            "example": 0
+          },
+          "unknownStatuses": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "number"
+            },
+            "example": {}
+          },
+          "durationMs": {
+            "type": "number",
+            "example": 845
+          },
+          "refreshTriggered": {
+            "type": "boolean",
+            "example": true
+          }
+        },
+        "required": [
+          "created",
+          "updated",
+          "unchanged",
+          "skipped",
+          "unknownStatuses",
+          "durationMs"
+        ]
+      },
+      "ReviewFollowUpResponseDto": {
+        "type": "object",
+        "properties": {
+          "alertsSent": {
+            "type": "number",
+            "example": 5
+          }
+        },
+        "required": [
+          "alertsSent"
         ]
       }
     }

@@ -1,4 +1,4 @@
-import { EnvValidationError, loadEnv } from './env';
+import { EnvValidationError, configureCors, loadEnv } from './env';
 
 const validEnv: NodeJS.ProcessEnv = {
   DATABASE_URL: 'postgres://postgres:postgres@localhost:5433/pliegos',
@@ -92,5 +92,40 @@ describe('loadEnv', () => {
 
     expect(() => loadEnv({ ...validEnv, MAX_PROFILES_PER_USER: '-1' })).toThrow(EnvValidationError);
     expect(() => loadEnv({ ...validEnv, MAX_PROFILES_PER_USER: 'invalid' })).toThrow(EnvValidationError);
+  });
+
+  describe('CORS configuration', () => {
+    it('defaults CORS_ORIGINS to empty string', () => {
+      const env = loadEnv(validEnv);
+      expect(env.CORS_ORIGINS).toBe('');
+    });
+
+    it('disables CORS in production when CORS_ORIGINS is empty', () => {
+      const cors = configureCors({ NODE_ENV: 'production', CORS_ORIGINS: '' });
+      expect(cors.origin).toBe(false);
+      expect(cors.credentials).toBe(false);
+    });
+
+    it('enables all origins in non-production when CORS_ORIGINS is empty', () => {
+      const cors = configureCors({ NODE_ENV: 'development', CORS_ORIGINS: '' });
+      expect(cors.origin).toBe(true);
+      expect(cors.credentials).toBe(false);
+    });
+
+    it('parses single and comma-separated origins with credentials false', () => {
+      const single = configureCors({
+        NODE_ENV: 'production',
+        CORS_ORIGINS: 'https://app.pliegos.co',
+      });
+      expect(single.origin).toBe('https://app.pliegos.co');
+      expect(single.credentials).toBe(false);
+
+      const multiple = configureCors({
+        NODE_ENV: 'production',
+        CORS_ORIGINS: 'https://app.pliegos.co, https://admin.pliegos.co',
+      });
+      expect(multiple.origin).toEqual(['https://app.pliegos.co', 'https://admin.pliegos.co']);
+      expect(multiple.credentials).toBe(false);
+    });
   });
 });

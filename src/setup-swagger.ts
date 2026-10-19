@@ -29,6 +29,8 @@ export function setupSwaggerAndScalar(app: INestApplication) {
     .addTag('Profiles', 'Perfiles de contratistas, capacidades y preferencias')
     .addTag('Recommendations', 'Motor de priorización con explicaciones y registro de feedback')
     .addTag('Alerts', 'Monitoreo de adendas, fechas límite y notificaciones')
+    .addTag('Admin', 'Rutas operativas y administrativas exclusivas para rol admin')
+    .addBearerAuth()
     .build();
 
   const document = SwaggerModule.createDocument(app, config, {

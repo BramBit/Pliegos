@@ -34,7 +34,10 @@ import {
   logoutSchema,
 } from './dtos/auth.dtos';
 
+import { Throttle } from '@nestjs/throttler';
+
 @ApiTags('Auth')
+@Throttle({ default: { limit: 10, ttl: 60000 } })
 @Controller('auth')
 export class AuthController {
   constructor(

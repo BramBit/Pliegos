@@ -9,7 +9,7 @@
 ### Execution Order:
 ###   1. Docs: GET /reference and GET /api-json (Public)
 ###   2. Auth: POST /auth/register, POST /auth/login, POST /auth/refresh, POST /auth/logout (Public)
-###   3. Sync: POST /opportunities/sync (Protected)
+###   3. Admin: POST /admin/sync, POST /admin/alerts/run, POST /admin/recommendations/refresh, GET /admin/jobs/:id (Admin role)
 ###   4. Opportunities: GET /opportunities and GET /opportunities/:id (Protected)
 ###   5. Profiles: POST /profiles (configureProfileTech, configureProfileCivilInfra) (Protected)
 ###   6. Recommendations Feed: GET /profiles/:id/recommendations (Protected)
@@ -92,14 +92,13 @@ Content-Type: application/json
 }
 
 ### ==============================================================================
-### 3. Opportunities Ingestion (SECOP II Sync)
+### 3. Admin Operations (Sync, Alerts & Recommendations)
 ### ==============================================================================
 
-# Validates ingestion of procurement processes from SECOP II / Socrata API,
-# verifying the ISO 8601 date filter, normalizing tenders to Opportunity entities,
-# persisting them in PostgreSQL, and enqueuing async AI analysis jobs in BullMQ.
-# @name syncOpportunitiesWithDate
-POST {{baseUrl}}/opportunities/sync
+# Validates enqueuing ingestion from SECOP II / Socrata API (requires role admin).
+# Answers HTTP 202 Accepted with { jobId }.
+# @name adminSyncWithDate
+POST {{baseUrl}}/admin/sync
 Authorization: Bearer {{accessToken}}
 Content-Type: application/json
 
@@ -109,13 +108,44 @@ Content-Type: application/json
 
 ###
 
-# Validates full synchronization without a date boundary (syncs latest available tenders)
-# @name syncOpportunitiesFull
-POST {{baseUrl}}/opportunities/sync
+# Validates enqueuing full synchronization (requires role admin).
+# Answers HTTP 202 Accepted with { jobId }.
+# @name adminSyncFull
+POST {{baseUrl}}/admin/sync
 Authorization: Bearer {{accessToken}}
 Content-Type: application/json
 
 {}
+
+###
+
+# Validates enqueuing alerts follow-up review (requires role admin).
+# Answers HTTP 202 Accepted with { jobId }.
+# @name adminAlertsRun
+POST {{baseUrl}}/admin/alerts/run
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{}
+
+###
+
+# Validates enqueuing recommendation refresh across all profiles (requires role admin).
+# Answers HTTP 202 Accepted with { jobId }.
+# @name adminRecommendationsRefresh
+POST {{baseUrl}}/admin/recommendations/refresh
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{}
+
+###
+
+# Validates querying background job status by UUID (requires role admin).
+# @name adminGetJobStatus
+GET {{baseUrl}}/admin/jobs/{{jobId}}
+Authorization: Bearer {{accessToken}}
+Accept: application/json
 
 ### ==============================================================================
 ### 4. Opportunities List & Detail (Paginated, Hybrid & Structured)
@@ -415,19 +445,6 @@ DELETE {{baseUrl}}/profiles/{{profileId}}/watches/{{opportunityId}}
 Authorization: Bearer {{accessToken}}
 Accept: application/json
 
-### ==============================================================================
-### 9. Alerts & Follow-up Monitoring
-### ==============================================================================
-
-# Validates scanning undelivered alerts (amendments/adendas and upcoming deadlines),
-# dispatching email notifications via NotificationPort, marking alerts as delivered,
-# and returning the count of dispatched notifications.
-# @name reviewFollowUpAlerts
-POST {{baseUrl}}/alerts/review-follow-up
-Authorization: Bearer {{accessToken}}
-Content-Type: application/json
-
-{}
 
 ### ==============================================================================
 ### 10. Negative Test Cases & Security Errors (Expect 400 / 401 / 404)

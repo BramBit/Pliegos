@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { Logger } from '@nestjs/common';
 import { AppModule } from './app.module';
 import { setupSwaggerAndScalar } from './setup-swagger';
+import { setupSecurity } from './setup-app';
 import { EnvValidationError, loadEnv } from './config/env';
 
 async function bootstrap() {
@@ -21,7 +22,7 @@ async function bootstrap() {
 
   const app = await NestFactory.create(AppModule);
 
-  app.enableCors();
+  setupSecurity(app, { nodeEnv: env.NODE_ENV, corsOrigins: env.CORS_ORIGINS });
   setupSwaggerAndScalar(app);
 
   const port = env.PORT;

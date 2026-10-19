@@ -33,14 +33,15 @@ import {
   ListOpportunitiesQueryInput,
   listOpportunitiesQuerySchema,
 } from './dtos/search-opportunities.dto';
+import { z } from 'zod';
 
 @ApiTags('Opportunities')
 @Controller('opportunities')
 export class OpportunityController {
   constructor(
-    private readonly syncOpportunitiesUseCase: SyncOpportunitiesUseCase,
     private readonly searchOpportunitiesUseCase: SearchOpportunitiesUseCase,
     private readonly getOpportunityByIdUseCase?: GetOpportunityByIdUseCase,
+    private readonly syncOpportunitiesUseCase?: SyncOpportunitiesUseCase,
   ) {}
 
   @Get()
@@ -116,7 +117,9 @@ export class OpportunityController {
     description: 'La oportunidad solicitada no existe',
     type: ErrorEnvelopeDto,
   })
-  async getById(@Param('id') id: string): Promise<OpportunityDetail> {
+  async getById(
+    @Param('id', new ZodValidationPipe(z.string().min(1))) id: string,
+  ): Promise<OpportunityDetail> {
     if (!this.getOpportunityByIdUseCase) {
       throw new DomainErrorException(createOpportunityNotFoundError(asOpportunityId(id)));
     }
@@ -130,44 +133,5 @@ export class OpportunityController {
     }
 
     return toOpportunityDetailDto(result.value.opportunity, result.value.summaryStatus);
-  }
-
-  @Post('sync')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({
-    summary: 'Sincronizar oportunidades desde SECOP II',
-    description:
-      'Consulta la API pública de SECOP II (Socrata), normaliza los procesos hacia el modelo de dominio Opportunity, detecta cambios o nuevas convocatorias y encola los trabajos de indexación asíncrona.',
-  })
-  @ApiResponse({
-    status: HttpStatus.OK,
-    description: 'Procesos sincronizados e indexados en cola correctamente',
-    type: SyncOpportunitiesResponseDto,
-  })
-  @ApiResponse({
-    status: HttpStatus.BAD_REQUEST,
-    description: 'Parámetros de sincronización inválidos',
-    type: ErrorEnvelopeDto,
-  })
-  @ApiResponse({
-    status: HttpStatus.BAD_GATEWAY,
-    description: 'Error de conectividad o respuesta inválida del endpoint de SECOP II',
-    type: ErrorEnvelopeDto,
-  })
-  async sync(
-    @Body(new ZodValidationPipe(syncOpportunitiesSchema))
-    body: SyncOpportunitiesDto,
-  ): Promise<SyncOpportunitiesResponseDto> {
-    const sinceDate = body.since ? new Date(body.since) : undefined;
-    const result = await this.syncOpportunitiesUseCase.execute({
-      since: sinceDate,
-      maxRecords: body.maxRecords ?? (Number(process.env.SECOP_SYNC_MAX_RECORDS) || 5000),
-    });
-
-    if (!result.ok) {
-      throw new DomainErrorException(result.error);
-    }
-
-    return result.value;
   }
 }

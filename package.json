@@ -18,7 +18,8 @@
     "test:watch": "NODE_OPTIONS=--experimental-vm-modules jest --watch",
     "test:cov": "CI=true NODE_OPTIONS=--experimental-vm-modules jest --coverage",
     "check:ollama": "node dist/scripts/manual-check-ollama-search.js",
-    "e2e": "node dist/scripts/run-full-flow-e2e.js"
+    "e2e": "node dist/scripts/run-full-flow-e2e.js",
+    "admin:create": "tsc && node dist/scripts/create-admin.js"
   },
   "keywords": [],
   "author": "",
@@ -32,8 +33,10 @@
     "@nestjs/platform-express": "^12.1.2",
     "@nestjs/schedule": "^12.0.2",
     "@nestjs/swagger": "^12.0.2",
+    "@nestjs/throttler": "^6.7.1",
     "@scalar/nestjs-api-reference": "^1.2.25",
     "bullmq": "^6.3.11",
+    "helmet": "^8.3.0",
     "ioredis": "^6.0.0",
     "pg": "^8.23.1",
     "reflect-metadata": "^0.2.2",

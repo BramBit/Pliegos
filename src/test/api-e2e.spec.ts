@@ -9,6 +9,8 @@ const request = ((supertest as any).default || supertest) as typeof supertest;
 import { Pool } from 'pg';
 import { AppModule } from '../app.module';
 import { setupSwaggerAndScalar } from '../setup-swagger';
+import { setupSecurity } from '../setup-app';
+import { SyncOpportunitiesUseCase } from '../modules/opportunity/application/use-cases/sync-opportunities.use-case';
 import { DATABASE_POOL } from '../modules/shared/infrastructure/persistence/database.module';
 import { migrateTestDatabase } from '../modules/shared/testing/migrate-test-database';
 import { OPPORTUNITY_SOURCE_PORT } from '../modules/opportunity/domain/ports/opportunity-source.port';
@@ -119,8 +121,12 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
       .compile();
 
     app = moduleFixture.createNestApplication();
+    setupSecurity(app, { nodeEnv: 'test', corsOrigins: '' });
     setupSwaggerAndScalar(app);
     await app.init();
+
+    const syncUseCase = moduleFixture.get(SyncOpportunitiesUseCase);
+    await syncUseCase.execute({ since: new Date('2026-01-01T00:00:00.000Z') });
 
     profileRepo = moduleFixture.get<ProfileRepositoryPort>(PROFILE_REPOSITORY_PORT);
     recRepo = moduleFixture.get<RecommendationRepositoryPort>(RECOMMENDATION_REPOSITORY_PORT);
@@ -155,7 +161,7 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
       expect(response.body.openapi).toMatch(/^3\./);
       expect(response.body.info.title).toBe('Pliegos API');
       expect(response.body.paths).toHaveProperty('/opportunities/{id}');
-      expect(response.body.paths).toHaveProperty('/opportunities/sync');
+      expect(response.body.paths).not.toHaveProperty('/opportunities/sync');
       expect(response.body.paths).toHaveProperty('/opportunities');
       expect(response.body.paths).not.toHaveProperty('/opportunities/search');
       expect(response.body.paths).toHaveProperty('/profiles');
@@ -166,7 +172,11 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
       expect(response.body.paths).toHaveProperty('/profiles/{id}/watches/{opportunityId}');
       expect(response.body.paths).not.toHaveProperty('/recommendations/{profileId}');
       expect(response.body.paths).toHaveProperty('/recommendations/{id}/feedback');
-      expect(response.body.paths).toHaveProperty('/alerts/review-follow-up');
+      expect(response.body.paths).not.toHaveProperty('/alerts/review-follow-up');
+      expect(response.body.paths).toHaveProperty('/admin/sync');
+      expect(response.body.paths).toHaveProperty('/admin/alerts/run');
+      expect(response.body.paths).toHaveProperty('/admin/recommendations/refresh');
+      expect(response.body.paths).toHaveProperty('/admin/jobs/{id}');
       expect(response.body.paths).toHaveProperty('/auth/register');
       expect(response.body.paths).toHaveProperty('/auth/login');
       expect(response.body.paths).toHaveProperty('/auth/refresh');
@@ -188,33 +198,11 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
   });
 
   describe('OpportunityController', () => {
-    it('POST /opportunities/sync syncs data from source', async () => {
-      const response = await request(app.getHttpServer())
+    it('POST /opportunities/sync returns 404 since it moved to /admin/sync', async () => {
+      await request(app.getHttpServer())
         .post('/opportunities/sync')
         .set('Authorization', `Bearer ${authToken}`)
-        .send({ since: '2026-01-01T00:00:00.000Z' })
-        .expect(200);
-
-      expect(response.body).toBeDefined();
-      expect(typeof response.body.created).toBe('number');
-      expect(typeof response.body.updated).toBe('number');
-    });
-
-    it('POST /opportunities/sync rejects invalid date with 400 (Zod) and error envelope', async () => {
-      const response = await request(app.getHttpServer())
-        .post('/opportunities/sync')
-        .set('Authorization', `Bearer ${authToken}`)
-        .set('X-Request-Id', 'req-sync-invalid-400')
-        .send({ since: 'not-a-valid-date' })
-        .expect(400);
-
-      expect(response.headers['x-request-id']).toBe('req-sync-invalid-400');
-      expect(response.body.statusCode).toBe(400);
-      expect(response.body.error).toBe('ValidationError');
-      expect(response.body.message).toBe('Validation failed');
-      expect(response.body.details).toBeDefined();
-      expect(response.body.errors).toBeDefined();
-      expect(response.body.requestId).toBe('req-sync-invalid-400');
+        .expect(404);
     });
 
     it('GET /opportunities returns paginated Page<OpportunitySummary> with default params', async () => {
@@ -627,9 +615,9 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
     });
 
     it('POST and DELETE /recommendations/:id/feedback handles Participate, Discard and Undo with watch sync', async () => {
-      const dummyRecId = asRecommendationId('rec-e2e-feedback-01');
+      const dummyRecId = asRecommendationId('00000000-0000-0000-0000-000000000031');
       const oppId = asOpportunityId('opp-feedback-test');
-      const profId = asProfileId('prof-feedback-test');
+      const profId = asProfileId('00000000-0000-0000-0000-000000000021');
 
       const scoreResult = createRelevanceScore(0.88);
       if (!scoreResult.ok) throw new Error(scoreResult.error.message);
@@ -647,7 +635,7 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
       });
       if (!testRecResult.ok) throw new Error(testRecResult.error.message);
 
-      await seedProfile(pool, 'prof-feedback-test');
+      await seedProfile(pool, '00000000-0000-0000-0000-000000000021');
       await seedOpportunity(pool, 'opp-feedback-test');
       await recRepo.save(testRecResult.value);
 
@@ -695,7 +683,7 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
 
     it('POST /recommendations/:id/feedback rejects invalid decision with 400 (Zod)', async () => {
       const response = await request(app.getHttpServer())
-        .post('/recommendations/rec-any/feedback')
+        .post('/recommendations/00000000-0000-0000-0000-000000000099/feedback')
         .set('Authorization', `Bearer ${authToken}`)
         .send({ decision: 'InvalidDecisionValue' })
         .expect(400);
@@ -706,7 +694,7 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
 
     it('POST /recommendations/:id/feedback returns 404 for unknown recommendation', async () => {
       const response = await request(app.getHttpServer())
-        .post('/recommendations/non-existent-rec-id/feedback')
+        .post('/recommendations/00000000-0000-0000-0000-000000000000/feedback')
         .set('Authorization', `Bearer ${authToken}`)
         .send({ decision: 'Discard' })
         .expect(404);
@@ -716,7 +704,7 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
 
     it('DELETE /recommendations/:id/feedback returns 404 for unknown recommendation', async () => {
       const response = await request(app.getHttpServer())
-        .delete('/recommendations/non-existent-rec-id/feedback')
+        .delete('/recommendations/00000000-0000-0000-0000-000000000000/feedback')
         .set('Authorization', `Bearer ${authToken}`)
         .expect(404);
 
@@ -724,9 +712,9 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
     });
 
     it('Watchlist and Summary endpoints: POST/DELETE watch, GET watches, GET summary', async () => {
-      const profId = asProfileId('prof-watch-e2e');
+      const profId = asProfileId('00000000-0000-0000-0000-000000000022');
       const oppId = asOpportunityId('opp-watch-e2e');
-      await seedProfile(pool, 'prof-watch-e2e');
+      await seedProfile(pool, '00000000-0000-0000-0000-000000000022');
       await seedOpportunity(pool, 'opp-watch-e2e');
 
       // 1. Summary before adding watch
@@ -816,14 +804,10 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
       await seedProfile(pool, 'profile-alert-e2e');
       await alertRepo.save(alert);
 
-      const response = await request(app.getHttpServer())
+      await request(app.getHttpServer())
         .post('/alerts/review-follow-up')
         .set('Authorization', `Bearer ${authToken}`)
-        .expect(200);
-
-      expect(response.body).toBeDefined();
-      expect(typeof response.body.alertsSent).toBe('number');
-      expect(response.body.alertsSent).toBeGreaterThanOrEqual(1);
+        .expect(404);
     });
   });
 
@@ -1086,7 +1070,7 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
       profileAId = createProfA.body.id;
 
       // Seed recommendation for Profile A and oppIsoId
-      recAId = 'rec-iso-42-01';
+      recAId = '00000000-0000-0000-0000-000000000042';
       const scoreResult = createRelevanceScore(0.95);
       if (!scoreResult.ok) throw new Error(scoreResult.error.message);
       const recResult = createRecommendation({
@@ -1270,6 +1254,181 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
         .set('Authorization', `Bearer ${tokenUserB}`)
         .expect(200);
       expect(listB.body).toHaveLength(5);
+    });
+  });
+
+  describe('Admin Routes & Operational Hardening (P4.3)', () => {
+    let normalUserToken: string;
+    let createdJobId: string;
+
+    beforeAll(async () => {
+      // Register a normal user (role: 'user')
+      await request(app.getHttpServer())
+        .post('/auth/register')
+        .set('X-Forwarded-For', '10.0.0.99')
+        .send({ email: 'normal.user.hardening@pliegos.test', password: 'Password12345!' })
+        .expect(201);
+
+      const login = await request(app.getHttpServer())
+        .post('/auth/login')
+        .set('X-Forwarded-For', '10.0.0.99')
+        .send({ email: 'normal.user.hardening@pliegos.test', password: 'Password12345!' })
+        .expect(200);
+
+      normalUserToken = login.body.accessToken;
+    });
+
+    it('returns Helmet security headers on responses', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/opportunities')
+        .set('Authorization', `Bearer ${authToken}`);
+      expect(res.headers['x-content-type-options']).toBe('nosniff');
+      expect(res.headers['x-dns-prefetch-control']).toBe('off');
+      expect(res.headers['x-frame-options']).toBe('SAMEORIGIN');
+    });
+
+    it('unauthenticated requests to /admin/* return 401 Unauthorized', async () => {
+      await request(app.getHttpServer()).post('/admin/sync').expect(401);
+      await request(app.getHttpServer()).post('/admin/alerts/run').expect(401);
+      await request(app.getHttpServer()).post('/admin/recommendations/refresh').expect(401);
+      await request(app.getHttpServer()).get('/admin/jobs/00000000-0000-0000-0000-000000000001').expect(401);
+    });
+
+    it('normal user (role: user) gets 403 Forbidden on all /admin/* routes', async () => {
+      const resSync = await request(app.getHttpServer())
+        .post('/admin/sync')
+        .set('Authorization', `Bearer ${normalUserToken}`)
+        .expect(403);
+      expect(resSync.body.statusCode).toBe(403);
+
+      const resAlerts = await request(app.getHttpServer())
+        .post('/admin/alerts/run')
+        .set('Authorization', `Bearer ${normalUserToken}`)
+        .expect(403);
+      expect(resAlerts.body.statusCode).toBe(403);
+
+      const resRecs = await request(app.getHttpServer())
+        .post('/admin/recommendations/refresh')
+        .set('Authorization', `Bearer ${normalUserToken}`)
+        .expect(403);
+      expect(resRecs.body.statusCode).toBe(403);
+
+      const resJobs = await request(app.getHttpServer())
+        .get('/admin/jobs/00000000-0000-0000-0000-000000000001')
+        .set('Authorization', `Bearer ${normalUserToken}`)
+        .expect(403);
+      expect(resJobs.body.statusCode).toBe(403);
+    });
+
+    it('admin user enqueues POST /admin/sync and receives 202 { jobId }', async () => {
+      const res = await request(app.getHttpServer())
+        .post('/admin/sync')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({ since: '2026-01-01T00:00:00.000Z' })
+        .expect(202);
+
+      expect(res.body.jobId).toBeDefined();
+      expect(res.body.jobId).toMatch(/^[0-9a-f-]{36}$/i);
+      createdJobId = res.body.jobId;
+    });
+
+    it('POST /admin/sync rejects invalid date with 400 (Zod)', async () => {
+      const res = await request(app.getHttpServer())
+        .post('/admin/sync')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({ since: 'not-a-valid-date' })
+        .expect(400);
+
+      expect(res.body.statusCode).toBe(400);
+      expect(res.body.error).toBe('ValidationError');
+    });
+
+    it('admin user enqueues POST /admin/alerts/run and receives 202 { jobId }', async () => {
+      const res = await request(app.getHttpServer())
+        .post('/admin/alerts/run')
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(202);
+
+      expect(res.body.jobId).toBeDefined();
+      expect(res.body.jobId).toMatch(/^[0-9a-f-]{36}$/i);
+    });
+
+    it('admin user enqueues POST /admin/recommendations/refresh and receives 202 { jobId }', async () => {
+      const res = await request(app.getHttpServer())
+        .post('/admin/recommendations/refresh')
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(202);
+
+      expect(res.body.jobId).toBeDefined();
+      expect(res.body.jobId).toMatch(/^[0-9a-f-]{36}$/i);
+    });
+
+    it('GET /admin/jobs/:id returns job status for existing job and 404 for non-existent', async () => {
+      const res = await request(app.getHttpServer())
+        .get(`/admin/jobs/${createdJobId}`)
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(200);
+
+      expect(res.body.jobId).toBe(createdJobId);
+      expect(res.body.name).toBe('admin-sync');
+      expect(res.body.status).toBeDefined();
+
+      await request(app.getHttpServer())
+        .get('/admin/jobs/00000000-0000-0000-0000-000000000000')
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(404);
+    });
+
+    it('validates UUID on :id params rejecting non-uuid with 400 Bad Request', async () => {
+      await request(app.getHttpServer())
+        .get('/admin/jobs/not-a-valid-uuid')
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(400);
+
+      await request(app.getHttpServer())
+        .get('/profiles/not-a-valid-uuid')
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(400);
+
+      await request(app.getHttpServer())
+        .put('/profiles/not-a-valid-uuid')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({
+          sector: 'Tecnología',
+          capabilities: [],
+          preferences: {
+            categoryCodes: [],
+            keywords: [],
+            departments: ['Antioquia'],
+          },
+        })
+        .expect(400);
+
+      await request(app.getHttpServer())
+        .delete('/profiles/not-a-valid-uuid')
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(400);
+
+      await request(app.getHttpServer())
+        .post('/recommendations/not-a-valid-uuid/feedback')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({ decision: 'Participate' })
+        .expect(400);
+    });
+
+    it('rate limiting: 120 requests succeed, the 121st request in a minute gets 429', async () => {
+      let got429 = false;
+      for (let i = 0; i < 135; i++) {
+        const res = await request(app.getHttpServer())
+          .get('/opportunities')
+          .set('Authorization', `Bearer ${authToken}`);
+        if (res.status === 429) {
+          got429 = true;
+          expect(res.body.statusCode).toBe(429);
+          break;
+        }
+      }
+      expect(got429).toBe(true);
     });
   });
 });

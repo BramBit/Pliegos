@@ -7,6 +7,7 @@ import { USER_REPOSITORY_PORT } from './domain/ports/user.repository.port';
 import { PostgresUserRepository } from './infrastructure/adapters/persistence/postgres-user.repository';
 import { LoginThrottlerService } from './infrastructure/security/login-throttler.service';
 import { AuthGuard } from './infrastructure/security/auth.guard';
+import { RolesGuard } from './infrastructure/security/roles.guard';
 import { AuthController } from './infrastructure/controllers/auth.controller';
 import { RegisterUseCase } from './application/use-cases/register.use-case';
 import { LoginUseCase } from './application/use-cases/login.use-case';
@@ -46,6 +47,10 @@ import { LogoutUseCase } from './application/use-cases/logout.use-case';
     {
       provide: APP_GUARD,
       useClass: AuthGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: RolesGuard,
     },
   ],
   exports: [

@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import {
   Controller,
   Get,
@@ -17,7 +18,7 @@ import { GetProfilesByOwnerUseCase } from '../../application/use-cases/get-profi
 import { DeleteProfileUseCase } from '../../application/use-cases/delete-profile.use-case';
 import { asProfileId, asUserId } from '../../../shared/domain/typed-id';
 import { createProfileNotFoundError } from '../../../shared/domain/errors';
-import { ZodValidationPipe } from '../../../shared/infrastructure/http/zod-validation.pipe';
+import { ZodValidationPipe, uuidParamSchema } from '../../../shared/infrastructure/http/zod-validation.pipe';
 import { DomainErrorException } from '../../../shared/infrastructure/http/global-exception.filter';
 import {
   ErrorEnvelopeDto,
@@ -91,7 +92,7 @@ export class ProfileController {
     type: ErrorEnvelopeDto,
   })
   async getById(
-    @Param('id') id: string,
+    @Param('id', new ZodValidationPipe(uuidParamSchema)) id: string,
     @CurrentUser() user: CurrentUserPayload,
   ): Promise<ProfileDto> {
     if (this.profileAccessService) {
@@ -194,7 +195,7 @@ export class ProfileController {
     type: ErrorEnvelopeDto,
   })
   async replace(
-    @Param('id') id: string,
+    @Param('id', new ZodValidationPipe(uuidParamSchema)) id: string,
     @CurrentUser() user: CurrentUserPayload,
     @Body(new ZodValidationPipe(configureProfileSchema))
     body: ConfigureProfileDto,
@@ -261,7 +262,7 @@ export class ProfileController {
     type: ErrorEnvelopeDto,
   })
   async delete(
-    @Param('id') id: string,
+    @Param('id', new ZodValidationPipe(uuidParamSchema)) id: string,
     @CurrentUser() user: CurrentUserPayload,
   ): Promise<void> {
     if (this.profileAccessService) {
