@@ -789,25 +789,132 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
     });
   });
 
-  describe('AlertController', () => {
-    it('POST /alerts/review-follow-up executes follow-up and notifies pending alerts', async () => {
-      const alertResult = createAlert({
-        id: asAlertId('alert-e2e-01'),
-        profileId: asProfileId('profile-alert-e2e'),
-        opportunityId: asOpportunityId('opp-alert-e2e'),
+  describe('AlertController & Alert Inbox (P5.4)', () => {
+    const alertProfileId = 'c0000000-0000-0000-0000-000000000001';
+    const alertOppId = 'b0000000-0000-0000-0000-000000000001';
+    const alert1Id = 'a0000000-0000-0000-0000-000000000001';
+    const alert2Id = 'a0000000-0000-0000-0000-000000000002';
+
+    beforeAll(async () => {
+      await seedProfile(pool, alertProfileId, '00000000-0000-0000-0000-000000000001');
+      await seedOpportunity(pool, alertOppId);
+      await pool.query(
+        `UPDATE opportunities
+         SET title = 'Construcción Hospital Central',
+             contracting_entity_name = 'Secretaría de Salud',
+             amount = 500000000,
+             closing_date = '2026-11-15T15:00:00.000Z'
+         WHERE id = $1;`,
+        [alertOppId],
+      );
+
+      await pool.query('DELETE FROM alerts WHERE profile_id = $1;', [alertProfileId]);
+
+      await alertRepo.save({
+        id: asAlertId(alert1Id),
+        profileId: asProfileId(alertProfileId),
+        opportunityId: asOpportunityId(alertOppId),
         trigger: 'Amendment',
+        changeKey: 'amount:2026-10-18',
+        attempts: 0,
+        lastError: null,
+        readAt: null,
         deliveredAt: null,
       });
-      if (!alertResult.ok) throw new Error(alertResult.error.message);
-      const alert = alertResult.value;
 
-      await seedProfile(pool, 'profile-alert-e2e');
-      await alertRepo.save(alert);
+      await alertRepo.save({
+        id: asAlertId(alert2Id),
+        profileId: asProfileId(alertProfileId),
+        opportunityId: asOpportunityId(alertOppId),
+        trigger: 'DeadlineApproaching',
+        changeKey: 'deadline:2026-11-15',
+        attempts: 0,
+        lastError: null,
+        readAt: null,
+        deliveredAt: null,
+      });
+    });
 
+    it('GET /profiles/:id/alerts returns paginated list of alerts with opportunitySummary', async () => {
+      const res = await request(app.getHttpServer())
+        .get(`/profiles/${alertProfileId}/alerts?page=1&pageSize=10`)
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(200);
+
+      expect(res.body.total).toBe(2);
+      expect(res.body.page).toBe(1);
+      expect(res.body.pageSize).toBe(10);
+      expect(res.body.items).toHaveLength(2);
+
+      const item = res.body.items[0];
+      expect(item).toHaveProperty('id');
+      expect(item).toHaveProperty('trigger');
+      expect(item).toHaveProperty('changeKey');
+      expect(item).toHaveProperty('createdAt');
+      expect(item.readAt).toBeNull();
+      expect(item.opportunitySummary).toEqual({
+        id: alertOppId,
+        title: 'Construcción Hospital Central',
+        entity: 'Secretaría de Salud',
+        amount: 500000000,
+        closingDate: '2026-11-15T15:00:00.000Z',
+      });
+    });
+
+    it('GET /profiles/:id/summary reflects real unreadAlerts count', async () => {
+      const res = await request(app.getHttpServer())
+        .get(`/profiles/${alertProfileId}/summary`)
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(200);
+
+      expect(res.body.unreadAlerts).toBe(2);
+    });
+
+    it('POST /alerts/:id/read marks an alert as read and is idempotent', async () => {
+      const markRes = await request(app.getHttpServer())
+        .post(`/alerts/${alert1Id}/read`)
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(200);
+
+      expect(markRes.body.success).toBe(true);
+
+      // Verify unread count in summary decreased to 1
+      const summaryRes = await request(app.getHttpServer())
+        .get(`/profiles/${alertProfileId}/summary`)
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(200);
+      expect(summaryRes.body.unreadAlerts).toBe(1);
+
+      // Idempotent: marking again still succeeds
+      const idempotentRes = await request(app.getHttpServer())
+        .post(`/alerts/${alert1Id}/read`)
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(200);
+      expect(idempotentRes.body.success).toBe(true);
+    });
+
+    it('POST /alerts/:id/read returns 404 for unknown alert', async () => {
       await request(app.getHttpServer())
-        .post('/alerts/review-follow-up')
+        .post('/alerts/00000000-0000-0000-0000-000000000000/read')
         .set('Authorization', `Bearer ${authToken}`)
         .expect(404);
+    });
+
+    it('POST /profiles/:id/alerts/read-all marks all unread alerts for profile as read', async () => {
+      const res = await request(app.getHttpServer())
+        .post(`/profiles/${alertProfileId}/alerts/read-all`)
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(200);
+
+      expect(res.body.success).toBe(true);
+      expect(res.body.markedCount).toBe(1); // since alert1 was already read, only alert2 was unread
+
+      // Summary unread count should now be 0
+      const summaryRes = await request(app.getHttpServer())
+        .get(`/profiles/${alertProfileId}/summary`)
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(200);
+      expect(summaryRes.body.unreadAlerts).toBe(0);
     });
   });
 
@@ -1186,6 +1293,43 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
         .set('Authorization', `Bearer ${tokenUserB}`)
         .expect(404);
       expect(res.body.error).toBe('RecommendationNotFoundError');
+    });
+
+    it('User B gets 404 when attempting to read User A alerts (GET /profiles/:id/alerts)', async () => {
+      const res = await request(app.getHttpServer())
+        .get(`/profiles/${profileAId}/alerts`)
+        .set('Authorization', `Bearer ${tokenUserB}`)
+        .expect(404);
+      expect(res.body.error).toBe('ProfileNotFoundError');
+    });
+
+    it('User B gets 404 when attempting to mark read an alert belonging to User A (POST /alerts/:id/read)', async () => {
+      const alertIsoId = 'a1111111-1111-1111-1111-111111111111';
+      await alertRepo.save({
+        id: asAlertId(alertIsoId),
+        profileId: asProfileId(profileAId),
+        opportunityId: asOpportunityId(oppIsoId),
+        trigger: 'Amendment',
+        changeKey: 'amount',
+        attempts: 0,
+        lastError: null,
+        readAt: null,
+        deliveredAt: null,
+      });
+
+      const res = await request(app.getHttpServer())
+        .post(`/alerts/${alertIsoId}/read`)
+        .set('Authorization', `Bearer ${tokenUserB}`)
+        .expect(404);
+      expect(res.body.error).toBe('ProfileNotFoundError');
+    });
+
+    it('User B gets 404 when attempting to mark all read on User A profile (POST /profiles/:id/alerts/read-all)', async () => {
+      const res = await request(app.getHttpServer())
+        .post(`/profiles/${profileAId}/alerts/read-all`)
+        .set('Authorization', `Bearer ${tokenUserB}`)
+        .expect(404);
+      expect(res.body.error).toBe('ProfileNotFoundError');
     });
 
     it('GET /profiles returns isolated profiles for each user', async () => {

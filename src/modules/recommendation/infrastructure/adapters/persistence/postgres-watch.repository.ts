@@ -186,7 +186,12 @@ export class PostgresWatchRepository implements WatchRepositoryPort {
            AND o.closing_date IS NOT NULL
            AND o.closing_date >= CURRENT_TIMESTAMP
            AND o.closing_date <= CURRENT_TIMESTAMP + interval '7 days') AS closing_soon,
-        0 AS unread_alerts;
+        (SELECT COUNT(*)
+         FROM alerts a
+         JOIN profiles p ON p.id = a.profile_id
+         WHERE a.profile_id = $1
+           AND ($2::text IS NULL OR p.owner_id = $2)
+           AND a.read_at IS NULL) AS unread_alerts;
     `;
 
     const res = await this.pool.query<{

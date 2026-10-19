@@ -115,6 +115,23 @@ describe('PostgresWatchRepository & Summary (Real Test Database)', () => {
     expect(summary?.watching).toBe(2);
     expect(summary?.closingSoon).toBe(1);
     expect(summary?.unreadAlerts).toBe(0);
+
+    // Insert an unread alert and verify real unreadAlerts count
+    await pool.query(
+      `INSERT INTO alerts (id, profile_id, opportunity_id, trigger, change_key)
+       VALUES ($1, $2, $3, 'Amendment', 'change-1');`,
+      ['alert-test-summary-1', profileId, opp1],
+    );
+    const summaryWithAlert = await watchRepo.getProfileSummary(profileId);
+    expect(summaryWithAlert?.unreadAlerts).toBe(1);
+
+    // Mark alert as read and verify unreadAlerts decreases to 0
+    await pool.query(
+      `UPDATE alerts SET read_at = NOW() WHERE id = $1;`,
+      ['alert-test-summary-1'],
+    );
+    const summaryRead = await watchRepo.getProfileSummary(profileId);
+    expect(summaryRead?.unreadAlerts).toBe(0);
   });
 
   it('returns null summary when profile does not exist', async () => {

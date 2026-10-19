@@ -57,6 +57,32 @@ class FakeAlertRepository implements AlertRepositoryPort {
       });
     }
   }
+
+  async findById(id: AlertId): Promise<Alert | null> {
+    return this.alerts.get(id) ?? null;
+  }
+
+  async findByProfile(): Promise<any> {
+    return { items: [], total: 0, page: 1, pageSize: 20 };
+  }
+
+  async markRead(id: AlertId): Promise<boolean> {
+    const alert = this.alerts.get(id);
+    if (!alert) return false;
+    this.alerts.set(id, { ...alert, readAt: new Date() });
+    return true;
+  }
+
+  async markAllRead(profileId: ProfileId): Promise<number> {
+    let count = 0;
+    for (const [id, a] of this.alerts.entries()) {
+      if (a.profileId === profileId && !a.readAt) {
+        this.alerts.set(id, { ...a, readAt: new Date() });
+        count++;
+      }
+    }
+    return count;
+  }
 }
 
 class FakeNotificationPort implements NotificationPort {

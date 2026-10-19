@@ -250,6 +250,156 @@
         ]
       }
     },
+    "/alerts/{id}/read": {
+      "post": {
+        "description": "Marca una alerta específica como leída (read_at = NOW()). Verifica que el usuario autenticado sea propietario del perfil asociado a la alerta.",
+        "operationId": "AlertController_markRead",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Identificador único de la alerta",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Alerta marcada como leída exitosamente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarkAlertReadResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "La alerta o el perfil no fue encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelopeDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Marcar una alerta como leída",
+        "tags": [
+          "Alerts"
+        ]
+      }
+    },
+    "/profiles/{id}/alerts": {
+      "get": {
+        "description": "Retorna la bandeja de entrada de alertas de un perfil específico, ordenadas cronológicamente por fecha de creación descendente.",
+        "operationId": "ProfileAlertsController_getAlerts",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Identificador único del perfil",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": 1,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Bandeja de alertas paginada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertInboxPageDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Perfil no encontrado o no pertenece al usuario autenticado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelopeDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Listado paginado de alertas de un perfil",
+        "tags": [
+          "Alerts"
+        ]
+      }
+    },
+    "/profiles/{id}/alerts/read-all": {
+      "post": {
+        "description": "Marca todas las alertas no leídas de un perfil como leídas (read_at = NOW()). Verifica que el usuario autenticado sea propietario del perfil.",
+        "operationId": "ProfileAlertsController_markAllRead",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Identificador único del perfil",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Alertas marcadas como leídas exitosamente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarkAlertReadResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Perfil no encontrado o no pertenece al usuario autenticado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelopeDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Marcar todas las alertas de un perfil como leídas",
+        "tags": [
+          "Alerts"
+        ]
+      }
+    },
     "/profiles": {
       "get": {
         "description": "Retorna todos los perfiles pertenecientes al usuario autenticado.",
@@ -1758,6 +1908,135 @@
           "summary",
           "analysis",
           "changeHistory"
+        ]
+      },
+      "MarkAlertReadResponseDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "message": {
+            "type": "string",
+            "example": "Alert marked as read"
+          },
+          "markedCount": {
+            "type": "number",
+            "example": 1
+          }
+        },
+        "required": [
+          "success"
+        ]
+      },
+      "AlertItemOpportunitySummaryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d"
+          },
+          "title": {
+            "type": "string",
+            "example": "Construcción de Puente Vehicular sobre Río Cauca"
+          },
+          "entity": {
+            "type": "string",
+            "example": "Gobernación del Valle del Cauca"
+          },
+          "amount": {
+            "type": "number",
+            "example": 150000000
+          },
+          "closingDate": {
+            "type": "string",
+            "nullable": true,
+            "example": "2026-10-25T22:00:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "entity",
+          "amount",
+          "closingDate"
+        ]
+      },
+      "AlertInboxItemDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "alert-01"
+          },
+          "trigger": {
+            "type": "string",
+            "enum": [
+              "Amendment",
+              "DeadlineApproaching",
+              "StatusChange"
+            ],
+            "example": "Amendment"
+          },
+          "changeKey": {
+            "type": "string",
+            "example": "closingDate:2026-10-10T14:30:00.000Z"
+          },
+          "createdAt": {
+            "type": "string",
+            "example": "2026-10-18T10:00:00.000Z"
+          },
+          "readAt": {
+            "type": "string",
+            "nullable": true,
+            "example": null
+          },
+          "deliveredAt": {
+            "type": "string",
+            "nullable": true,
+            "example": "2026-10-18T10:01:00.000Z"
+          },
+          "opportunitySummary": {
+            "$ref": "#/components/schemas/AlertItemOpportunitySummaryDto"
+          }
+        },
+        "required": [
+          "id",
+          "trigger",
+          "changeKey",
+          "createdAt",
+          "readAt",
+          "opportunitySummary"
+        ]
+      },
+      "AlertInboxPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AlertInboxItemDto"
+            }
+          },
+          "total": {
+            "type": "number",
+            "example": 42
+          },
+          "page": {
+            "type": "number",
+            "example": 1
+          },
+          "pageSize": {
+            "type": "number",
+            "example": 20
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "pageSize"
         ]
       },
       "CapabilityDto": {

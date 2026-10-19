@@ -1,4 +1,4 @@
-import { OpportunityId, ProfileId, RecommendationId } from './typed-id';
+import { AlertId, OpportunityId, ProfileId, RecommendationId } from './typed-id';
 
 export interface SourceUnavailableError {
   readonly type: 'SourceUnavailableError';
@@ -18,6 +18,11 @@ export interface ProfileNotFoundError {
 export interface RecommendationNotFoundError {
   readonly type: 'RecommendationNotFoundError';
   readonly recommendationId: RecommendationId;
+}
+
+export interface AlertNotFoundError {
+  readonly type: 'AlertNotFoundError';
+  readonly alertId: AlertId;
 }
 
 export interface ValidationError {
@@ -48,6 +53,11 @@ export const createRecommendationNotFoundError = (
 ): RecommendationNotFoundError => ({
   type: 'RecommendationNotFoundError',
   recommendationId,
+});
+
+export const createAlertNotFoundError = (alertId: AlertId): AlertNotFoundError => ({
+  type: 'AlertNotFoundError',
+  alertId,
 });
 
 export const createValidationError = (fields: string[], message?: string): ValidationError => ({

@@ -8,8 +8,12 @@ import { PostgresAlertRepository } from './infrastructure/adapters/persistence/p
 import { SmtpEmailAdapter } from './infrastructure/adapters/email/smtp-email.adapter';
 import { ReviewFollowUpUseCase } from './application/use-cases/review-follow-up.use-case';
 import { ScanDeadlinesUseCase } from './application/use-cases/scan-deadlines.use-case';
+import { GetProfileAlertsUseCase } from './application/use-cases/get-profile-alerts.use-case';
+import { MarkAlertReadUseCase } from './application/use-cases/mark-alert-read.use-case';
+import { MarkAllAlertsReadUseCase } from './application/use-cases/mark-all-alerts-read.use-case';
 import { Clock, CLOCK_PORT, SystemClock } from '../shared/domain/clock';
 import { AlertController } from './infrastructure/controllers/alert.controller';
+import { ProfileAlertsController } from './infrastructure/controllers/profile-alerts.controller';
 import { ProfileModule } from '../profile/profile.module';
 import { OpportunityModule } from '../opportunity/opportunity.module';
 import {
@@ -23,7 +27,7 @@ import {
 
 @Module({
   imports: [ProfileModule, forwardRef(() => OpportunityModule)],
-  controllers: [AlertController],
+  controllers: [AlertController, ProfileAlertsController],
   providers: [
     {
       provide: ALERT_REPOSITORY_PORT,
@@ -79,6 +83,21 @@ import {
         new ScanDeadlinesUseCase(pool, alertRepo, clock),
       inject: [DATABASE_POOL, ALERT_REPOSITORY_PORT, CLOCK_PORT],
     },
+    {
+      provide: GetProfileAlertsUseCase,
+      useFactory: (alertRepo: AlertRepositoryPort) => new GetProfileAlertsUseCase(alertRepo),
+      inject: [ALERT_REPOSITORY_PORT],
+    },
+    {
+      provide: MarkAlertReadUseCase,
+      useFactory: (alertRepo: AlertRepositoryPort) => new MarkAlertReadUseCase(alertRepo),
+      inject: [ALERT_REPOSITORY_PORT],
+    },
+    {
+      provide: MarkAllAlertsReadUseCase,
+      useFactory: (alertRepo: AlertRepositoryPort) => new MarkAllAlertsReadUseCase(alertRepo),
+      inject: [ALERT_REPOSITORY_PORT],
+    },
   ],
   exports: [
     ALERT_REPOSITORY_PORT,
@@ -86,6 +105,9 @@ import {
     CLOCK_PORT,
     ReviewFollowUpUseCase,
     ScanDeadlinesUseCase,
+    GetProfileAlertsUseCase,
+    MarkAlertReadUseCase,
+    MarkAllAlertsReadUseCase,
   ],
 })
 export class AlertModule {}

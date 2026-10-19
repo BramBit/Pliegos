@@ -7,6 +7,7 @@ import {
 import { Profile } from '../../../profile/domain/entities/profile.entity';
 import { Recommendation } from '../../../recommendation/domain/entities/recommendation.entity';
 import { Alert, AlertTrigger } from '../../../alert/domain/entities/alert.entity';
+import type { AlertInboxItem } from '../../../alert/domain/ports/alert.repository.port';
 
 const ONE_DAY_MS = 86_400_000;
 
@@ -398,6 +399,65 @@ export class AlertPageDto extends Page<AlertDto> {
   declare items: AlertDto[];
 }
 
+export class AlertItemOpportunitySummaryDto {
+  @ApiProperty({ example: '9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d' })
+  id!: string;
+
+  @ApiProperty({ example: 'Construcción de Puente Vehicular sobre Río Cauca' })
+  title!: string;
+
+  @ApiProperty({ example: 'Gobernación del Valle del Cauca' })
+  entity!: string;
+
+  @ApiProperty({ example: 150000000 })
+  amount!: number;
+
+  @ApiProperty({ type: String, nullable: true, example: '2026-10-25T22:00:00.000Z' })
+  closingDate!: string | null;
+}
+
+export class AlertInboxItemDto {
+  @ApiProperty({ example: 'alert-01' })
+  id!: string;
+
+  @ApiProperty({
+    enum: ['Amendment', 'DeadlineApproaching', 'StatusChange'],
+    example: 'Amendment',
+  })
+  trigger!: AlertTrigger;
+
+  @ApiProperty({ example: 'closingDate:2026-10-10T14:30:00.000Z' })
+  changeKey!: string;
+
+  @ApiProperty({ example: '2026-10-18T10:00:00.000Z' })
+  createdAt!: string;
+
+  @ApiProperty({ type: String, nullable: true, example: null })
+  readAt!: string | null;
+
+  @ApiPropertyOptional({ type: String, nullable: true, example: '2026-10-18T10:01:00.000Z' })
+  deliveredAt?: string | null;
+
+  @ApiProperty({ type: AlertItemOpportunitySummaryDto })
+  opportunitySummary!: AlertItemOpportunitySummaryDto;
+}
+
+export class AlertInboxPageDto extends Page<AlertInboxItemDto> {
+  @ApiProperty({ type: [AlertInboxItemDto] })
+  declare items: AlertInboxItemDto[];
+}
+
+export class MarkAlertReadResponseDto {
+  @ApiProperty({ example: true })
+  success!: boolean;
+
+  @ApiPropertyOptional({ example: 'Alert marked as read' })
+  message?: string;
+
+  @ApiPropertyOptional({ example: 1 })
+  markedCount?: number;
+}
+
 export class WatchedOpportunityDto {
   @ApiProperty({ type: OpportunitySummary })
   opportunity!: OpportunitySummary;
@@ -658,3 +718,24 @@ export function toAlertDto(alert: Alert): AlertDto {
     deliveredAt: alert.deliveredAt ? new Date(alert.deliveredAt).toISOString() : null,
   };
 }
+
+export function toAlertInboxItemDto(item: AlertInboxItem): AlertInboxItemDto {
+  return {
+    id: item.id,
+    trigger: item.trigger,
+    changeKey: item.changeKey,
+    createdAt: item.createdAt.toISOString(),
+    readAt: item.readAt ? item.readAt.toISOString() : null,
+    deliveredAt: item.deliveredAt ? item.deliveredAt.toISOString() : null,
+    opportunitySummary: {
+      id: item.opportunitySummary.id,
+      title: item.opportunitySummary.title,
+      entity: item.opportunitySummary.entity,
+      amount: item.opportunitySummary.amount,
+      closingDate: item.opportunitySummary.closingDate
+        ? item.opportunitySummary.closingDate.toISOString()
+        : null,
+    },
+  };
+}
+

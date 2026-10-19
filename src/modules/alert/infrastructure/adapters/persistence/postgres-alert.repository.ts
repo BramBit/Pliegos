@@ -1,9 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { Pool, QueryResult } from 'pg';
-import { AlertRepositoryPort } from '../../../domain/ports/alert.repository.port';
+import {
+  AlertRepositoryPort,
+  AlertInboxItem,
+  PaginatedAlertInbox,
+} from '../../../domain/ports/alert.repository.port';
 import { Alert, AlertTrigger } from '../../../domain/entities/alert.entity';
 import {
   AlertId,
+  ProfileId,
   UserId,
   asAlertId,
   asProfileId,
@@ -119,6 +124,92 @@ export class PostgresAlertRepository implements AlertRepositoryPort {
     const res: QueryResult<AlertRow> = await this.pool.query(query, params);
     if (res.rows.length === 0) return null;
     return this.mapRowToAlert(res.rows[0]);
+  }
+
+  async findByProfile(
+    profileId: ProfileId,
+    page: number = 1,
+    pageSize: number = 20,
+  ): Promise<PaginatedAlertInbox> {
+    const safePage = Math.max(1, page);
+    const safeSize = Math.max(1, Math.min(100, pageSize));
+    const offset = (safePage - 1) * safeSize;
+
+    const countQuery = `SELECT COUNT(*) FROM alerts WHERE profile_id = $1;`;
+    const countRes = await this.pool.query<{ count: string }>(countQuery, [profileId]);
+    const total = parseInt(countRes.rows[0]?.count ?? '0', 10);
+
+    const query = `
+      SELECT
+        a.id,
+        a.profile_id,
+        a.opportunity_id,
+        a.trigger,
+        a.change_key,
+        a.attempts,
+        a.last_error,
+        a.read_at,
+        a.delivered_at,
+        a.created_at,
+        o.title AS opp_title,
+        o.contracting_entity_name AS opp_entity,
+        o.amount AS opp_amount,
+        o.closing_date AS opp_closing_date
+      FROM alerts a
+      LEFT JOIN opportunities o ON o.id = a.opportunity_id
+      WHERE a.profile_id = $1
+      ORDER BY a.created_at DESC, a.id DESC
+      LIMIT $2 OFFSET $3;
+    `;
+
+    const res = await this.pool.query(query, [profileId, safeSize, offset]);
+
+    const items: AlertInboxItem[] = res.rows.map((row) => ({
+      id: asAlertId(row.id),
+      profileId: asProfileId(row.profile_id),
+      opportunityId: asOpportunityId(row.opportunity_id),
+      trigger: row.trigger as AlertTrigger,
+      changeKey: row.change_key ?? '',
+      attempts: Number(row.attempts ?? 0),
+      lastError: row.last_error ?? null,
+      readAt: row.read_at ? new Date(row.read_at) : null,
+      deliveredAt: row.delivered_at ? new Date(row.delivered_at) : null,
+      createdAt: row.created_at ? new Date(row.created_at) : new Date(),
+      opportunitySummary: {
+        id: row.opportunity_id,
+        title: row.opp_title ?? '',
+        entity: row.opp_entity ?? '',
+        amount: Number(row.opp_amount ?? 0),
+        closingDate: row.opp_closing_date ? new Date(row.opp_closing_date) : null,
+      },
+    }));
+
+    return {
+      items,
+      total,
+      page: safePage,
+      pageSize: safeSize,
+    };
+  }
+
+  async markRead(id: AlertId): Promise<boolean> {
+    const res = await this.pool.query(
+      `UPDATE alerts
+       SET read_at = COALESCE(read_at, CURRENT_TIMESTAMP)
+       WHERE id = $1;`,
+      [id],
+    );
+    return (res.rowCount ?? 0) > 0;
+  }
+
+  async markAllRead(profileId: ProfileId): Promise<number> {
+    const res = await this.pool.query(
+      `UPDATE alerts
+       SET read_at = CURRENT_TIMESTAMP
+       WHERE profile_id = $1 AND read_at IS NULL;`,
+      [profileId],
+    );
+    return res.rowCount ?? 0;
   }
 
   private mapRowToAlert(row: AlertRow): Alert {

@@ -10,6 +10,7 @@ import {
   Inject,
 } from '@nestjs/common';
 import {
+  AlertNotFoundError,
   OpportunityNotFoundError,
   ProfileNotFoundError,
   RecommendationNotFoundError,
@@ -23,6 +24,7 @@ export type DomainError =
   | ProfileNotFoundError
   | OpportunityNotFoundError
   | RecommendationNotFoundError
+  | AlertNotFoundError
   | SourceUnavailableError;
 
 export interface ErrorEnvelope {
@@ -49,6 +51,7 @@ function isDomainErrorObject(value: unknown): value is DomainError {
     maybeType === 'ProfileNotFoundError' ||
     maybeType === 'OpportunityNotFoundError' ||
     maybeType === 'RecommendationNotFoundError' ||
+    maybeType === 'AlertNotFoundError' ||
     maybeType === 'SourceUnavailableError'
   );
 }
@@ -128,6 +131,13 @@ export class GlobalExceptionFilter implements ExceptionFilter {
             statusCode: HttpStatus.NOT_FOUND,
             error: 'RecommendationNotFoundError',
             message: `Recomendación no encontrada: ${String(domainErr.recommendationId ?? '')}`,
+            requestId,
+          };
+        case 'AlertNotFoundError':
+          return {
+            statusCode: HttpStatus.NOT_FOUND,
+            error: 'AlertNotFoundError',
+            message: `Alerta no encontrada: ${String(domainErr.alertId ?? '')}`,
             requestId,
           };
         case 'SourceUnavailableError':

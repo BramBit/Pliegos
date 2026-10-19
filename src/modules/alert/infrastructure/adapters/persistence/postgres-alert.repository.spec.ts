@@ -1,4 +1,4 @@
-import { seedProfile } from '../../../../shared/testing/seed';
+import { seedProfile, seedOpportunity } from '../../../../shared/testing/seed';
 import { requireTestDatabaseUrl } from '../../../../shared/testing/test-database-url';
 import { Pool } from 'pg';
 import { PostgresAlertRepository } from './postgres-alert.repository';
@@ -196,5 +196,116 @@ describe('PostgresAlertRepository (Real Test Database)', () => {
     expect(found).not.toBeNull();
     expect(found?.attempts).toBe(1);
     expect(found?.lastError).toBe('SMTP timeout');
+  });
+
+  it('finds alerts by profile paginated with opportunity summary', async () => {
+    // Seed an opportunity so the LEFT JOIN has opportunity data
+    await seedOpportunity(pool, 'opp-inbox-1');
+    await pool.query(
+      `UPDATE opportunities
+       SET title = 'Licitación Vial Cali',
+           contracting_entity_name = 'Alcaldía de Cali',
+           amount = 150000000,
+           closing_date = NOW() + interval '5 days'
+       WHERE id = 'opp-inbox-1';`,
+    );
+
+    const alert1: Alert = {
+      id: asAlertId('alt-inbox-1'),
+      profileId: asProfileId('prof-1'),
+      opportunityId: asOpportunityId('opp-inbox-1'),
+      trigger: 'Amendment',
+      changeKey: 'amount:2026-10-18',
+      attempts: 0,
+      lastError: null,
+      readAt: null,
+      deliveredAt: null,
+    };
+    const alert2: Alert = {
+      id: asAlertId('alt-inbox-2'),
+      profileId: asProfileId('prof-1'),
+      opportunityId: asOpportunityId('opp-inbox-1'),
+      trigger: 'DeadlineApproaching',
+      changeKey: 'deadline:2026-10-25',
+      attempts: 0,
+      lastError: null,
+      readAt: null,
+      deliveredAt: null,
+    };
+
+    await repo.save(alert1);
+    await repo.save(alert2);
+
+    const page1 = await repo.findByProfile(asProfileId('prof-1'), 1, 10);
+    expect(page1.total).toBe(2);
+    expect(page1.items).toHaveLength(2);
+    expect(page1.items[0].opportunitySummary.title).toBe('Licitación Vial Cali');
+    expect(page1.items[0].opportunitySummary.entity).toBe('Alcaldía de Cali');
+    expect(page1.items[0].opportunitySummary.amount).toBe(150000000);
+    expect(page1.items[0].opportunitySummary.closingDate).toBeInstanceOf(Date);
+  });
+
+  it('marks a single alert as read and is idempotent', async () => {
+    const alert: Alert = {
+      id: asAlertId('alt-read-1'),
+      profileId: asProfileId('prof-2'),
+      opportunityId: asOpportunityId('opp-1'),
+      trigger: 'StatusChange',
+      changeKey: 'status:1',
+      attempts: 0,
+      lastError: null,
+      readAt: null,
+      deliveredAt: null,
+    };
+    await repo.save(alert);
+
+    const marked = await repo.markRead(alert.id);
+    expect(marked).toBe(true);
+
+    const found = await repo.findById(alert.id);
+    expect(found?.readAt).toBeInstanceOf(Date);
+
+    // Idempotent: calling again succeeds
+    const markedAgain = await repo.markRead(alert.id);
+    expect(markedAgain).toBe(true);
+  });
+
+  it('marks all unread alerts for a profile as read', async () => {
+    const a1: Alert = {
+      id: asAlertId('alt-all-1'),
+      profileId: asProfileId('prof-3'),
+      opportunityId: asOpportunityId('opp-1'),
+      trigger: 'Amendment',
+      changeKey: 'k1',
+      attempts: 0,
+      lastError: null,
+      readAt: null,
+      deliveredAt: null,
+    };
+    const a2: Alert = {
+      id: asAlertId('alt-all-2'),
+      profileId: asProfileId('prof-3'),
+      opportunityId: asOpportunityId('opp-2'),
+      trigger: 'DeadlineApproaching',
+      changeKey: 'k2',
+      attempts: 0,
+      lastError: null,
+      readAt: null,
+      deliveredAt: null,
+    };
+    await repo.save(a1);
+    await repo.save(a2);
+
+    const count = await repo.markAllRead(asProfileId('prof-3'));
+    expect(count).toBe(2);
+
+    const a1After = await repo.findById(a1.id);
+    const a2After = await repo.findById(a2.id);
+    expect(a1After?.readAt).toBeInstanceOf(Date);
+    expect(a2After?.readAt).toBeInstanceOf(Date);
+
+    // If all are already read, markAllRead returns 0
+    const countAgain = await repo.markAllRead(asProfileId('prof-3'));
+    expect(countAgain).toBe(0);
   });
 });
