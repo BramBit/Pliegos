@@ -21,6 +21,7 @@ async function bootstrap() {
   }
 
   const app = await NestFactory.create(AppModule);
+  app.enableShutdownHooks();
 
   setupSecurity(app, { nodeEnv: env.NODE_ENV, corsOrigins: env.CORS_ORIGINS });
   setupSwaggerAndScalar(app);

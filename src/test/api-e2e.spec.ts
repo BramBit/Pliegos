@@ -144,8 +144,8 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
     if (app) {
       await app.close();
     }
-    if (pool) {
-      await pool.end();
+    if (pool && !(pool as any).ending && !(pool as any).ended) {
+      await pool.end().catch(() => {});
     }
   });
 

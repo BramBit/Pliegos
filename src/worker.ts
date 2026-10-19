@@ -21,15 +21,6 @@ async function bootstrap() {
   app.enableShutdownHooks();
 
   logger.log('Pliegos Worker running in application context');
-
-  const shutdown = async (signal: string) => {
-    logger.log(`Worker received ${signal}, shutting down...`);
-    await app.close();
-    process.exit(0);
-  };
-
-  process.on('SIGTERM', () => void shutdown('SIGTERM'));
-  process.on('SIGINT', () => void shutdown('SIGINT'));
 }
 
 bootstrap();
