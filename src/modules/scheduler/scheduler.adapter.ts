@@ -2,6 +2,7 @@ import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { SyncOpportunitiesUseCase } from '../opportunity/application/use-cases/sync-opportunities.use-case';
 import { ReviewFollowUpUseCase } from '../alert/application/use-cases/review-follow-up.use-case';
+import { ScanDeadlinesUseCase } from '../alert/application/use-cases/scan-deadlines.use-case';
 import {
   RECOMMENDATION_REFRESH_QUEUE_PORT,
   RecommendationRefreshQueuePort,
@@ -13,8 +14,12 @@ export const SYNC_OPPORTUNITIES_CRON =
 export const REVIEW_FOLLOW_UP_CRON =
   process.env.REVIEW_FOLLOW_UP_CRON || CronExpression.EVERY_DAY_AT_8AM;
 
+export const SCAN_DEADLINES_CRON =
+  process.env.SCAN_DEADLINES_CRON || '30 07 * * *';
+
 export const SYNC_OPPORTUNITIES_JOB_NAME = 'sync-opportunities';
 export const REVIEW_FOLLOW_UP_JOB_NAME = 'review-follow-up';
+export const SCAN_DEADLINES_JOB_NAME = 'scan-deadlines';
 
 /**
  * Driving adapter for scheduled background jobs (technical design §8).
@@ -30,6 +35,8 @@ export class SchedulerAdapter {
     @Optional()
     @Inject(RECOMMENDATION_REFRESH_QUEUE_PORT)
     private readonly refreshQueue?: RecommendationRefreshQueuePort,
+    @Optional()
+    private readonly scanDeadlinesUseCase?: ScanDeadlinesUseCase,
   ) {}
 
   /**
@@ -89,6 +96,36 @@ export class SchedulerAdapter {
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
       this.logger.error(`Scheduled review follow-up threw unexpected exception: ${message}`);
+    }
+  }
+
+  /**
+   * Periodically scans watched opportunities (and optionally top 5 new recommendations)
+   * approaching their submission deadlines and creates DeadlineApproaching alerts under an advisory lock.
+   * Default: Daily at 7:30 AM (30 07 * * *).
+   */
+  @Cron(SCAN_DEADLINES_CRON, {
+    name: SCAN_DEADLINES_JOB_NAME,
+  })
+  async handleScanDeadlines(): Promise<void> {
+    if (!this.scanDeadlinesUseCase) return;
+    this.logger.log('Executing scheduled job: ScanDeadlines');
+    try {
+      const result = await this.scanDeadlinesUseCase.execute();
+      if (result.ok) {
+        if (result.value.skipped) {
+          this.logger.log(`Scheduled scan deadlines skipped: ${result.value.reason}`);
+        } else {
+          this.logger.log(
+            `Scheduled scan deadlines completed: ${result.value.alertsCreated} alerts created`,
+          );
+        }
+      } else {
+        this.logger.warn(`Scheduled scan deadlines failed: ${result.error.message}`);
+      }
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      this.logger.error(`Scheduled scan deadlines threw unexpected exception: ${message}`);
     }
   }
 }

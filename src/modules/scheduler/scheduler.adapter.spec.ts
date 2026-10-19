@@ -5,11 +5,14 @@ import {
   SchedulerAdapter,
   SYNC_OPPORTUNITIES_CRON,
   REVIEW_FOLLOW_UP_CRON,
+  SCAN_DEADLINES_CRON,
   SYNC_OPPORTUNITIES_JOB_NAME,
   REVIEW_FOLLOW_UP_JOB_NAME,
+  SCAN_DEADLINES_JOB_NAME,
 } from './scheduler.adapter';
 import { SyncOpportunitiesUseCase } from '../opportunity/application/use-cases/sync-opportunities.use-case';
 import { ReviewFollowUpUseCase } from '../alert/application/use-cases/review-follow-up.use-case';
+import { ScanDeadlinesUseCase } from '../alert/application/use-cases/scan-deadlines.use-case';
 import { ok, err } from '../shared/domain/result';
 import { createSourceUnavailableError } from '../shared/domain/errors';
 
@@ -23,6 +26,10 @@ describe('SchedulerAdapter (Driving Adapter per Technical Design §8)', () => {
   };
 
   const mockReviewFollowUpUseCase = {
+    execute: jest.fn(),
+  };
+
+  const mockScanDeadlinesUseCase = {
     execute: jest.fn(),
   };
 
@@ -41,6 +48,10 @@ describe('SchedulerAdapter (Driving Adapter per Technical Design §8)', () => {
           provide: ReviewFollowUpUseCase,
           useValue: mockReviewFollowUpUseCase,
         },
+        {
+          provide: ScanDeadlinesUseCase,
+          useValue: mockScanDeadlinesUseCase,
+        },
       ],
     }).compile();
 
@@ -58,16 +69,19 @@ describe('SchedulerAdapter (Driving Adapter per Technical Design §8)', () => {
   });
 
   describe('Cron Job Registration and Metadata', () => {
-    it('should register sync-opportunities and review-follow-up cron jobs in SchedulerRegistry', () => {
+    it('should register sync-opportunities, review-follow-up and scan-deadlines cron jobs in SchedulerRegistry', () => {
       const cronJobs = schedulerRegistry.getCronJobs();
       expect(cronJobs.has(SYNC_OPPORTUNITIES_JOB_NAME)).toBe(true);
       expect(cronJobs.has(REVIEW_FOLLOW_UP_JOB_NAME)).toBe(true);
+      expect(cronJobs.has(SCAN_DEADLINES_JOB_NAME)).toBe(true);
 
       const syncJob = schedulerRegistry.getCronJob(SYNC_OPPORTUNITIES_JOB_NAME);
       const reviewJob = schedulerRegistry.getCronJob(REVIEW_FOLLOW_UP_JOB_NAME);
+      const scanJob = schedulerRegistry.getCronJob(SCAN_DEADLINES_JOB_NAME);
 
       expect(syncJob).toBeDefined();
       expect(reviewJob).toBeDefined();
+      expect(scanJob).toBeDefined();
     });
 
     it('should configure sensible cron intervals matching defaults', () => {
@@ -78,6 +92,9 @@ describe('SchedulerAdapter (Driving Adapter per Technical Design §8)', () => {
       // Default: Daily at 8:00 AM for review follow up
       expect(REVIEW_FOLLOW_UP_CRON).toBe(CronExpression.EVERY_DAY_AT_8AM);
       expect(REVIEW_FOLLOW_UP_CRON).toBe('0 08 * * *');
+
+      // Default: Daily at 7:30 AM for scan deadlines
+      expect(SCAN_DEADLINES_CRON).toBe('30 07 * * *');
     });
   });
 
@@ -156,6 +173,42 @@ describe('SchedulerAdapter (Driving Adapter per Technical Design §8)', () => {
     });
   });
 
+  describe('handleScanDeadlines', () => {
+    it('should invoke ScanDeadlinesUseCase.execute and complete successfully', async () => {
+      mockScanDeadlinesUseCase.execute.mockResolvedValue(
+        ok({ alertsCreated: 3 }),
+      );
+
+      await schedulerAdapter.handleScanDeadlines();
+
+      expect(mockScanDeadlinesUseCase.execute).toHaveBeenCalledTimes(1);
+    });
+
+    it('should handle domain failure result gracefully without throwing', async () => {
+      mockScanDeadlinesUseCase.execute.mockResolvedValue(
+        err(new Error('Advisory lock failed')),
+      );
+
+      await expect(
+        schedulerAdapter.handleScanDeadlines(),
+      ).resolves.not.toThrow();
+
+      expect(mockScanDeadlinesUseCase.execute).toHaveBeenCalledTimes(1);
+    });
+
+    it('should catch unexpected exception gracefully without crashing', async () => {
+      mockScanDeadlinesUseCase.execute.mockRejectedValue(
+        new Error('Database disconnected'),
+      );
+
+      await expect(
+        schedulerAdapter.handleScanDeadlines(),
+      ).resolves.not.toThrow();
+
+      expect(mockScanDeadlinesUseCase.execute).toHaveBeenCalledTimes(1);
+    });
+  });
+
   describe('Triggering via CronJob callback', () => {
     it('should execute SyncOpportunitiesUseCase when the registered cron job tick fires', async () => {
       mockSyncOpportunitiesUseCase.execute.mockResolvedValue(
@@ -179,6 +232,17 @@ describe('SchedulerAdapter (Driving Adapter per Technical Design §8)', () => {
       await (reviewJob as any).fireOnTick?.();
 
       expect(mockReviewFollowUpUseCase.execute).toHaveBeenCalled();
+    });
+
+    it('should execute ScanDeadlinesUseCase when the registered cron job tick fires', async () => {
+      mockScanDeadlinesUseCase.execute.mockResolvedValue(
+        ok({ alertsCreated: 1 }),
+      );
+
+      const scanJob = schedulerRegistry.getCronJob(SCAN_DEADLINES_JOB_NAME);
+      await (scanJob as any).fireOnTick?.();
+
+      expect(mockScanDeadlinesUseCase.execute).toHaveBeenCalled();
     });
   });
 });
