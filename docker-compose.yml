@@ -30,6 +30,7 @@ services:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 5s
+
   mailpit:
     image: axllent/mailpit:latest
     container_name: pliegos-mailpit
@@ -37,6 +38,74 @@ services:
     ports:
       - "${SMTP_PORT:-1025}:1025"
       - "8025:8025"
+
+  migrate:
+    image: pliegos:latest
+    build: .
+    container_name: pliegos-migrate
+    restart: "no"
+    command: ["node", "dist/scripts/migrate.js"]
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-pliegos}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  api:
+    image: pliegos:latest
+    build: .
+    container_name: pliegos-api
+    restart: unless-stopped
+    command: ["node", "dist/src/main.js"]
+    ports:
+      - "${PORT:-3000}:3000"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-pliegos}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      SMTP_HOST: mailpit
+      SMTP_PORT: 1025
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+  worker:
+    image: pliegos:latest
+    build: .
+    container_name: pliegos-worker
+    restart: unless-stopped
+    command: ["node", "dist/src/worker.js"]
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      disable: true
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-pliegos}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      SMTP_HOST: mailpit
+      SMTP_PORT: 1025
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
 
 volumes:
   pliegos-pgdata:

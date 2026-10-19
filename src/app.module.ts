@@ -11,6 +11,7 @@ import { AlertModule } from './modules/alert/alert.module';
 import { SchedulerModule } from './modules/scheduler/scheduler.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { AdminModule } from './modules/admin/admin.module';
+import { HealthModule } from './modules/health/health.module';
 import { GlobalExceptionFilter } from './modules/shared/infrastructure/http/global-exception.filter';
 import { RequestIdMiddleware } from './modules/shared/infrastructure/http/request-id.middleware';
 
@@ -41,6 +42,7 @@ import { RequestIdMiddleware } from './modules/shared/infrastructure/http/reques
     AlertModule,
     SchedulerModule,
     AdminModule,
+    HealthModule,
   ],
   providers: [
     {

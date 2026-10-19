@@ -8,6 +8,8 @@
     "build": "tsc",
     "start": "tsc && node dist/src/main.js",
     "start:dev": "tsc && node --watch dist/src/main.js",
+    "start:api": "node dist/src/main.js",
+    "start:worker": "node dist/src/worker.js",
     "db:migrate": "tsc && node dist/scripts/migrate.js",
     "db:init": "pnpm db:migrate",
     "audit:data": "tsc && node dist/scripts/audit-data.js",

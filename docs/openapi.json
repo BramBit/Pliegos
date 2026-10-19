@@ -1228,6 +1228,41 @@
           "Admin"
         ]
       }
+    },
+    "/health/live": {
+      "get": {
+        "description": "Indica si el proceso de la aplicación está activo y respondiendo.",
+        "operationId": "HealthController_live",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Servicio activo"
+          }
+        },
+        "summary": "Liveness probe",
+        "tags": [
+          "Health"
+        ]
+      }
+    },
+    "/health/ready": {
+      "get": {
+        "description": "Verifica la conectividad con PostgreSQL, Redis y Ollama. Falla con 503 si PostgreSQL o Redis no responden. Retorna 200 con status degraded si Ollama no responde.",
+        "operationId": "HealthController_ready",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Servicio listo o degradado"
+          },
+          "503": {
+            "description": "Dependencia crítica caída"
+          }
+        },
+        "summary": "Readiness probe",
+        "tags": [
+          "Health"
+        ]
+      }
     }
   },
   "info": {
