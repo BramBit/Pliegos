@@ -44,6 +44,15 @@ const envSchema = z.object({
 
   MAX_PROFILES_PER_USER: positiveInt.default(5),
   CORS_ORIGINS: z.string().default(''),
+
+  SMTP_HOST: nonEmpty.default('localhost'),
+  SMTP_PORT: port.default(1025),
+  SMTP_USER: z.string().default(''),
+  SMTP_PASS: z.string().default(''),
+  SMTP_FROM: nonEmpty.default('Pliegos <alertas@pliegos.co>'),
+  SMTP_SECURE: z
+    .preprocess((val) => val === 'true' || val === true, z.boolean())
+    .default(false),
 });
 
 export type Env = z.infer<typeof envSchema>;

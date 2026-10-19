@@ -235,7 +235,12 @@ async function main() {
     });
     console.log(`✓ Alerta creada por proximo cierre de plazo para ${profile.id}.`);
 
-    const reviewFollowUpUseCase = new ReviewFollowUpUseCase(alertRepo, emailAdapter);
+    const reviewFollowUpUseCase = new ReviewFollowUpUseCase(
+      alertRepo,
+      emailAdapter,
+      profileRepo,
+      opportunityRepo,
+    );
     const alertResult = await reviewFollowUpUseCase.execute();
 
     console.log(`✓ Revision de seguimiento ejecutada.`);
@@ -245,7 +250,7 @@ async function main() {
     const sentEmails = emailAdapter.getSentNotifications();
     console.log(`  - Notificaciones por correo despachadas: ${sentEmails.length}`);
     for (const email of sentEmails) {
-      console.log(`    ✉ [EMAIL to ${email.profileId}]: "${email.message}"`);
+      console.log(`    ✉ [EMAIL to ${email.to.email}]: "${email.content.subject}"`);
     }
 
     console.log('\n╔═══════════════════════════════════════════════════════════════════╗');

@@ -33,6 +33,12 @@ describe('loadEnv', () => {
     expect(env.MIN_RECOMMENDATION_SCORE).toBe(0.45);
     expect(env.TEST_DATABASE_URL).toBeUndefined();
     expect(env.SECOP_APP_TOKEN).toBeUndefined();
+    expect(env.SMTP_HOST).toBe('localhost');
+    expect(env.SMTP_PORT).toBe(1025);
+    expect(env.SMTP_USER).toBe('');
+    expect(env.SMTP_PASS).toBe('');
+    expect(env.SMTP_FROM).toBe('Pliegos <alertas@pliegos.co>');
+    expect(env.SMTP_SECURE).toBe(false);
   });
 
   it('coerces numeric values', () => {
