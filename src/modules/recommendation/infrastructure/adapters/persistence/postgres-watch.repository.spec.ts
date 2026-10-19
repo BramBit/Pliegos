@@ -121,4 +121,35 @@ describe('PostgresWatchRepository & Summary (Real Test Database)', () => {
     const summary = await watchRepo.getProfileSummary(asProfileId('00000000-0000-0000-0000-000000000000'));
     expect(summary).toBeNull();
   });
+
+  it('finds watching profiles with their alerts_enabled preference', async () => {
+    const profileId1 = asProfileId('prof-watch-1');
+    const oppId1 = asOpportunityId('opp-watch-1');
+
+    await seedProfile(pool, 'prof-watch-2');
+    const profileId2 = asProfileId('prof-watch-2');
+
+    // Set prof-watch-2 to alerts_enabled = false
+    await pool.query('UPDATE profiles SET alerts_enabled = false, contact_email = $1 WHERE id = $2;', [
+      'user2@test.com',
+      profileId2,
+    ]);
+    await pool.query('UPDATE profiles SET alerts_enabled = true, contact_email = $1 WHERE id = $2;', [
+      'user1@test.com',
+      profileId1,
+    ]);
+
+    await watchRepo.addWatch(profileId1, oppId1);
+    await watchRepo.addWatch(profileId2, oppId1);
+
+    const watchers = await watchRepo.findWatchers(oppId1);
+    expect(watchers).toHaveLength(2);
+    expect(watchers).toEqual([
+      { profileId: profileId1, alertsEnabled: true, contactEmail: 'user1@test.com' },
+      { profileId: profileId2, alertsEnabled: false, contactEmail: 'user2@test.com' },
+    ]);
+
+    const noWatchers = await watchRepo.findWatchers(asOpportunityId('opp-watch-3'));
+    expect(noWatchers).toHaveLength(0);
+  });
 });

@@ -37,6 +37,10 @@ describe('PostgresAlertRepository (Real Test Database)', () => {
       profileId: asProfileId('prof-1'),
       opportunityId: asOpportunityId('opp-1'),
       trigger: 'Amendment',
+      changeKey: '',
+      attempts: 0,
+      lastError: null,
+      readAt: null,
       deliveredAt: null,
     };
 
@@ -45,6 +49,10 @@ describe('PostgresAlertRepository (Real Test Database)', () => {
       profileId: asProfileId('prof-2'),
       opportunityId: asOpportunityId('opp-2'),
       trigger: 'DeadlineApproaching',
+      changeKey: '',
+      attempts: 0,
+      lastError: null,
+      readAt: null,
       deliveredAt: new Date('2026-03-01T08:00:00.000Z'),
     };
 
@@ -64,6 +72,10 @@ describe('PostgresAlertRepository (Real Test Database)', () => {
       profileId: asProfileId('prof-3'),
       opportunityId: asOpportunityId('opp-3'),
       trigger: 'StatusChange',
+      changeKey: '',
+      attempts: 0,
+      lastError: null,
+      readAt: null,
       deliveredAt: null,
     };
 
@@ -79,5 +91,110 @@ describe('PostgresAlertRepository (Real Test Database)', () => {
 
     const remainingUndelivered = await repo.findUndelivered();
     expect(remainingUndelivered).toHaveLength(0);
+  });
+
+  it('inserts multiple alerts with createMany and ignores duplicates on conflict', async () => {
+    const alerts: Alert[] = [
+      {
+        id: asAlertId('alert-m1'),
+        profileId: asProfileId('prof-1'),
+        opportunityId: asOpportunityId('opp-1'),
+        trigger: 'Amendment',
+        changeKey: 'amount:2026-10-18T00:00:00.000Z',
+        attempts: 0,
+        lastError: null,
+        readAt: null,
+        deliveredAt: null,
+      },
+      {
+        id: asAlertId('alert-m2'),
+        profileId: asProfileId('prof-2'),
+        opportunityId: asOpportunityId('opp-2'),
+        trigger: 'StatusChange',
+        changeKey: 'status:2026-10-18T00:00:00.000Z',
+        attempts: 0,
+        lastError: null,
+        readAt: null,
+        deliveredAt: null,
+      },
+    ];
+
+    await repo.createMany(alerts);
+
+    const undelivered = await repo.findUndelivered();
+    expect(undelivered).toHaveLength(2);
+
+    // Attempting to re-insert the same alert (same profile, opp, trigger, changeKey) but different id
+    const duplicateAlert: Alert = {
+      id: asAlertId('alert-m3-duplicate'),
+      profileId: asProfileId('prof-1'),
+      opportunityId: asOpportunityId('opp-1'),
+      trigger: 'Amendment',
+      changeKey: 'amount:2026-10-18T00:00:00.000Z',
+      attempts: 0,
+      lastError: null,
+      readAt: null,
+      deliveredAt: null,
+    };
+
+    await repo.createMany([duplicateAlert]);
+
+    // Count should still be 2 due to ON CONFLICT DO NOTHING
+    const undeliveredAfter = await repo.findUndelivered();
+    expect(undeliveredAfter).toHaveLength(2);
+  });
+
+  it('limits undelivered alerts when limit is provided', async () => {
+    const alerts: Alert[] = [
+      {
+        id: asAlertId('alert-lim-1'),
+        profileId: asProfileId('prof-1'),
+        opportunityId: asOpportunityId('opp-1'),
+        trigger: 'Amendment',
+        changeKey: 'k1',
+        attempts: 0,
+        lastError: null,
+        readAt: null,
+        deliveredAt: null,
+      },
+      {
+        id: asAlertId('alert-lim-2'),
+        profileId: asProfileId('prof-2'),
+        opportunityId: asOpportunityId('opp-2'),
+        trigger: 'Amendment',
+        changeKey: 'k2',
+        attempts: 0,
+        lastError: null,
+        readAt: null,
+        deliveredAt: null,
+      },
+    ];
+
+    await repo.createMany(alerts);
+
+    const limited = await repo.findUndelivered(1);
+    expect(limited).toHaveLength(1);
+  });
+
+  it('increments attempts and updates last_error on markFailed', async () => {
+    const alert: Alert = {
+      id: asAlertId('alert-fail-1'),
+      profileId: asProfileId('prof-1'),
+      opportunityId: asOpportunityId('opp-1'),
+      trigger: 'Amendment',
+      changeKey: 'kfail',
+      attempts: 0,
+      lastError: null,
+      readAt: null,
+      deliveredAt: null,
+    };
+
+    await repo.save(alert);
+    await repo.markFailed(alert.id, 'SMTP timeout');
+
+    const found = await repo.findById(alert.id);
+    expect(found).not.toBeNull();
+    expect(found?.attempts).toBe(1);
+    expect(found?.lastError).toBe('SMTP timeout');
   });
 });

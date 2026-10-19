@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { BullModule, getQueueToken } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { Pool } from 'pg';
@@ -9,6 +9,10 @@ import { OPPORTUNITY_REPOSITORY_PORT } from './domain/ports/opportunity.reposito
 import { OPPORTUNITY_SOURCE_PORT } from './domain/ports/opportunity-source.port';
 import { SEARCH_INDEX_PORT } from './domain/ports/search-index.port';
 import { ANALYSIS_QUEUE_PORT } from './domain/ports/analysis-queue.port';
+import { WATCH_REPOSITORY_PORT, WatchRepositoryPort } from '../recommendation/domain/ports/watch.repository.port';
+import { ALERT_REPOSITORY_PORT, AlertRepositoryPort } from '../alert/domain/ports/alert.repository.port';
+import { RecommendationModule } from '../recommendation/recommendation.module';
+import { AlertModule } from '../alert/alert.module';
 import { PostgresOpportunityRepository } from './infrastructure/adapters/persistence/postgres-opportunity.repository';
 import { SecopAdapter } from './infrastructure/adapters/secop/secop.adapter';
 import { PgVectorAdapter } from './infrastructure/adapters/search/pgvector.adapter';
@@ -29,6 +33,8 @@ import { OpportunityController } from './infrastructure/controllers/opportunity.
 @Module({
   imports: [
     AiModule,
+    AlertModule,
+    forwardRef(() => RecommendationModule),
     BullModule.registerQueue(
       { name: ANALYSIS_QUEUE_NAME },
       { name: REFRESH_RECOMMENDATIONS_QUEUE_NAME },
@@ -60,12 +66,32 @@ import { OpportunityController } from './infrastructure/controllers/opportunity.
     AnalyzeOpportunityJob,
     {
       provide: SyncOpportunitiesUseCase,
-      useFactory: (source, repo, queue) =>
-        new SyncOpportunitiesUseCase(source, repo, queue),
+      useFactory: (
+        source,
+        repo,
+        queue,
+        refreshQueueRaw,
+        watchRepo: WatchRepositoryPort,
+        alertRepo: AlertRepositoryPort,
+      ) => {
+        const refreshQueue = new BullMQRecommendationRefreshQueueAdapter(refreshQueueRaw);
+        return new SyncOpportunitiesUseCase(
+          source,
+          repo,
+          queue,
+          undefined,
+          refreshQueue,
+          watchRepo,
+          alertRepo,
+        );
+      },
       inject: [
         OPPORTUNITY_SOURCE_PORT,
         OPPORTUNITY_REPOSITORY_PORT,
         ANALYSIS_QUEUE_PORT,
+        getQueueToken(REFRESH_RECOMMENDATIONS_QUEUE_NAME),
+        WATCH_REPOSITORY_PORT,
+        ALERT_REPOSITORY_PORT,
       ],
     },
     {

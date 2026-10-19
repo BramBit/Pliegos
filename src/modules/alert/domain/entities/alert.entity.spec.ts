@@ -18,6 +18,10 @@ describe('Alert Entity', () => {
     if (alert.ok) {
       expect(alert.value.id).toBe('alert-001');
       expect(alert.value.trigger).toBe('DeadlineApproaching');
+      expect(alert.value.changeKey).toBe('');
+      expect(alert.value.attempts).toBe(0);
+      expect(alert.value.lastError).toBeNull();
+      expect(alert.value.readAt).toBeNull();
       expect(alert.value.deliveredAt).toBeNull();
     }
   });

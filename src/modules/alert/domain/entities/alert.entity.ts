@@ -13,7 +13,12 @@ export interface Alert {
   readonly profileId: ProfileId;
   readonly opportunityId: OpportunityId;
   readonly trigger: AlertTrigger;
+  readonly changeKey: string;
+  readonly attempts: number;
+  readonly lastError: string | null;
+  readonly readAt: Date | null;
   readonly deliveredAt: Date | null;
+  readonly createdAt?: Date;
 }
 
 export interface CreateAlertProps {
@@ -21,7 +26,12 @@ export interface CreateAlertProps {
   readonly profileId: ProfileId;
   readonly opportunityId: OpportunityId;
   readonly trigger: AlertTrigger;
+  readonly changeKey?: string;
+  readonly attempts?: number;
+  readonly lastError?: string | null;
+  readonly readAt?: Date | null;
   readonly deliveredAt?: Date | null;
+  readonly createdAt?: Date;
 }
 
 export const createAlert = (props: CreateAlertProps): Result<Alert, ValidationError> => {
@@ -54,7 +64,12 @@ export const createAlert = (props: CreateAlertProps): Result<Alert, ValidationEr
     profileId: props.profileId,
     opportunityId: props.opportunityId,
     trigger: props.trigger,
+    changeKey: props.changeKey ?? '',
+    attempts: props.attempts ?? 0,
+    lastError: props.lastError ?? null,
+    readAt: props.readAt ?? null,
     deliveredAt: props.deliveredAt ?? null,
+    createdAt: props.createdAt,
   });
 };
 

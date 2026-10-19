@@ -320,6 +320,10 @@ describe('HTTP Contract: RequestIdMiddleware, GlobalExceptionFilter & Response D
         profileId: profile.id,
         opportunityId: sampleOpp.id,
         trigger: 'Amendment',
+        changeKey: '',
+        attempts: 0,
+        lastError: null,
+        readAt: null,
         deliveredAt: null,
       };
       const alertDto = toAlertDto(alert);

@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
 import { Pool } from 'pg';
 import { DATABASE_POOL } from '../shared/infrastructure/persistence/database.module';
@@ -45,7 +45,7 @@ import { RefreshRecommendationsJob } from './infrastructure/jobs/refresh-recomme
   imports: [
     AiModule,
     ProfileModule,
-    OpportunityModule,
+    forwardRef(() => OpportunityModule),
     BullModule.registerQueue({ name: REFRESH_RECOMMENDATIONS_QUEUE_NAME }),
   ],
   controllers: [RecommendationController, ProfileRecommendationsController],

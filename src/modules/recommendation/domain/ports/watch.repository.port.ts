@@ -22,6 +22,12 @@ export interface ProfileSummary {
   readonly unreadAlerts: number;
 }
 
+export interface WatcherProfile {
+  readonly profileId: ProfileId;
+  readonly alertsEnabled: boolean;
+  readonly contactEmail?: string | null;
+}
+
 export interface WatchRepositoryPort {
   addWatch(profileId: ProfileId, opportunityId: OpportunityId, userId?: UserId): Promise<void>;
   removeWatch(profileId: ProfileId, opportunityId: OpportunityId, userId?: UserId): Promise<boolean>;
@@ -33,6 +39,7 @@ export interface WatchRepositoryPort {
     userId?: UserId,
   ): Promise<PagedWatchedOpportunities>;
   getProfileSummary(profileId: ProfileId, userId?: UserId): Promise<ProfileSummary | null>;
+  findWatchers(opportunityId: OpportunityId): Promise<WatcherProfile[]>;
 }
 
 export const WATCH_REPOSITORY_PORT = Symbol('WATCH_REPOSITORY_PORT');

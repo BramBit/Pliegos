@@ -5,8 +5,9 @@ import {
   PagedWatchedOpportunities,
   ProfileSummary,
   WatchedOpportunityItem,
+  WatcherProfile,
 } from '../../../domain/ports/watch.repository.port';
-import { ProfileId, OpportunityId, UserId, asOpportunityId } from '../../../../shared/domain/typed-id';
+import { ProfileId, OpportunityId, UserId, asOpportunityId, asProfileId } from '../../../../shared/domain/typed-id';
 import { Opportunity } from '../../../../opportunity/domain/entities/opportunity.entity';
 import {
   OpportunityStatus,
@@ -207,6 +208,22 @@ export class PostgresWatchRepository implements WatchRepositoryPort {
       closingSoon: Number(row.closing_soon ?? 0),
       unreadAlerts: Number(row.unread_alerts ?? 0),
     };
+  }
+
+  async findWatchers(opportunityId: OpportunityId): Promise<WatcherProfile[]> {
+    const query = `
+      SELECT w.profile_id, p.alerts_enabled, p.contact_email
+      FROM watches w
+      JOIN profiles p ON p.id = w.profile_id
+      WHERE w.opportunity_id = $1
+      ORDER BY w.created_at ASC;
+    `;
+    const res = await this.pool.query(query, [opportunityId]);
+    return res.rows.map((row) => ({
+      profileId: asProfileId(row.profile_id),
+      alertsEnabled: Boolean(row.alerts_enabled ?? true),
+      contactEmail: row.contact_email ?? null,
+    }));
   }
 
   private mapRowToOpportunity(row: WatchedRow): Opportunity {

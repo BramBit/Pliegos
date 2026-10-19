@@ -15,7 +15,12 @@ interface AlertRow {
   profile_id: string;
   opportunity_id: string;
   trigger: string;
+  change_key?: string;
+  attempts?: number;
+  last_error?: string | null;
+  read_at?: Date | null;
   delivered_at: Date | null;
+  created_at?: Date | null;
 }
 
 @Injectable()
@@ -24,10 +29,13 @@ export class PostgresAlertRepository implements AlertRepositoryPort {
 
   async save(alert: Alert): Promise<void> {
     const query = `
-      INSERT INTO alerts (id, profile_id, opportunity_id, trigger, delivered_at)
-      VALUES ($1, $2, $3, $4, $5)
+      INSERT INTO alerts (id, profile_id, opportunity_id, trigger, change_key, attempts, last_error, read_at, delivered_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
       ON CONFLICT (id) DO UPDATE SET
-        delivered_at = EXCLUDED.delivered_at;
+        delivered_at = EXCLUDED.delivered_at,
+        attempts = EXCLUDED.attempts,
+        last_error = EXCLUDED.last_error,
+        read_at = EXCLUDED.read_at;
     `;
 
     const values = [
@@ -35,24 +43,70 @@ export class PostgresAlertRepository implements AlertRepositoryPort {
       alert.profileId,
       alert.opportunityId,
       alert.trigger,
+      alert.changeKey ?? '',
+      alert.attempts ?? 0,
+      alert.lastError ?? null,
+      alert.readAt ?? null,
       alert.deliveredAt,
     ];
 
     await this.pool.query(query, values);
   }
 
-  async findUndelivered(): Promise<Alert[]> {
-    const res: QueryResult<AlertRow> = await this.pool.query(
-      'SELECT * FROM alerts WHERE delivered_at IS NULL ORDER BY created_at ASC;',
-    );
+  async createMany(alerts: Alert[]): Promise<void> {
+    if (alerts.length === 0) return;
 
-    return res.rows.map((row) => ({
-      id: asAlertId(row.id),
-      profileId: asProfileId(row.profile_id),
-      opportunityId: asOpportunityId(row.opportunity_id),
-      trigger: row.trigger as AlertTrigger,
-      deliveredAt: row.delivered_at ? new Date(row.delivered_at) : null,
-    }));
+    const values: any[] = [];
+    const valueClauses: string[] = [];
+
+    alerts.forEach((alert, index) => {
+      const offset = index * 9;
+      valueClauses.push(
+        `($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5}, $${offset + 6}, $${offset + 7}, $${offset + 8}, $${offset + 9})`,
+      );
+      values.push(
+        alert.id,
+        alert.profileId,
+        alert.opportunityId,
+        alert.trigger,
+        alert.changeKey ?? '',
+        alert.attempts ?? 0,
+        alert.lastError ?? null,
+        alert.readAt ?? null,
+        alert.deliveredAt ?? null,
+      );
+    });
+
+    const query = `
+      INSERT INTO alerts (
+        id, profile_id, opportunity_id, trigger, change_key,
+        attempts, last_error, read_at, delivered_at
+      )
+      VALUES ${valueClauses.join(', ')}
+      ON CONFLICT DO NOTHING;
+    `;
+
+    await this.pool.query(query, values);
+  }
+
+  async findUndelivered(limit?: number): Promise<Alert[]> {
+    const query = limit
+      ? 'SELECT * FROM alerts WHERE delivered_at IS NULL ORDER BY created_at ASC LIMIT $1;'
+      : 'SELECT * FROM alerts WHERE delivered_at IS NULL ORDER BY created_at ASC;';
+    const params = limit ? [limit] : [];
+    const res: QueryResult<AlertRow> = await this.pool.query(query, params);
+
+    return res.rows.map((row) => this.mapRowToAlert(row));
+  }
+
+  async markFailed(id: AlertId, error: string): Promise<void> {
+    await this.pool.query(
+      `UPDATE alerts
+       SET attempts = attempts + 1,
+           last_error = $2
+       WHERE id = $1;`,
+      [id, error],
+    );
   }
 
   async findById(id: AlertId, userId?: UserId): Promise<Alert | null> {
@@ -64,13 +118,21 @@ export class PostgresAlertRepository implements AlertRepositoryPort {
     const params = userId ? [id, userId] : [id];
     const res: QueryResult<AlertRow> = await this.pool.query(query, params);
     if (res.rows.length === 0) return null;
-    const row = res.rows[0];
+    return this.mapRowToAlert(res.rows[0]);
+  }
+
+  private mapRowToAlert(row: AlertRow): Alert {
     return {
       id: asAlertId(row.id),
       profileId: asProfileId(row.profile_id),
       opportunityId: asOpportunityId(row.opportunity_id),
       trigger: row.trigger as AlertTrigger,
+      changeKey: row.change_key ?? '',
+      attempts: Number(row.attempts ?? 0),
+      lastError: row.last_error ?? null,
+      readAt: row.read_at ? new Date(row.read_at) : null,
       deliveredAt: row.delivered_at ? new Date(row.delivered_at) : null,
+      createdAt: row.created_at ? new Date(row.created_at) : undefined,
     };
   }
 }

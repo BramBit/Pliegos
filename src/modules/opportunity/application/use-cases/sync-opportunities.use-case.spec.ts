@@ -12,7 +12,10 @@ import {
 import { AnalysisQueuePort } from '../../domain/ports/analysis-queue.port';
 import { Opportunity } from '../../domain/entities/opportunity.entity';
 import { OpportunityFilters } from '../../domain/value-objects/opportunity-filters';
-import { OpportunityId } from '../../../shared/domain/typed-id';
+import { OpportunityId, asProfileId } from '../../../shared/domain/typed-id';
+import { WatchRepositoryPort, WatcherProfile } from '../../../recommendation/domain/ports/watch.repository.port';
+import { AlertRepositoryPort } from '../../../alert/domain/ports/alert.repository.port';
+import { Alert } from '../../../alert/domain/entities/alert.entity';
 
 class FakeOpportunitySource implements OpportunitySourcePort {
   public calls: Array<{ since?: Date; options?: SourceFetchOptions }> = [];
@@ -157,10 +160,43 @@ class FakeAnalysisQueue implements AnalysisQueuePort {
   }
 }
 
+class FakeWatchRepository implements Partial<WatchRepositoryPort> {
+  public watchersByOpp: Map<string, WatcherProfile[]> = new Map();
+  public findWatchersCalls = 0;
+
+  async findWatchers(opportunityId: OpportunityId): Promise<WatcherProfile[]> {
+    this.findWatchersCalls++;
+    return this.watchersByOpp.get(opportunityId) ?? [];
+  }
+}
+
+class FakeAlertRepository implements Partial<AlertRepositoryPort> {
+  public createdAlerts: Alert[] = [];
+  public createManyCalls = 0;
+
+  async createMany(alerts: Alert[]): Promise<void> {
+    this.createManyCalls++;
+    for (const a of alerts) {
+      const exists = this.createdAlerts.some(
+        (existing) =>
+          existing.profileId === a.profileId &&
+          existing.opportunityId === a.opportunityId &&
+          existing.trigger === a.trigger &&
+          existing.changeKey === a.changeKey,
+      );
+      if (!exists) {
+        this.createdAlerts.push(a);
+      }
+    }
+  }
+}
+
 describe('SyncOpportunitiesUseCase', () => {
   let fakeSource: FakeOpportunitySource;
   let fakeRepo: FakeOpportunityRepository;
   let fakeQueue: FakeAnalysisQueue;
+  let fakeWatchRepo: FakeWatchRepository;
+  let fakeAlertRepo: FakeAlertRepository;
   let fakeLogger: LoggerService & { logs: string[]; errors: string[] };
   let useCase: SyncOpportunitiesUseCase;
 
@@ -190,6 +226,8 @@ describe('SyncOpportunitiesUseCase', () => {
     fakeSource = new FakeOpportunitySource([sourceSample]);
     fakeRepo = new FakeOpportunityRepository();
     fakeQueue = new FakeAnalysisQueue();
+    fakeWatchRepo = new FakeWatchRepository();
+    fakeAlertRepo = new FakeAlertRepository();
     fakeLogger = {
       log: jest.fn((msg: string) => fakeLogger.logs.push(msg)),
       error: jest.fn((msg: string) => fakeLogger.errors.push(msg)),
@@ -199,7 +237,15 @@ describe('SyncOpportunitiesUseCase', () => {
       logs: [],
       errors: [],
     };
-    useCase = new SyncOpportunitiesUseCase(fakeSource, fakeRepo, fakeQueue, fakeLogger);
+    useCase = new SyncOpportunitiesUseCase(
+      fakeSource,
+      fakeRepo,
+      fakeQueue,
+      fakeLogger,
+      undefined,
+      fakeWatchRepo as any,
+      fakeAlertRepo as any,
+    );
   });
 
   it('returns SourceUnavailableError when OpportunitySourcePort throws', async () => {
@@ -437,5 +483,89 @@ describe('SyncOpportunitiesUseCase', () => {
     expect(result.ok).toBe(true);
     expect(fakeQueue.queuedJobs).toHaveLength(1);
     expect(fakeQueue.queuedJobs[0].summarize).toBe(false);
+  });
+
+  it('creates no alerts when an unwatched opportunity changes materially', async () => {
+    // 1st sync: opportunity ingested
+    await useCase.execute({});
+    expect(fakeAlertRepo.createdAlerts).toHaveLength(0);
+
+    // 2nd sync: status changes materially
+    const modified: SourceOpportunity = { ...sourceSample, status: 'Closed' };
+    fakeSource.processes = [modified];
+
+    const result = await useCase.execute({});
+    expect(result.ok).toBe(true);
+    expect(fakeAlertRepo.createdAlerts).toHaveLength(0);
+    expect(fakeWatchRepo.findWatchersCalls).toBeGreaterThan(0);
+  });
+
+  it('creates alerts for watching profiles with alerts_enabled = true on material changes', async () => {
+    // Ingest initial opportunity
+    await useCase.execute({});
+    const stored = (await fakeRepo.findByExternalId(sourceSample.externalId))!;
+
+    // Set up watchers: watcher 1 with alerts enabled, watcher 2 disabled
+    const watcher1: WatcherProfile = {
+      profileId: asProfileId('prof-1'),
+      alertsEnabled: true,
+      contactEmail: 'user1@test.com',
+    };
+    const watcher2: WatcherProfile = {
+      profileId: asProfileId('prof-2'),
+      alertsEnabled: false,
+      contactEmail: 'user2@test.com',
+    };
+    fakeWatchRepo.watchersByOpp.set(stored.id, [watcher1, watcher2]);
+
+    // Material changes: status changed (StatusChange) + amount changed (Amendment)
+    const modified: SourceOpportunity = {
+      ...sourceSample,
+      status: 'Closed',
+      amount: 200_000_000,
+    };
+    fakeSource.processes = [modified];
+
+    const result = await useCase.execute({});
+    expect(result.ok).toBe(true);
+
+    // Only watcher1 receives alerts; 2 material changes -> 2 alerts
+    expect(fakeAlertRepo.createdAlerts).toHaveLength(2);
+    expect(fakeAlertRepo.createdAlerts.every((a) => a.profileId === 'prof-1')).toBe(true);
+    expect(fakeAlertRepo.createdAlerts.map((a) => a.trigger).sort()).toEqual([
+      'Amendment',
+      'StatusChange',
+    ]);
+  });
+
+  it('creates no duplicate alerts when the same sync is run twice', async () => {
+    // Ingest initial opportunity
+    await useCase.execute({});
+    const stored = (await fakeRepo.findByExternalId(sourceSample.externalId))!;
+
+    const watcher: WatcherProfile = {
+      profileId: asProfileId('prof-watch'),
+      alertsEnabled: true,
+      contactEmail: 'watcher@test.com',
+    };
+    fakeWatchRepo.watchersByOpp.set(stored.id, [watcher]);
+
+    // Modify closing date (material change)
+    const modified: SourceOpportunity = {
+      ...sourceSample,
+      closingDate: new Date('2026-11-30T17:00:00.000Z'),
+    };
+    fakeSource.processes = [modified];
+
+    // Run 1: alert is created
+    await useCase.execute({});
+    expect(fakeAlertRepo.createdAlerts).toHaveLength(1);
+    const alertId = fakeAlertRepo.createdAlerts[0].id;
+
+    // Run 2: same data from source
+    await useCase.execute({});
+    // No duplicate alerts created
+    expect(fakeAlertRepo.createdAlerts).toHaveLength(1);
+    expect(fakeAlertRepo.createdAlerts[0].id).toBe(alertId);
   });
 });

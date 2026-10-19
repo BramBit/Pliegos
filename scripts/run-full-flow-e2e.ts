@@ -227,6 +227,10 @@ async function main() {
       profileId: profile.id,
       opportunityId: sampleOpp.id,
       trigger: 'DeadlineApproaching',
+      changeKey: 'deadline:2026-10-20',
+      attempts: 0,
+      lastError: null,
+      readAt: null,
       deliveredAt: null,
     });
     console.log(`✓ Alerta creada por proximo cierre de plazo para ${profile.id}.`);

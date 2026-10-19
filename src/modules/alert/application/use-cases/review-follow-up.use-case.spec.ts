@@ -6,6 +6,7 @@ import {
 } from '../../domain/ports/notification.port';
 import { Alert } from '../../domain/entities/alert.entity';
 import {
+  AlertId,
   ProfileId,
   asAlertId,
   asProfileId,
@@ -19,8 +20,36 @@ class FakeAlertRepository implements AlertRepositoryPort {
     this.alerts.set(alert.id, alert);
   }
 
-  async findUndelivered(): Promise<Alert[]> {
-    return Array.from(this.alerts.values()).filter((a) => a.deliveredAt === null);
+  async createMany(alerts: Alert[]): Promise<void> {
+    for (const a of alerts) {
+      // simulate ON CONFLICT (profileId, opportunityId, trigger, changeKey) DO NOTHING
+      const exists = Array.from(this.alerts.values()).some(
+        (existing) =>
+          existing.profileId === a.profileId &&
+          existing.opportunityId === a.opportunityId &&
+          existing.trigger === a.trigger &&
+          existing.changeKey === a.changeKey,
+      );
+      if (!exists) {
+        this.alerts.set(a.id, a);
+      }
+    }
+  }
+
+  async findUndelivered(limit?: number): Promise<Alert[]> {
+    const list = Array.from(this.alerts.values()).filter((a) => a.deliveredAt === null);
+    return limit ? list.slice(0, limit) : list;
+  }
+
+  async markFailed(id: AlertId, error: string): Promise<void> {
+    const alert = this.alerts.get(id);
+    if (alert) {
+      this.alerts.set(id, {
+        ...alert,
+        attempts: (alert.attempts ?? 0) + 1,
+        lastError: error,
+      });
+    }
   }
 }
 
@@ -67,6 +96,10 @@ describe('ReviewFollowUpUseCase', () => {
       profileId: asProfileId('prof-1'),
       opportunityId: asOpportunityId('opp-1'),
       trigger: 'Amendment',
+      changeKey: '',
+      attempts: 0,
+      lastError: null,
+      readAt: null,
       deliveredAt: null,
     };
 
@@ -75,6 +108,10 @@ describe('ReviewFollowUpUseCase', () => {
       profileId: asProfileId('prof-2'),
       opportunityId: asOpportunityId('opp-2'),
       trigger: 'DeadlineApproaching',
+      changeKey: '',
+      attempts: 0,
+      lastError: null,
+      readAt: null,
       deliveredAt: null,
     };
 
@@ -83,6 +120,10 @@ describe('ReviewFollowUpUseCase', () => {
       profileId: asProfileId('prof-3'),
       opportunityId: asOpportunityId('opp-3'),
       trigger: 'StatusChange',
+      changeKey: '',
+      attempts: 0,
+      lastError: null,
+      readAt: null,
       deliveredAt: null,
     };
 

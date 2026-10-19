@@ -21,6 +21,9 @@ import {
 } from '../../domain/entities/opportunity.entity';
 import { Change } from '../../domain/value-objects/opportunity.value-objects';
 import { createMoney } from '../../domain/value-objects/money.vo';
+import { WatchRepositoryPort } from '../../../recommendation/domain/ports/watch.repository.port';
+import { AlertRepositoryPort } from '../../../alert/domain/ports/alert.repository.port';
+import { AlertPlanner } from '../../../alert/domain/services/alert-planner';
 
 export interface SyncOpportunitiesResult {
   created: number;
@@ -52,6 +55,8 @@ export class SyncOpportunitiesUseCase implements ISyncOpportunitiesUseCase {
     private readonly analysisQueue?: AnalysisQueuePort,
     logger?: LoggerService,
     private readonly refreshQueue?: RecommendationRefreshQueuePort,
+    private readonly watchRepository?: WatchRepositoryPort,
+    private readonly alertRepository?: AlertRepositoryPort,
   ) {
     this.logger = logger ?? new Logger(SyncOpportunitiesUseCase.name);
   }
@@ -256,6 +261,7 @@ export class SyncOpportunitiesUseCase implements ISyncOpportunitiesUseCase {
 
     const toSave: Opportunity[] = [];
     const toEnqueue: OpportunityId[] = [];
+    const opportunitiesWithMaterialChanges: Array<{ id: OpportunityId; materialChanges: Change[] }> = [];
     let pageCreated = 0;
     let pageUpdated = 0;
     let pageUnchanged = 0;
@@ -323,6 +329,14 @@ export class SyncOpportunitiesUseCase implements ISyncOpportunitiesUseCase {
             updatedOpp = withOpportunityChange(updatedOpp, change);
           }
 
+          const materialChanges = changes.filter((c) => c.material);
+          if (materialChanges.length > 0) {
+            opportunitiesWithMaterialChanges.push({
+              id: existing.id,
+              materialChanges,
+            });
+          }
+
           const moneyResult = createMoney(
             src.amount !== null && src.amount >= 0 ? src.amount : 0,
           );
@@ -364,6 +378,22 @@ export class SyncOpportunitiesUseCase implements ISyncOpportunitiesUseCase {
 
     if (toSave.length > 0) {
       await this.repository.saveMany(toSave);
+    }
+
+    if (
+      this.watchRepository &&
+      this.alertRepository &&
+      opportunitiesWithMaterialChanges.length > 0
+    ) {
+      for (const item of opportunitiesWithMaterialChanges) {
+        const watchers = await this.watchRepository.findWatchers(item.id);
+        if (watchers.length > 0) {
+          const alerts = AlertPlanner.planAlerts(item.id, item.materialChanges, watchers);
+          if (alerts.length > 0) {
+            await this.alertRepository.createMany(alerts);
+          }
+        }
+      }
     }
 
     counters.created += pageCreated;
