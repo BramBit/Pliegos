@@ -5,6 +5,7 @@ import { EnvValidationError, loadEnv } from './config/env';
 import { StructuredLoggerService } from './modules/shared/infrastructure/logging/structured-logger.service';
 
 async function bootstrap() {
+  process.env.ROLE = process.env.ROLE || 'worker';
   let env;
   try {
     env = loadEnv();

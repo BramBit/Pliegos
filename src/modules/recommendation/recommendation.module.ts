@@ -95,7 +95,7 @@ import { RefreshRecommendationsJob } from './infrastructure/jobs/refresh-recomme
         ANALYSIS_QUEUE_PORT,
       ],
     },
-    RefreshRecommendationsJob,
+    ...(process.env.ROLE !== 'api' ? [RefreshRecommendationsJob] : []),
     {
       provide: GetRecommendationsUseCase,
       useFactory: (profileRepo, recRepo) =>

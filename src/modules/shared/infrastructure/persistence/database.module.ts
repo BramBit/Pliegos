@@ -1,7 +1,9 @@
 import { Global, Inject, Module, OnModuleDestroy } from '@nestjs/common';
 import { Pool } from 'pg';
+import { DATABASE_POOL } from './database.tokens';
+import { PgAdvisoryLock } from './pg-advisory-lock';
 
-export const DATABASE_POOL = Symbol('DATABASE_POOL');
+export { DATABASE_POOL };
 
 @Global()
 @Module({
@@ -16,8 +18,9 @@ export const DATABASE_POOL = Symbol('DATABASE_POOL');
         return new Pool({ connectionString });
       },
     },
+    PgAdvisoryLock,
   ],
-  exports: [DATABASE_POOL],
+  exports: [DATABASE_POOL, PgAdvisoryLock],
 })
 export class DatabaseModule implements OnModuleDestroy {
   constructor(@Inject(DATABASE_POOL) private readonly pool: Pool) {}

@@ -10,6 +10,7 @@ const positiveInt = z.coerce.number().int().positive();
 
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
+  ROLE: z.enum(['api', 'worker', 'all']).default('all'),
   PORT: port.default(3000),
   LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
 

@@ -40,7 +40,7 @@ import { RequestIdMiddleware } from './modules/shared/infrastructure/http/reques
     ProfileModule,
     RecommendationModule,
     AlertModule,
-    SchedulerModule,
+    ...(process.env.ROLE !== 'api' ? [SchedulerModule] : []),
     AdminModule,
     HealthModule,
   ],

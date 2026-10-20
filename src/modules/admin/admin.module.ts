@@ -31,7 +31,7 @@ import { PostgresPipelineRunRepository } from './infrastructure/persistence/post
       provide: PIPELINE_RUN_REPOSITORY_PORT,
       useClass: PostgresPipelineRunRepository,
     },
-    AdminTaskProcessor,
+    ...(process.env.ROLE !== 'api' ? [AdminTaskProcessor] : []),
   ],
   exports: [ADMIN_QUEUE_PORT, PIPELINE_RUN_REPOSITORY_PORT],
 })

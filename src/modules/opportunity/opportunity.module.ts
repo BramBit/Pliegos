@@ -63,7 +63,7 @@ import { OpportunityController } from './infrastructure/controllers/opportunity.
       useFactory: (queue: Queue) => new BullMQAnalysisQueueAdapter(queue),
       inject: [getQueueToken(ANALYSIS_QUEUE_NAME)],
     },
-    AnalyzeOpportunityJob,
+    ...(process.env.ROLE !== 'api' ? [AnalyzeOpportunityJob] : []),
     {
       provide: SyncOpportunitiesUseCase,
       useFactory: (
