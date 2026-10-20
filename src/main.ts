@@ -4,10 +4,9 @@ import { AppModule } from './app.module';
 import { setupSwaggerAndScalar } from './setup-swagger';
 import { setupSecurity } from './setup-app';
 import { EnvValidationError, loadEnv } from './config/env';
+import { StructuredLoggerService } from './modules/shared/infrastructure/logging/structured-logger.service';
 
 async function bootstrap() {
-  const logger = new Logger('Bootstrap');
-
   let env;
   try {
     env = loadEnv();
@@ -20,8 +19,18 @@ async function bootstrap() {
     throw error;
   }
 
-  const app = await NestFactory.create(AppModule);
+  const structuredLogger = new StructuredLoggerService({
+    nodeEnv: env.NODE_ENV,
+    logLevel: env.LOG_LEVEL,
+  });
+
+  const app = await NestFactory.create(AppModule, {
+    logger: structuredLogger,
+  });
+  app.useLogger(structuredLogger);
   app.enableShutdownHooks();
+
+  const logger = new Logger('Bootstrap');
 
   setupSecurity(app, { nodeEnv: env.NODE_ENV, corsOrigins: env.CORS_ORIGINS });
   setupSwaggerAndScalar(app);

@@ -1229,6 +1229,48 @@
         ]
       }
     },
+    "/admin/metrics": {
+      "get": {
+        "description": "Retorna contadores en memoria: llamadas, fallos, y percentiles p50 y p95 de latencia de las últimas 100 llamadas.",
+        "operationId": "AdminController_getMetrics",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Reporte de métricas de IA obtenido exitosamente"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Consultar métricas de llamadas a modelos de IA (Solo Admin)",
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
+    "/admin/pipeline": {
+      "get": {
+        "description": "Retorna las últimas 20 ejecuciones registradas de los procesos del pipeline.",
+        "operationId": "AdminController_getPipeline",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Historial de ejecuciones del pipeline obtenido exitosamente"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Consultar historial de ejecuciones del pipeline (Solo Admin)",
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
     "/health/live": {
       "get": {
         "description": "Indica si el proceso de la aplicación está activo y respondiendo.",

@@ -23,6 +23,15 @@ import {
   syncOpportunitiesSchema,
 } from '../../../opportunity/infrastructure/controllers/dtos/sync-opportunities.dto';
 import { ErrorEnvelopeDto } from '../../../shared/infrastructure/http/response.dtos';
+import {
+  AiMetricsReport,
+  AiMetricsService,
+} from '../../../shared/infrastructure/ai/ai-metrics.service';
+import {
+  PIPELINE_RUN_REPOSITORY_PORT,
+  PipelineRun,
+  PipelineRunRepositoryPort,
+} from '../../domain/ports/pipeline-run-repository.port';
 
 @ApiTags('Admin')
 @ApiBearerAuth()
@@ -32,6 +41,10 @@ export class AdminController {
   constructor(
     @Inject(ADMIN_QUEUE_PORT)
     private readonly adminQueue: AdminQueuePort,
+    @Inject(AiMetricsService)
+    private readonly aiMetricsService: AiMetricsService,
+    @Inject(PIPELINE_RUN_REPOSITORY_PORT)
+    private readonly pipelineRunRepository: PipelineRunRepositoryPort,
   ) {}
 
   @Post('sync')
@@ -159,5 +172,34 @@ export class AdminController {
       throw new NotFoundException(`Trabajo administrativo ${id} no encontrado`);
     }
     return job;
+  }
+
+  @Get('metrics')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Consultar métricas de llamadas a modelos de IA (Solo Admin)',
+    description:
+      'Retorna contadores en memoria: llamadas, fallos, y percentiles p50 y p95 de latencia de las últimas 100 llamadas.',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Reporte de métricas de IA obtenido exitosamente',
+  })
+  async getMetrics(): Promise<AiMetricsReport> {
+    return this.aiMetricsService.getReport();
+  }
+
+  @Get('pipeline')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Consultar historial de ejecuciones del pipeline (Solo Admin)',
+    description: 'Retorna las últimas 20 ejecuciones registradas de los procesos del pipeline.',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Historial de ejecuciones del pipeline obtenido exitosamente',
+  })
+  async getPipeline(): Promise<PipelineRun[]> {
+    return this.pipelineRunRepository.findRecent(20);
   }
 }

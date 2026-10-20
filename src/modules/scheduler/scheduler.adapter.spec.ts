@@ -245,4 +245,61 @@ describe('SchedulerAdapter (Driving Adapter per Technical Design §8)', () => {
       expect(mockScanDeadlinesUseCase.execute).toHaveBeenCalled();
     });
   });
+
+  describe('Pipeline runs recording', () => {
+    it('records startRun and completeRun for sync opportunities', async () => {
+      const mockPipelineRepo = {
+        startRun: jest.fn().mockResolvedValue('run-123'),
+        completeRun: jest.fn().mockResolvedValue(undefined),
+        failRun: jest.fn().mockResolvedValue(undefined),
+        findRecent: jest.fn().mockResolvedValue([]),
+      };
+
+      const adapter = new SchedulerAdapter(
+        mockSyncOpportunitiesUseCase as any,
+        mockReviewFollowUpUseCase as any,
+        undefined,
+        mockScanDeadlinesUseCase as any,
+        mockPipelineRepo,
+      );
+
+      mockSyncOpportunitiesUseCase.execute.mockResolvedValueOnce(
+        ok({ created: 5, updated: 2 }),
+      );
+
+      await adapter.handleSyncOpportunities();
+
+      expect(mockPipelineRepo.startRun).toHaveBeenCalledWith('sync');
+      expect(mockPipelineRepo.completeRun).toHaveBeenCalledWith('run-123', {
+        created: 5,
+        updated: 2,
+      });
+    });
+
+    it('records failRun when sync opportunities throws', async () => {
+      const mockPipelineRepo = {
+        startRun: jest.fn().mockResolvedValue('run-456'),
+        completeRun: jest.fn().mockResolvedValue(undefined),
+        failRun: jest.fn().mockResolvedValue(undefined),
+        findRecent: jest.fn().mockResolvedValue([]),
+      };
+
+      const adapter = new SchedulerAdapter(
+        mockSyncOpportunitiesUseCase as any,
+        mockReviewFollowUpUseCase as any,
+        undefined,
+        mockScanDeadlinesUseCase as any,
+        mockPipelineRepo,
+      );
+
+      mockSyncOpportunitiesUseCase.execute.mockRejectedValueOnce(
+        new Error('Network failure'),
+      );
+
+      await adapter.handleSyncOpportunities();
+
+      expect(mockPipelineRepo.startRun).toHaveBeenCalledWith('sync');
+      expect(mockPipelineRepo.failRun).toHaveBeenCalledWith('run-456', 'Network failure');
+    });
+  });
 });

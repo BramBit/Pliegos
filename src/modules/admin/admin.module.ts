@@ -8,6 +8,9 @@ import { AdminController } from './infrastructure/controllers/admin.controller';
 import { OpportunityModule } from '../opportunity/opportunity.module';
 import { AlertModule } from '../alert/alert.module';
 import { ProfileModule } from '../profile/profile.module';
+import { AiModule } from '../shared/infrastructure/ai/ai.module';
+import { PIPELINE_RUN_REPOSITORY_PORT } from './domain/ports/pipeline-run-repository.port';
+import { PostgresPipelineRunRepository } from './infrastructure/persistence/postgres-pipeline-run.repository';
 
 @Module({
   imports: [
@@ -15,6 +18,7 @@ import { ProfileModule } from '../profile/profile.module';
     OpportunityModule,
     AlertModule,
     ProfileModule,
+    AiModule,
   ],
   controllers: [AdminController],
   providers: [
@@ -23,8 +27,12 @@ import { ProfileModule } from '../profile/profile.module';
       useFactory: (queue: Queue) => new BullMQAdminQueueAdapter(queue),
       inject: [getQueueToken(ADMIN_TASKS_QUEUE_NAME)],
     },
+    {
+      provide: PIPELINE_RUN_REPOSITORY_PORT,
+      useClass: PostgresPipelineRunRepository,
+    },
     AdminTaskProcessor,
   ],
-  exports: [ADMIN_QUEUE_PORT],
+  exports: [ADMIN_QUEUE_PORT, PIPELINE_RUN_REPOSITORY_PORT],
 })
 export class AdminModule {}

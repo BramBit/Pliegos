@@ -3,6 +3,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { OpportunityModule } from '../opportunity/opportunity.module';
 import { AlertModule } from '../alert/alert.module';
 import { ProfileModule } from '../profile/profile.module';
+import { AdminModule } from '../admin/admin.module';
 import { SchedulerAdapter } from './scheduler.adapter';
 
 @Module({
@@ -11,6 +12,7 @@ import { SchedulerAdapter } from './scheduler.adapter';
     OpportunityModule,
     AlertModule,
     ProfileModule,
+    AdminModule,
   ],
   providers: [SchedulerAdapter],
   exports: [SchedulerAdapter],

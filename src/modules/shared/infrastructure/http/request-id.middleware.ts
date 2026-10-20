@@ -1,7 +1,14 @@
 import { randomUUID } from 'node:crypto';
+import { AsyncLocalStorage } from 'node:async_hooks';
 import { Injectable, NestMiddleware } from '@nestjs/common';
 
 export const REQUEST_ID_HEADER = 'x-request-id';
+
+export const requestIdStorage = new AsyncLocalStorage<string>();
+
+export function getRequestId(): string {
+  return requestIdStorage.getStore() || 'system';
+}
 
 export interface RequestWithId {
   requestId?: string;
@@ -27,6 +34,8 @@ export class RequestIdMiddleware implements NestMiddleware {
   use(req: RequestWithId, res: { setHeader(name: string, value: string): void }, next: () => void) {
     const requestId = resolveRequestId(req);
     res.setHeader('X-Request-Id', requestId);
-    next();
+    requestIdStorage.run(requestId, () => {
+      next();
+    });
   }
 }

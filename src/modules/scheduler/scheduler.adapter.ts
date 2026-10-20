@@ -7,6 +7,10 @@ import {
   RECOMMENDATION_REFRESH_QUEUE_PORT,
   RecommendationRefreshQueuePort,
 } from '../recommendation/domain/ports/recommendation-refresh-queue.port';
+import {
+  PIPELINE_RUN_REPOSITORY_PORT,
+  PipelineRunRepositoryPort,
+} from '../admin/domain/ports/pipeline-run-repository.port';
 
 export const SYNC_OPPORTUNITIES_CRON =
   process.env.SYNC_OPPORTUNITIES_CRON || CronExpression.EVERY_4_HOURS;
@@ -37,6 +41,9 @@ export class SchedulerAdapter {
     private readonly refreshQueue?: RecommendationRefreshQueuePort,
     @Optional()
     private readonly scanDeadlinesUseCase?: ScanDeadlinesUseCase,
+    @Optional()
+    @Inject(PIPELINE_RUN_REPOSITORY_PORT)
+    private readonly pipelineRunRepository?: PipelineRunRepositoryPort,
   ) {}
 
   /**
@@ -48,6 +55,15 @@ export class SchedulerAdapter {
   })
   async handleSyncOpportunities(): Promise<void> {
     this.logger.log('Executing scheduled job: SyncOpportunities');
+    let runId: string | undefined;
+    if (this.pipelineRunRepository) {
+      try {
+        runId = await this.pipelineRunRepository.startRun('sync');
+      } catch (err) {
+        this.logger.warn(`Failed to record pipeline run start: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    }
+
     try {
       const result = await this.syncOpportunitiesUseCase.execute({
         maxRecords: Number(process.env.SECOP_SYNC_MAX_RECORDS) || 5000,
@@ -63,14 +79,25 @@ export class SchedulerAdapter {
         ) {
           await this.refreshQueue.enqueueRefreshForAllProfiles();
         }
+        if (runId && this.pipelineRunRepository) {
+          await this.pipelineRunRepository.completeRun(runId, {
+            created: result.value.created,
+            updated: result.value.updated,
+          });
+        }
       } else {
-        this.logger.warn(
-          `Scheduled sync failed: source unavailable (${result.error.sourceName})`,
-        );
+        const errorMsg = `Source unavailable (${result.error.sourceName})`;
+        this.logger.warn(`Scheduled sync failed: ${errorMsg}`);
+        if (runId && this.pipelineRunRepository) {
+          await this.pipelineRunRepository.failRun(runId, errorMsg);
+        }
       }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
       this.logger.error(`Scheduled sync threw unexpected exception: ${message}`);
+      if (runId && this.pipelineRunRepository) {
+        await this.pipelineRunRepository.failRun(runId, message);
+      }
     }
   }
 
@@ -84,18 +111,38 @@ export class SchedulerAdapter {
   })
   async handleReviewFollowUp(): Promise<void> {
     this.logger.log('Executing scheduled job: ReviewFollowUp');
+    let runId: string | undefined;
+    if (this.pipelineRunRepository) {
+      try {
+        runId = await this.pipelineRunRepository.startRun('alerts');
+      } catch (err) {
+        this.logger.warn(`Failed to record pipeline run start: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    }
+
     try {
       const result = await this.reviewFollowUpUseCase.execute();
       if (result.ok) {
         this.logger.log(
           `Scheduled review follow-up completed: ${result.value.alertsSent} alerts sent`,
         );
+        if (runId && this.pipelineRunRepository) {
+          await this.pipelineRunRepository.completeRun(runId, {
+            alertsSent: result.value.alertsSent,
+          });
+        }
       } else {
         this.logger.warn('Scheduled review follow-up failed');
+        if (runId && this.pipelineRunRepository) {
+          await this.pipelineRunRepository.failRun(runId, 'Review follow-up failed');
+        }
       }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
       this.logger.error(`Scheduled review follow-up threw unexpected exception: ${message}`);
+      if (runId && this.pipelineRunRepository) {
+        await this.pipelineRunRepository.failRun(runId, message);
+      }
     }
   }
 
@@ -110,6 +157,15 @@ export class SchedulerAdapter {
   async handleScanDeadlines(): Promise<void> {
     if (!this.scanDeadlinesUseCase) return;
     this.logger.log('Executing scheduled job: ScanDeadlines');
+    let runId: string | undefined;
+    if (this.pipelineRunRepository) {
+      try {
+        runId = await this.pipelineRunRepository.startRun('deadlines');
+      } catch (err) {
+        this.logger.warn(`Failed to record pipeline run start: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    }
+
     try {
       const result = await this.scanDeadlinesUseCase.execute();
       if (result.ok) {
@@ -120,12 +176,25 @@ export class SchedulerAdapter {
             `Scheduled scan deadlines completed: ${result.value.alertsCreated} alerts created`,
           );
         }
+        if (runId && this.pipelineRunRepository) {
+          await this.pipelineRunRepository.completeRun(runId, {
+            alertsCreated: result.value.alertsCreated,
+            skipped: result.value.skipped,
+            reason: result.value.reason,
+          });
+        }
       } else {
         this.logger.warn(`Scheduled scan deadlines failed: ${result.error.message}`);
+        if (runId && this.pipelineRunRepository) {
+          await this.pipelineRunRepository.failRun(runId, result.error.message);
+        }
       }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
       this.logger.error(`Scheduled scan deadlines threw unexpected exception: ${message}`);
+      if (runId && this.pipelineRunRepository) {
+        await this.pipelineRunRepository.failRun(runId, message);
+      }
     }
   }
 }

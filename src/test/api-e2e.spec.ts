@@ -177,6 +177,8 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
       expect(response.body.paths).toHaveProperty('/admin/alerts/run');
       expect(response.body.paths).toHaveProperty('/admin/recommendations/refresh');
       expect(response.body.paths).toHaveProperty('/admin/jobs/{id}');
+      expect(response.body.paths).toHaveProperty('/admin/metrics');
+      expect(response.body.paths).toHaveProperty('/admin/pipeline');
       expect(response.body.paths).toHaveProperty('/auth/register');
       expect(response.body.paths).toHaveProperty('/auth/login');
       expect(response.body.paths).toHaveProperty('/auth/refresh');
@@ -1436,6 +1438,8 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
       await request(app.getHttpServer()).post('/admin/alerts/run').expect(401);
       await request(app.getHttpServer()).post('/admin/recommendations/refresh').expect(401);
       await request(app.getHttpServer()).get('/admin/jobs/00000000-0000-0000-0000-000000000001').expect(401);
+      await request(app.getHttpServer()).get('/admin/metrics').expect(401);
+      await request(app.getHttpServer()).get('/admin/pipeline').expect(401);
     });
 
     it('normal user (role: user) gets 403 Forbidden on all /admin/* routes', async () => {
@@ -1462,6 +1466,18 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
         .set('Authorization', `Bearer ${normalUserToken}`)
         .expect(403);
       expect(resJobs.body.statusCode).toBe(403);
+
+      const resMetrics = await request(app.getHttpServer())
+        .get('/admin/metrics')
+        .set('Authorization', `Bearer ${normalUserToken}`)
+        .expect(403);
+      expect(resMetrics.body.statusCode).toBe(403);
+
+      const resPipeline = await request(app.getHttpServer())
+        .get('/admin/pipeline')
+        .set('Authorization', `Bearer ${normalUserToken}`)
+        .expect(403);
+      expect(resPipeline.body.statusCode).toBe(403);
     });
 
     it('admin user enqueues POST /admin/sync and receives 202 { jobId }', async () => {
@@ -1521,6 +1537,29 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
         .get('/admin/jobs/00000000-0000-0000-0000-000000000000')
         .set('Authorization', `Bearer ${authToken}`)
         .expect(404);
+    });
+
+    it('admin user queries GET /admin/metrics and receives in-memory AI metrics report', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/admin/metrics')
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(200);
+
+      expect(res.body.overall).toBeDefined();
+      expect(typeof res.body.overall.calls).toBe('number');
+      expect(typeof res.body.overall.failures).toBe('number');
+      expect(typeof res.body.overall.p50).toBe('number');
+      expect(typeof res.body.overall.p95).toBe('number');
+      expect(res.body.byFeature).toBeDefined();
+    });
+
+    it('admin user queries GET /admin/pipeline and receives recent pipeline runs array', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/admin/pipeline')
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(200);
+
+      expect(Array.isArray(res.body)).toBe(true);
     });
 
     it('validates UUID on :id params rejecting non-uuid with 400 Bad Request', async () => {
