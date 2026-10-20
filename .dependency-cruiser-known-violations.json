@@ -1,0 +1,353 @@
+[
+  {
+    "type": "dependency",
+    "from": "src/modules/alert/application/use-cases/scan-deadlines.use-case.spec.ts",
+    "to": "src/modules/alert/infrastructure/adapters/persistence/postgres-alert.repository.ts",
+    "unresolvedTo": "../../infrastructure/adapters/persistence/postgres-alert.repository",
+    "dependencyTypes": [
+      "local",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "application-not-to-infrastructure"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "src/modules/alert/application/use-cases/scan-deadlines.use-case.ts",
+    "to": "src/modules/shared/infrastructure/persistence/database.module.ts",
+    "unresolvedTo": "../../../shared/infrastructure/persistence/database.module",
+    "dependencyTypes": [
+      "local",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "application-not-to-infrastructure"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "src/modules/auth/application/use-cases/login.use-case.ts",
+    "to": "src/modules/auth/infrastructure/security/login-throttler.service.ts",
+    "unresolvedTo": "../../infrastructure/security/login-throttler.service",
+    "dependencyTypes": [
+      "local",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "application-not-to-infrastructure"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "src/modules/auth/application/use-cases/login.use-case.ts",
+    "to": "src/modules/auth/infrastructure/security/password-hasher.ts",
+    "unresolvedTo": "../../infrastructure/security/password-hasher",
+    "dependencyTypes": [
+      "local",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "application-not-to-infrastructure"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "src/modules/auth/application/use-cases/login.use-case.ts",
+    "to": "src/modules/auth/infrastructure/security/token-hasher.ts",
+    "unresolvedTo": "../../infrastructure/security/token-hasher",
+    "dependencyTypes": [
+      "local",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "application-not-to-infrastructure"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "src/modules/auth/application/use-cases/logout.use-case.ts",
+    "to": "src/modules/auth/infrastructure/security/token-hasher.ts",
+    "unresolvedTo": "../../infrastructure/security/token-hasher",
+    "dependencyTypes": [
+      "local",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "application-not-to-infrastructure"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "src/modules/auth/application/use-cases/refresh-token.use-case.ts",
+    "to": "src/modules/auth/infrastructure/security/token-hasher.ts",
+    "unresolvedTo": "../../infrastructure/security/token-hasher",
+    "dependencyTypes": [
+      "local",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "application-not-to-infrastructure"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "src/modules/auth/application/use-cases/register.use-case.ts",
+    "to": "src/modules/auth/infrastructure/security/password-hasher.ts",
+    "unresolvedTo": "../../infrastructure/security/password-hasher",
+    "dependencyTypes": [
+      "local",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "application-not-to-infrastructure"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "src/modules/opportunity/application/use-cases/get-opportunity-by-id.use-case.ts",
+    "to": "src/modules/opportunity/infrastructure/jobs/analyze-opportunity.job.ts",
+    "unresolvedTo": "../../infrastructure/jobs/analyze-opportunity.job",
+    "dependencyTypes": [
+      "local",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "application-not-to-infrastructure"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "src/modules/profile/application/services/profile-access.service.spec.ts",
+    "to": "src/modules/shared/infrastructure/http/global-exception.filter.ts",
+    "unresolvedTo": "../../../shared/infrastructure/http/global-exception.filter",
+    "dependencyTypes": [
+      "local",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "application-not-to-infrastructure"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "src/modules/profile/application/services/profile-access.service.ts",
+    "to": "src/modules/auth/infrastructure/security/current-user.decorator.ts",
+    "unresolvedTo": "../../../auth/infrastructure/security/current-user.decorator",
+    "dependencyTypes": [
+      "local",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "application-not-to-infrastructure"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "src/modules/profile/application/services/profile-access.service.ts",
+    "to": "src/modules/shared/infrastructure/http/global-exception.filter.ts",
+    "unresolvedTo": "../../../shared/infrastructure/http/global-exception.filter",
+    "dependencyTypes": [
+      "local",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "application-not-to-infrastructure"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "src/modules/recommendation/application/use-cases/refresh-recommendations.use-case.ts",
+    "to": "src/modules/opportunity/infrastructure/jobs/analyze-opportunity.job.ts",
+    "unresolvedTo": "../../../opportunity/infrastructure/jobs/analyze-opportunity.job",
+    "dependencyTypes": [
+      "local",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "application-not-to-infrastructure"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "src/modules/admin/domain/ports/admin-queue.port.ts",
+    "to": "src/modules/opportunity/infrastructure/controllers/dtos/sync-opportunities.dto.ts",
+    "unresolvedTo": "../../../opportunity/infrastructure/controllers/dtos/sync-opportunities.dto",
+    "dependencyTypes": [
+      "local",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "domain-not-to-infrastructure"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "src/modules/profile/domain/value-objects/profile.value-objects.ts",
+    "to": "src/modules/opportunity/infrastructure/adapters/secop/normalizers.ts",
+    "unresolvedTo": "../../../opportunity/infrastructure/adapters/secop/normalizers",
+    "dependencyTypes": [
+      "local",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "domain-not-to-infrastructure"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "src/modules/recommendation/domain/services/matching.service.ts",
+    "to": "src/modules/opportunity/infrastructure/adapters/secop/normalizers.ts",
+    "unresolvedTo": "../../../opportunity/infrastructure/adapters/secop/normalizers",
+    "dependencyTypes": [
+      "local",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "domain-not-to-infrastructure"
+    }
+  },
+  {
+    "type": "cycle",
+    "from": "src/modules/alert/alert.module.ts",
+    "to": "src/modules/opportunity/opportunity.module.ts",
+    "unresolvedTo": "../opportunity/opportunity.module",
+    "dependencyTypes": [
+      "local",
+      "import"
+    ],
+    "rule": {
+      "severity": "warn",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "src/modules/opportunity/opportunity.module.ts",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "src/modules/alert/alert.module.ts",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "src/modules/opportunity/domain/entities/opportunity.entity.ts",
+    "to": "src/modules/opportunity/domain/value-objects/opportunity.value-objects.ts",
+    "unresolvedTo": "../value-objects/opportunity.value-objects",
+    "dependencyTypes": [
+      "local",
+      "import"
+    ],
+    "rule": {
+      "severity": "warn",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "src/modules/opportunity/domain/value-objects/opportunity.value-objects.ts",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "src/modules/opportunity/domain/value-objects/opportunity-filters.ts",
+        "dependencyTypes": [
+          "local",
+          "export"
+        ]
+      },
+      {
+        "name": "src/modules/opportunity/domain/entities/opportunity.entity.ts",
+        "dependencyTypes": [
+          "local",
+          "type-import"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "src/modules/opportunity/domain/value-objects/opportunity-filters.ts",
+    "to": "src/modules/opportunity/domain/value-objects/opportunity.value-objects.ts",
+    "unresolvedTo": "./opportunity.value-objects",
+    "dependencyTypes": [
+      "local",
+      "import"
+    ],
+    "rule": {
+      "severity": "warn",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "src/modules/opportunity/domain/value-objects/opportunity.value-objects.ts",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "src/modules/opportunity/domain/value-objects/opportunity-filters.ts",
+        "dependencyTypes": [
+          "local",
+          "export"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "cycle",
+    "from": "src/modules/opportunity/opportunity.module.ts",
+    "to": "src/modules/recommendation/recommendation.module.ts",
+    "unresolvedTo": "../recommendation/recommendation.module",
+    "dependencyTypes": [
+      "local",
+      "import"
+    ],
+    "rule": {
+      "severity": "warn",
+      "name": "no-circular"
+    },
+    "cycle": [
+      {
+        "name": "src/modules/recommendation/recommendation.module.ts",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "src/modules/opportunity/opportunity.module.ts",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      }
+    ]
+  }
+]

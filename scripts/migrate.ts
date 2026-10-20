@@ -9,9 +9,9 @@ async function main() {
     process.loadEnvFile(envPath);
   }
 
-  const databaseUrl = process.env.DATABASE_URL;
+  const databaseUrl = process.env.DATABASE_URL || process.env.TEST_DATABASE_URL;
   if (!databaseUrl) {
-    console.error('DATABASE_URL is not set');
+    console.error('DATABASE_URL or TEST_DATABASE_URL is not set');
     process.exit(1);
   }
 

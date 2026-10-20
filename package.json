@@ -21,8 +21,14 @@
     "test:cov": "CI=true NODE_OPTIONS=--experimental-vm-modules jest --coverage",
     "check:ollama": "node dist/scripts/manual-check-ollama-search.js",
     "e2e": "node dist/scripts/run-full-flow-e2e.js",
-    "admin:create": "tsc && node dist/scripts/create-admin.js"
+    "admin:create": "tsc && node dist/scripts/create-admin.js",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format:check": "prettier --check .",
+    "check:arch": "depcruise src --config .dependency-cruiser.js --ignore-known",
+    "check:arch:all": "depcruise src --config .dependency-cruiser.js --no-ignore-known"
   },
+  "packageManager": "pnpm@12.4.2",
   "keywords": [],
   "author": "",
   "license": "UNLICENSED",
@@ -53,10 +59,14 @@
     "@types/nodemailer": "^8.0.2",
     "@types/pg": "^8.23.1",
     "@types/supertest": "^7.2.1",
+    "dependency-cruiser": "^18.6.0",
+    "eslint": "^10.13.0",
     "jest": "^30.5.2",
+    "prettier": "^3.9.10",
     "supertest": "^7.3.0",
     "ts-jest": "^29.4.14",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.72.0"
   },
   "jest": {
     "moduleFileExtensions": [
