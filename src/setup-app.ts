@@ -28,7 +28,7 @@ export function setupSecurity(app: INestApplication, options?: SetupSecurityOpti
     httpAdapter.useBodyParser('urlencoded', false, { extended: true, limit: '100kb' });
   }
 
-  const nodeEnv = options?.nodeEnv ?? process.env.NODE_ENV ?? 'development';
-  const corsOrigins = options?.corsOrigins ?? process.env.CORS_ORIGINS ?? '';
+  const nodeEnv = options?.nodeEnv ?? 'development';
+  const corsOrigins = options?.corsOrigins ?? '';
   app.enableCors(configureCors({ NODE_ENV: nodeEnv, CORS_ORIGINS: corsOrigins }));
 }

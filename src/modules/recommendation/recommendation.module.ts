@@ -15,6 +15,7 @@ import {
 import { PostgresRecommendationRepository } from './infrastructure/adapters/persistence/postgres-recommendation.repository';
 import { PostgresWatchRepository } from './infrastructure/adapters/persistence/postgres-watch.repository';
 import { MatchingService } from './domain/services/matching.service';
+import { ENV, Env, isWorkerRole } from '../../config/env';
 import { GetRecommendationsUseCase } from './application/use-cases/get-recommendations.use-case';
 import { GetRecommendationFeedUseCase } from './application/use-cases/get-recommendation-feed.use-case';
 import { RefreshRecommendationsUseCase } from './application/use-cases/refresh-recommendations.use-case';
@@ -62,7 +63,13 @@ import { RefreshRecommendationsJob } from './infrastructure/jobs/refresh-recomme
     },
     {
       provide: MatchingService,
-      useFactory: () => new MatchingService(),
+      inject: [ENV],
+      useFactory: (env: Env) =>
+        new MatchingService({
+          semanticCosineLow: env.SEMANTIC_COSINE_LOW,
+          semanticCosineHigh: env.SEMANTIC_COSINE_HIGH,
+          minRecommendationScore: env.MIN_RECOMMENDATION_SCORE,
+        }),
     },
     {
       provide: RefreshRecommendationsUseCase,
@@ -95,7 +102,7 @@ import { RefreshRecommendationsJob } from './infrastructure/jobs/refresh-recomme
         ANALYSIS_QUEUE_PORT,
       ],
     },
-    ...(process.env.ROLE !== 'api' ? [RefreshRecommendationsJob] : []),
+    ...(isWorkerRole() ? [RefreshRecommendationsJob] : []),
     {
       provide: GetRecommendationsUseCase,
       useFactory: (profileRepo, recRepo) =>

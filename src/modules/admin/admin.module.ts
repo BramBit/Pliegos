@@ -11,6 +11,7 @@ import { ProfileModule } from '../profile/profile.module';
 import { AiModule } from '../shared/infrastructure/ai/ai.module';
 import { PIPELINE_RUN_REPOSITORY_PORT } from './domain/ports/pipeline-run-repository.port';
 import { PostgresPipelineRunRepository } from './infrastructure/persistence/postgres-pipeline-run.repository';
+import { isWorkerRole } from '../../config/env';
 
 @Module({
   imports: [
@@ -31,7 +32,7 @@ import { PostgresPipelineRunRepository } from './infrastructure/persistence/post
       provide: PIPELINE_RUN_REPOSITORY_PORT,
       useClass: PostgresPipelineRunRepository,
     },
-    ...(process.env.ROLE !== 'api' ? [AdminTaskProcessor] : []),
+    ...(isWorkerRole() ? [AdminTaskProcessor] : []),
   ],
   exports: [ADMIN_QUEUE_PORT, PIPELINE_RUN_REPOSITORY_PORT],
 })

@@ -3,6 +3,7 @@ import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import { BullModule } from '@nestjs/bullmq';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { EnvModule, ENV, Env, isWorkerRole } from './config/env';
 import { DatabaseModule } from './modules/shared/infrastructure/persistence/database.module';
 import { OpportunityModule } from './modules/opportunity/opportunity.module';
 import { ProfileModule } from './modules/profile/profile.module';
@@ -20,12 +21,16 @@ import { RequestIdMiddleware } from './modules/shared/infrastructure/http/reques
     ConfigModule.forRoot({
       isGlobal: true,
     }),
-    BullModule.forRoot({
-      connection: {
-        host: process.env.REDIS_HOST || 'localhost',
-        port: Number(process.env.REDIS_PORT) || 6379,
-        maxRetriesPerRequest: null,
-      },
+    EnvModule,
+    BullModule.forRootAsync({
+      inject: [ENV],
+      useFactory: (env: Env) => ({
+        connection: {
+          host: env.REDIS_HOST,
+          port: env.REDIS_PORT,
+          maxRetriesPerRequest: null,
+        },
+      }),
     }),
     ThrottlerModule.forRoot([
       {
@@ -40,7 +45,7 @@ import { RequestIdMiddleware } from './modules/shared/infrastructure/http/reques
     ProfileModule,
     RecommendationModule,
     AlertModule,
-    ...(process.env.ROLE !== 'api' ? [SchedulerModule] : []),
+    ...(isWorkerRole() ? [SchedulerModule] : []),
     AdminModule,
     HealthModule,
   ],

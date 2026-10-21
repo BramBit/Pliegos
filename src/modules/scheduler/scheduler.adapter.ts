@@ -1,5 +1,5 @@
 import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
+import { Cron } from '@nestjs/schedule';
 import { SyncOpportunitiesUseCase } from '../opportunity/application/use-cases/sync-opportunities.use-case';
 import { ReviewFollowUpUseCase } from '../alert/application/use-cases/review-follow-up.use-case';
 import { ScanDeadlinesUseCase } from '../alert/application/use-cases/scan-deadlines.use-case';
@@ -12,15 +12,15 @@ import {
   PipelineRunRepositoryPort,
 } from '../admin/domain/ports/pipeline-run-repository.port';
 import { PgAdvisoryLock } from '../shared/infrastructure/persistence/pg-advisory-lock';
+import {
+  SYNC_OPPORTUNITIES_CRON,
+  REVIEW_FOLLOW_UP_CRON,
+  SCAN_DEADLINES_CRON,
+  ENV,
+  Env,
+} from '../../config/env';
 
-export const SYNC_OPPORTUNITIES_CRON =
-  process.env.SYNC_OPPORTUNITIES_CRON || CronExpression.EVERY_4_HOURS;
-
-export const REVIEW_FOLLOW_UP_CRON =
-  process.env.REVIEW_FOLLOW_UP_CRON || CronExpression.EVERY_DAY_AT_8AM;
-
-export const SCAN_DEADLINES_CRON =
-  process.env.SCAN_DEADLINES_CRON || '30 07 * * *';
+export { SYNC_OPPORTUNITIES_CRON, REVIEW_FOLLOW_UP_CRON, SCAN_DEADLINES_CRON };
 
 export const SYNC_OPPORTUNITIES_JOB_NAME = 'sync-opportunities';
 export const REVIEW_FOLLOW_UP_JOB_NAME = 'review-follow-up';
@@ -49,6 +49,9 @@ export class SchedulerAdapter {
     private readonly pipelineRunRepository?: PipelineRunRepositoryPort,
     @Optional()
     private readonly advisoryLock?: PgAdvisoryLock,
+    @Optional()
+    @Inject(ENV)
+    private readonly env?: Env,
   ) {}
 
   private async runWithLock(name: string, fn: () => Promise<void>): Promise<void> {
@@ -83,7 +86,7 @@ export class SchedulerAdapter {
 
       try {
         const result = await this.syncOpportunitiesUseCase.execute({
-          maxRecords: Number(process.env.SECOP_SYNC_MAX_RECORDS) || 5000,
+          maxRecords: this.env?.SECOP_SYNC_MAX_RECORDS ?? 5000,
         });
         if (result.ok) {
           this.logger.log(

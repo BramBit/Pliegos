@@ -80,12 +80,8 @@ export class OllamaAdapter implements EmbedderPort, TextGeneratorPort {
     this.baseUrl = (options?.baseUrl ?? DEFAULT_OLLAMA_BASE_URL).replace(/\/+$/, '');
     this.model = options?.embedModel ?? DEFAULT_EMBED_MODEL;
     this.chatModel = options?.chatModel ?? DEFAULT_CHAT_MODEL;
-    this.embedTimeoutMs =
-      options?.embedTimeoutMs ??
-      (Number(process.env.OLLAMA_EMBED_TIMEOUT_MS) || DEFAULT_EMBED_TIMEOUT_MS);
-    this.chatTimeoutMs =
-      options?.chatTimeoutMs ??
-      (Number(process.env.OLLAMA_CHAT_TIMEOUT_MS) || DEFAULT_CHAT_TIMEOUT_MS);
+    this.embedTimeoutMs = options?.embedTimeoutMs ?? DEFAULT_EMBED_TIMEOUT_MS;
+    this.chatTimeoutMs = options?.chatTimeoutMs ?? DEFAULT_CHAT_TIMEOUT_MS;
     this.fetchFn = options?.fetchFn ?? globalThis.fetch.bind(globalThis);
     this.logger = options?.logger ?? new Logger(OllamaAdapter.name);
   }

@@ -38,6 +38,7 @@ export class ScanDeadlinesUseCase {
     @Inject(CLOCK_PORT)
     private readonly clock: Clock = new SystemClock(),
     logger?: LoggerService,
+    private readonly recommendDeadlineAlerts: boolean = false,
   ) {
     this.logger = logger ?? new Logger(ScanDeadlinesUseCase.name);
   }
@@ -84,7 +85,7 @@ export class ScanDeadlinesUseCase {
       const candidateRows: DeadlineRow[] = [...watchedRes.rows];
 
       // 2. Optional: top 5 new recommendations closing within 3 days
-      const recommendDeadlineAlerts = process.env.RECOMMEND_DEADLINE_ALERTS === 'true';
+      const recommendDeadlineAlerts = this.recommendDeadlineAlerts;
       if (recommendDeadlineAlerts) {
         const recommendationsQuery = `
           SELECT

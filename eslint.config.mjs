@@ -15,4 +15,19 @@ export default tseslint.config(
       'no-undef': 'off',
     },
   },
+  {
+    files: ['src/modules/**/*.ts'],
+    ignores: ['src/modules/**/*.spec.ts', 'src/modules/**/*.test.ts'],
+    rules: {
+      'no-restricted-properties': [
+        'error',
+        {
+          object: 'process',
+          property: 'env',
+          message:
+            'Direct process.env access is forbidden under src/modules. Inject configuration from config/env instead.',
+        },
+      ],
+    },
+  },
 );

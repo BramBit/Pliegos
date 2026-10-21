@@ -57,6 +57,7 @@ export class SyncOpportunitiesUseCase implements ISyncOpportunitiesUseCase {
     private readonly refreshQueue?: RecommendationRefreshQueuePort,
     private readonly watchRepository?: WatchRepositoryPort,
     private readonly alertRepository?: AlertRepositoryPort,
+    private readonly secopSyncWindowDays: number = 14,
   ) {
     this.logger = logger ?? new Logger(SyncOpportunitiesUseCase.name);
   }
@@ -84,7 +85,7 @@ export class SyncOpportunitiesUseCase implements ISyncOpportunitiesUseCase {
       }
     }
 
-    const windowDays = Number(process.env.SECOP_SYNC_WINDOW_DAYS) || 14;
+    const windowDays = this.secopSyncWindowDays;
     const windowStart = new Date(now.getTime() - windowDays * ONE_DAY_MS);
 
     let since: Date;

@@ -27,8 +27,8 @@ export class StructuredLoggerService implements LoggerService {
   private readonly configuredLevel: LogLevel;
 
   constructor(options?: { nodeEnv?: string; logLevel?: LogLevel }) {
-    this.isProduction = (options?.nodeEnv ?? process.env.NODE_ENV) === 'production';
-    const envLevel = (options?.logLevel ?? process.env.LOG_LEVEL?.toLowerCase()) as LogLevel;
+    this.isProduction = (options?.nodeEnv ?? 'development') === 'production';
+    const envLevel = (options?.logLevel ?? 'info').toLowerCase() as LogLevel;
     this.configuredLevel = LOG_LEVEL_SEVERITY[envLevel] !== undefined ? envLevel : 'info';
   }
 

@@ -8,6 +8,7 @@ import {
   RECOMMENDATION_REFRESH_QUEUE_PORT,
   RecommendationRefreshQueuePort,
 } from '../../../recommendation/domain/ports/recommendation-refresh-queue.port';
+import { ENV, Env } from '../../../../config/env';
 
 @Processor(ADMIN_TASKS_QUEUE_NAME, { concurrency: 2 })
 @Injectable()
@@ -27,6 +28,9 @@ export class AdminTaskProcessor extends WorkerHost {
     @Optional()
     @Inject('ADMIN_PROCESSOR_LOGGER')
     logger?: LoggerService,
+    @Optional()
+    @Inject(ENV)
+    private readonly env?: Env,
   ) {
     super();
     this.logger = logger ?? new Logger(AdminTaskProcessor.name);
@@ -41,7 +45,8 @@ export class AdminTaskProcessor extends WorkerHost {
           throw new Error('SyncOpportunitiesUseCase not available in AdminTaskProcessor');
         }
         const sinceDate = job.data?.since ? new Date(job.data.since) : undefined;
-        const maxRecords = job.data?.maxRecords ?? (Number(process.env.SECOP_SYNC_MAX_RECORDS) || 5000);
+        const maxRecords =
+          job.data?.maxRecords ?? (this.env?.SECOP_SYNC_MAX_RECORDS ?? 5000);
         const result = await this.syncOpportunitiesUseCase.execute({
           since: sinceDate,
           maxRecords,

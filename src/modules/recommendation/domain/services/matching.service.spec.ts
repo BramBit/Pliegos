@@ -121,24 +121,25 @@ describe('MatchingService', () => {
       expect(breakdown.explanation.summary).toContain('Alta coincidencia semántica');
     });
 
-    it('reads SEMANTIC_COSINE_LOW and SEMANTIC_COSINE_HIGH from env when normalizing cosine', () => {
-      const prevLow = process.env.SEMANTIC_COSINE_LOW;
-      const prevHigh = process.env.SEMANTIC_COSINE_HIGH;
-      try {
-        delete process.env.SEMANTIC_COSINE_LOW;
-        delete process.env.SEMANTIC_COSINE_HIGH;
-        expect(MatchingService.normalizeCosine(0.4)).toBeCloseTo(0, 6);
-        expect(MatchingService.normalizeCosine(0.75)).toBeCloseTo(1, 6);
+    it('uses constructor-injected thresholds or explicit bounds for cosine normalization', () => {
+      const customMatching = new MatchingService({
+        semanticCosineLow: 0.5,
+        semanticCosineHigh: 0.9,
+        minRecommendationScore: 0.6,
+      });
 
-        process.env.SEMANTIC_COSINE_LOW = '0.50';
-        process.env.SEMANTIC_COSINE_HIGH = '0.90';
-        expect(MatchingService.normalizeCosine(0.70)).toBeCloseTo(0.5, 6);
-      } finally {
-        if (prevLow === undefined) delete process.env.SEMANTIC_COSINE_LOW;
-        else process.env.SEMANTIC_COSINE_LOW = prevLow;
-        if (prevHigh === undefined) delete process.env.SEMANTIC_COSINE_HIGH;
-        else process.env.SEMANTIC_COSINE_HIGH = prevHigh;
-      }
+      expect(customMatching.semanticCosineLow).toBe(0.5);
+      expect(customMatching.semanticCosineHigh).toBe(0.9);
+      expect(customMatching.minRecommendationScore).toBe(0.6);
+      expect(customMatching.getMinRecommendationScore()).toBe(0.6);
+
+      expect(customMatching.normalizeCosine(0.5)).toBeCloseTo(0, 6);
+      expect(customMatching.normalizeCosine(0.9)).toBeCloseTo(1, 6);
+      expect(customMatching.normalizeCosine(0.7)).toBeCloseTo(0.5, 6);
+
+      expect(MatchingService.normalizeCosine(0.4)).toBeCloseTo(0, 6);
+      expect(MatchingService.normalizeCosine(0.75)).toBeCloseTo(1, 6);
+      expect(MatchingService.normalizeCosine(0.7, 0.5, 0.9)).toBeCloseTo(0.5, 6);
     });
   });
 

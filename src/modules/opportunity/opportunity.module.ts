@@ -29,6 +29,7 @@ import { SearchOpportunitiesUseCase } from './application/use-cases/search-oppor
 import { GetOpportunityByIdUseCase } from './application/use-cases/get-opportunity-by-id.use-case';
 import { AnalyzeOpportunityJob } from './infrastructure/jobs/analyze-opportunity.job';
 import { OpportunityController } from './infrastructure/controllers/opportunity.controller';
+import { ENV, Env, isWorkerRole } from '../../config/env';
 
 @Module({
   imports: [
@@ -49,7 +50,12 @@ import { OpportunityController } from './infrastructure/controllers/opportunity.
     },
     {
       provide: OPPORTUNITY_SOURCE_PORT,
-      useFactory: () => new SecopAdapter(),
+      inject: [ENV],
+      useFactory: (env: Env) =>
+        new SecopAdapter({
+          pageSize: env.SECOP_PAGE_SIZE,
+          appToken: env.SECOP_APP_TOKEN,
+        }),
     },
     {
       provide: SEARCH_INDEX_PORT,
@@ -63,7 +69,7 @@ import { OpportunityController } from './infrastructure/controllers/opportunity.
       useFactory: (queue: Queue) => new BullMQAnalysisQueueAdapter(queue),
       inject: [getQueueToken(ANALYSIS_QUEUE_NAME)],
     },
-    ...(process.env.ROLE !== 'api' ? [AnalyzeOpportunityJob] : []),
+    ...(isWorkerRole() ? [AnalyzeOpportunityJob] : []),
     {
       provide: SyncOpportunitiesUseCase,
       useFactory: (
@@ -73,6 +79,7 @@ import { OpportunityController } from './infrastructure/controllers/opportunity.
         refreshQueueRaw,
         watchRepo: WatchRepositoryPort,
         alertRepo: AlertRepositoryPort,
+        env: Env,
       ) => {
         const refreshQueue = new BullMQRecommendationRefreshQueueAdapter(refreshQueueRaw);
         return new SyncOpportunitiesUseCase(
@@ -83,6 +90,7 @@ import { OpportunityController } from './infrastructure/controllers/opportunity.
           refreshQueue,
           watchRepo,
           alertRepo,
+          env.SECOP_SYNC_WINDOW_DAYS,
         );
       },
       inject: [
@@ -92,6 +100,7 @@ import { OpportunityController } from './infrastructure/controllers/opportunity.
         getQueueToken(REFRESH_RECOMMENDATIONS_QUEUE_NAME),
         WATCH_REPOSITORY_PORT,
         ALERT_REPOSITORY_PORT,
+        ENV,
       ],
     },
     {

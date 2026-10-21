@@ -39,6 +39,8 @@ describe('loadEnv', () => {
     expect(env.SMTP_PASS).toBe('');
     expect(env.SMTP_FROM).toBe('Pliegos <alertas@pliegos.co>');
     expect(env.SMTP_SECURE).toBe(false);
+    expect(env.SCAN_DEADLINES_CRON).toBe('30 07 * * *');
+    expect(env.RECOMMEND_DEADLINE_ALERTS).toBe(false);
   });
 
   it('coerces numeric values', () => {
@@ -87,6 +89,38 @@ describe('loadEnv', () => {
     expect(() => loadEnv(withoutSecret)).toThrow(EnvValidationError);
 
     expect(() => loadEnv({ ...validEnv, JWT_SECRET: 'short-secret' })).toThrow(EnvValidationError);
+  });
+
+  it('rejects template placeholder JWT_SECRET in production mode', () => {
+    expect(() =>
+      loadEnv({
+        ...validEnv,
+        NODE_ENV: 'production',
+        JWT_SECRET: 'development-jwt-secret-key-must-be-at-least-32-characters-long',
+      }),
+    ).toThrow(EnvValidationError);
+
+    try {
+      loadEnv({
+        ...validEnv,
+        NODE_ENV: 'production',
+        JWT_SECRET: 'development-jwt-secret-key-must-be-at-least-32-characters-long',
+      });
+      throw new Error('expected to throw');
+    } catch (err) {
+      expect((err as EnvValidationError).problems.join('\n')).toContain(
+        'cannot use insecure template placeholder in production',
+      );
+    }
+  });
+
+  it('allows template placeholder JWT_SECRET in development mode', () => {
+    const env = loadEnv({
+      ...validEnv,
+      NODE_ENV: 'development',
+      JWT_SECRET: 'development-jwt-secret-key-must-be-at-least-32-characters-long',
+    });
+    expect(env.JWT_SECRET).toBe('development-jwt-secret-key-must-be-at-least-32-characters-long');
   });
 
   it('handles MAX_PROFILES_PER_USER defaults, overrides and validations', () => {

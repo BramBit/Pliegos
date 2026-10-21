@@ -26,7 +26,6 @@ describe('ScanDeadlinesUseCase (Real Test Database & FixedClock)', () => {
   });
 
   beforeEach(async () => {
-    delete process.env.RECOMMEND_DEADLINE_ALERTS;
     await pool.query('DELETE FROM alerts;');
     await pool.query('DELETE FROM watches;');
     await pool.query('DELETE FROM recommendations;');
@@ -187,9 +186,7 @@ describe('ScanDeadlinesUseCase (Real Test Database & FixedClock)', () => {
     }
   });
 
-  it('creates alerts for top 5 new recommendations closing within 3 days when RECOMMEND_DEADLINE_ALERTS=true', async () => {
-    process.env.RECOMMEND_DEADLINE_ALERTS = 'true';
-
+  it('creates alerts for top 5 new recommendations closing within 3 days when recommendDeadlineAlerts is true', async () => {
     const profileId = asProfileId('prof-rec-alerts');
     await seedProfile(pool, profileId);
     await pool.query(
@@ -221,7 +218,7 @@ describe('ScanDeadlinesUseCase (Real Test Database & FixedClock)', () => {
       );
     }
 
-    const useCase = new ScanDeadlinesUseCase(pool, alertRepo, clock);
+    const useCase = new ScanDeadlinesUseCase(pool, alertRepo, clock, undefined, true);
     const res = await useCase.execute();
 
     expect(res.ok).toBe(true);

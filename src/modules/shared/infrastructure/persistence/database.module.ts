@@ -2,6 +2,7 @@ import { Global, Inject, Module, OnModuleDestroy } from '@nestjs/common';
 import { Pool } from 'pg';
 import { DATABASE_POOL } from './database.tokens';
 import { PgAdvisoryLock } from './pg-advisory-lock';
+import { ENV, Env } from '../../../../config/env';
 
 export { DATABASE_POOL };
 
@@ -10,8 +11,9 @@ export { DATABASE_POOL };
   providers: [
     {
       provide: DATABASE_POOL,
-      useFactory: () => {
-        const connectionString = process.env.DATABASE_URL;
+      inject: [ENV],
+      useFactory: (env: Env) => {
+        const connectionString = env.DATABASE_URL;
         if (!connectionString) {
           throw new Error('DATABASE_URL is not set');
         }

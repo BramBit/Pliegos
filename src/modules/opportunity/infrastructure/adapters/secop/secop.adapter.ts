@@ -75,8 +75,8 @@ export class SecopAdapter implements OpportunitySourcePort {
   private readonly sleepFn: (ms: number) => Promise<void>;
 
   constructor(options?: SecopAdapterOptions) {
-    this.pageSize = options?.pageSize ?? (Number(process.env.SECOP_PAGE_SIZE) || 1000);
-    this.appToken = options?.appToken ?? process.env.SECOP_APP_TOKEN;
+    this.pageSize = options?.pageSize ?? 1000;
+    this.appToken = options?.appToken;
     this.maxRetries = options?.maxRetries ?? 4;
     this.retryBaseDelayMs = options?.retryBaseDelayMs ?? 1000;
     this.sleepFn = options?.sleepFn ?? ((ms) => new Promise((r) => setTimeout(r, ms)));

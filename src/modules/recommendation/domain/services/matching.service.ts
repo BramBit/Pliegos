@@ -31,20 +31,15 @@ export const DEFAULT_SEMANTIC_COSINE_LOW = 0.4;
 export const DEFAULT_SEMANTIC_COSINE_HIGH = 0.75;
 export const DEFAULT_MIN_RECOMMENDATION_SCORE = 0.45;
 
-function readEnvNumber(name: string, fallback: number): number {
-  const raw = process.env[name];
-  if (raw !== undefined && raw.trim() !== '') {
-    const parsed = Number(raw);
-    if (Number.isFinite(parsed)) {
-      return parsed;
-    }
-  }
-  return fallback;
+export interface MatchingConfig {
+  readonly semanticCosineLow?: number;
+  readonly semanticCosineHigh?: number;
+  readonly minRecommendationScore?: number;
+  readonly weights?: ScoringWeights;
 }
 
 export function getMinRecommendationScore(): number {
-  const val = readEnvNumber('MIN_RECOMMENDATION_SCORE', DEFAULT_MIN_RECOMMENDATION_SCORE);
-  return Math.min(1, Math.max(0, val));
+  return DEFAULT_MIN_RECOMMENDATION_SCORE;
 }
 
 export interface ScoringBreakdown {
@@ -59,7 +54,33 @@ export interface ScoringBreakdown {
 }
 
 export class MatchingService {
-  constructor(private readonly weights: ScoringWeights = DEFAULT_SCORING_WEIGHTS) {}
+  readonly weights: ScoringWeights;
+  readonly semanticCosineLow: number;
+  readonly semanticCosineHigh: number;
+  readonly minRecommendationScore: number;
+
+  constructor(
+    weightsOrConfig?: ScoringWeights | MatchingConfig,
+    legacyConfig?: MatchingConfig,
+  ) {
+    if (weightsOrConfig && 'semanticSimilarity' in weightsOrConfig) {
+      this.weights = weightsOrConfig;
+      const config = legacyConfig ?? {};
+      this.semanticCosineLow = config.semanticCosineLow ?? DEFAULT_SEMANTIC_COSINE_LOW;
+      this.semanticCosineHigh = config.semanticCosineHigh ?? DEFAULT_SEMANTIC_COSINE_HIGH;
+      this.minRecommendationScore = config.minRecommendationScore ?? DEFAULT_MIN_RECOMMENDATION_SCORE;
+    } else {
+      const config = weightsOrConfig ?? {};
+      this.weights = config.weights ?? DEFAULT_SCORING_WEIGHTS;
+      this.semanticCosineLow = config.semanticCosineLow ?? DEFAULT_SEMANTIC_COSINE_LOW;
+      this.semanticCosineHigh = config.semanticCosineHigh ?? DEFAULT_SEMANTIC_COSINE_HIGH;
+      this.minRecommendationScore = config.minRecommendationScore ?? DEFAULT_MIN_RECOMMENDATION_SCORE;
+    }
+  }
+
+  getMinRecommendationScore(): number {
+    return this.minRecommendationScore;
+  }
 
   /**
    * Computes the detailed scoring breakdown for an Opportunity against a Profile.
@@ -225,16 +246,26 @@ export class MatchingService {
   }
 
   /**
-   * Maps a raw embedding cosine similarity to 0..1 using SEMANTIC_COSINE_LOW (default 0.40)
-   * and SEMANTIC_COSINE_HIGH (default 0.75) unless overridden.
+   * Maps a raw embedding cosine similarity to 0..1 using configured or default bounds.
    */
-  static normalizeCosine(cosineValue: number, low?: number, high?: number): number {
-    const effLow = low ?? readEnvNumber('SEMANTIC_COSINE_LOW', DEFAULT_SEMANTIC_COSINE_LOW);
-    const effHigh = high ?? readEnvNumber('SEMANTIC_COSINE_HIGH', DEFAULT_SEMANTIC_COSINE_HIGH);
+  normalizeCosine(cosineValue: number, low?: number, high?: number): number {
+    const effLow = low ?? this.semanticCosineLow;
+    const effHigh = high ?? this.semanticCosineHigh;
     if (effHigh <= effLow) {
       return 0;
     }
     return Math.min(1, Math.max(0, (cosineValue - effLow) / (effHigh - effLow)));
+  }
+
+  static normalizeCosine(
+    cosineValue: number,
+    low: number = DEFAULT_SEMANTIC_COSINE_LOW,
+    high: number = DEFAULT_SEMANTIC_COSINE_HIGH,
+  ): number {
+    if (high <= low) {
+      return 0;
+    }
+    return Math.min(1, Math.max(0, (cosineValue - low) / (high - low)));
   }
 
   /**

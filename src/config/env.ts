@@ -1,3 +1,6 @@
+import { Global, Module, Provider } from '@nestjs/common';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 import { z } from 'zod';
 
 const nonEmpty = z.string().min(1);
@@ -7,6 +10,10 @@ const postgresUrl = z
 const httpUrl = z.string().regex(/^https?:\/\/.+/, 'must be an http:// or https:// URL');
 const port = z.coerce.number().int().min(1).max(65535);
 const positiveInt = z.coerce.number().int().positive();
+
+export const INSECURE_JWT_SECRETS = [
+  'development-jwt-secret-key-must-be-at-least-32-characters-long',
+];
 
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
@@ -28,6 +35,7 @@ const envSchema = z.object({
 
   SYNC_OPPORTUNITIES_CRON: nonEmpty,
   REVIEW_FOLLOW_UP_CRON: nonEmpty,
+  SCAN_DEADLINES_CRON: nonEmpty.default('30 07 * * *'),
 
   SECOP_APP_TOKEN: z.string().optional(),
   SECOP_PAGE_SIZE: positiveInt.default(1000),
@@ -55,9 +63,53 @@ const envSchema = z.object({
   SMTP_SECURE: z
     .preprocess((val) => val === 'true' || val === true, z.boolean())
     .default(false),
+
+  RECOMMEND_DEADLINE_ALERTS: z
+    .preprocess((val) => val === 'true' || val === true, z.boolean())
+    .default(false),
 });
 
 export type Env = z.infer<typeof envSchema>;
+
+export const ENV = 'ENV';
+
+export const envProvider: Provider = {
+  provide: ENV,
+  useFactory: () => loadEnv(),
+};
+
+@Global()
+@Module({
+  providers: [envProvider],
+  exports: [ENV],
+})
+export class EnvModule {}
+
+export const SYNC_OPPORTUNITIES_CRON = process.env.SYNC_OPPORTUNITIES_CRON || '0 0-23/4 * * *';
+export const REVIEW_FOLLOW_UP_CRON = process.env.REVIEW_FOLLOW_UP_CRON || '0 08 * * *';
+export const SCAN_DEADLINES_CRON = process.env.SCAN_DEADLINES_CRON || '30 07 * * *';
+
+export function isWorkerRole(source: NodeJS.ProcessEnv = process.env): boolean {
+  return (source.ROLE || 'all') !== 'api';
+}
+
+export function requireTestDatabaseUrl(): string {
+  const envPath = path.resolve(process.cwd(), '.env');
+  if (!process.env.TEST_DATABASE_URL && fs.existsSync(envPath)) {
+    for (const line of fs.readFileSync(envPath, 'utf8').split('\n')) {
+      const match = /^\s*TEST_DATABASE_URL\s*=\s*(.+?)\s*$/.exec(line);
+      if (match) {
+        process.env.TEST_DATABASE_URL = match[1];
+        break;
+      }
+    }
+  }
+  const url = process.env.TEST_DATABASE_URL;
+  if (!url) {
+    throw new Error('TEST_DATABASE_URL is not set. Define it in .env (see .env.example).');
+  }
+  return url;
+}
 
 export interface CorsConfig {
   readonly origin: boolean | string | string[];
@@ -103,16 +155,29 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
     }
   }
 
+  const problems: string[] = [];
+
+  if (cleaned.NODE_ENV === 'production' && cleaned.JWT_SECRET) {
+    if (INSECURE_JWT_SECRETS.includes(cleaned.JWT_SECRET)) {
+      problems.push('JWT_SECRET: cannot use insecure template placeholder in production');
+    }
+  }
+
   const result = envSchema.safeParse(cleaned);
   if (!result.success) {
-    const problems = result.error.issues.map((issue) => {
+    for (const issue of result.error.issues) {
       const name = issue.path.join('.') || '(root)';
       if (issue.path.length === 1 && cleaned[String(issue.path[0])] === undefined) {
-        return `${name}: is required (not set or empty)`;
+        problems.push(`${name}: is required (not set or empty)`);
+      } else {
+        problems.push(`${name}: ${issue.message}`);
       }
-      return `${name}: ${issue.message}`;
-    });
+    }
+  }
+
+  if (problems.length > 0) {
     throw new EnvValidationError(problems);
   }
-  return result.data;
+
+  return result.data!;
 }

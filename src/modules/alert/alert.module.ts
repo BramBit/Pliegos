@@ -1,5 +1,4 @@
 import { Module, forwardRef } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { Pool } from 'pg';
 import { DATABASE_POOL } from '../shared/infrastructure/persistence/database.module';
 import { ALERT_REPOSITORY_PORT, AlertRepositoryPort } from './domain/ports/alert.repository.port';
@@ -14,6 +13,7 @@ import { MarkAllAlertsReadUseCase } from './application/use-cases/mark-all-alert
 import { Clock, CLOCK_PORT, SystemClock } from '../shared/domain/clock';
 import { AlertController } from './infrastructure/controllers/alert.controller';
 import { ProfileAlertsController } from './infrastructure/controllers/profile-alerts.controller';
+import { ENV, Env } from '../../config/env';
 import { ProfileModule } from '../profile/profile.module';
 import { OpportunityModule } from '../opportunity/opportunity.module';
 import {
@@ -36,27 +36,19 @@ import {
     },
     {
       provide: NOTIFICATION_PORT,
-      useFactory: (config: ConfigService) => {
-        const host = config.get<string>('SMTP_HOST') || 'localhost';
-        const port = Number(config.get('SMTP_PORT')) || 1025;
-        const user = config.get<string>('SMTP_USER') || undefined;
-        const pass = config.get<string>('SMTP_PASS') || undefined;
-        const from = config.get<string>('SMTP_FROM') || 'Pliegos <alertas@pliegos.co>';
-        const secureRaw = config.get('SMTP_SECURE');
-        const secure = secureRaw === 'true' || secureRaw === true;
-
+      inject: [ENV],
+      useFactory: (env: Env) => {
         return new SmtpEmailAdapter({
           config: {
-            host,
-            port,
-            user,
-            pass,
-            from,
-            secure,
+            host: env.SMTP_HOST,
+            port: env.SMTP_PORT,
+            user: env.SMTP_USER || undefined,
+            pass: env.SMTP_PASS || undefined,
+            from: env.SMTP_FROM,
+            secure: env.SMTP_SECURE,
           },
         });
       },
-      inject: [ConfigService],
     },
     {
       provide: CLOCK_PORT,
@@ -79,9 +71,9 @@ import {
     },
     {
       provide: ScanDeadlinesUseCase,
-      useFactory: (pool: Pool, alertRepo: AlertRepositoryPort, clock?: Clock) =>
-        new ScanDeadlinesUseCase(pool, alertRepo, clock),
-      inject: [DATABASE_POOL, ALERT_REPOSITORY_PORT, CLOCK_PORT],
+      useFactory: (pool: Pool, alertRepo: AlertRepositoryPort, clock: Clock, env: Env) =>
+        new ScanDeadlinesUseCase(pool, alertRepo, clock, undefined, env.RECOMMEND_DEADLINE_ALERTS),
+      inject: [DATABASE_POOL, ALERT_REPOSITORY_PORT, CLOCK_PORT, ENV],
     },
     {
       provide: GetProfileAlertsUseCase,

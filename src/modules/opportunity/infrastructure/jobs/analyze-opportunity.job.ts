@@ -34,7 +34,7 @@ export interface IJobLike<T = any> {
 
 export function computeAnalysisContentHash(
   opportunity: Pick<Opportunity, 'title' | 'description' | 'contractingEntity' | 'contractType'>,
-  embeddingModel: string = process.env.OLLAMA_EMBED_MODEL || 'nomic-embed-text',
+  embeddingModel: string = 'nomic-embed-text',
 ): string {
   const payload = [
     opportunity.title,
@@ -58,7 +58,7 @@ export function hasGeneratedSummary(analysis: Analysis | null | undefined): bool
 }
 
 @Processor(ANALYSIS_QUEUE_NAME, {
-  concurrency: Number(process.env.ANALYSIS_CONCURRENCY) || 2,
+  concurrency: 2,
 })
 @Injectable()
 export class AnalyzeOpportunityJob extends WorkerHost {
@@ -78,7 +78,7 @@ export class AnalyzeOpportunityJob extends WorkerHost {
     this.embeddingModel =
       typeof embedderOrModel === 'string'
         ? embedderOrModel
-        : embedderOrModel?.model ?? (process.env.OLLAMA_EMBED_MODEL || 'nomic-embed-text');
+        : embedderOrModel?.model ?? 'nomic-embed-text';
   }
 
   /**

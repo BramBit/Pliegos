@@ -13,6 +13,7 @@ import { RegisterUseCase } from './application/use-cases/register.use-case';
 import { LoginUseCase } from './application/use-cases/login.use-case';
 import { RefreshTokenUseCase } from './application/use-cases/refresh-token.use-case';
 import { LogoutUseCase } from './application/use-cases/logout.use-case';
+import { ENV, Env } from '../../config/env';
 
 @Global()
 @Module({
@@ -20,14 +21,11 @@ import { LogoutUseCase } from './application/use-cases/logout.use-case';
     DatabaseModule,
     JwtModule.registerAsync({
       global: true,
-      useFactory: () => {
-        const secret =
-          process.env.JWT_SECRET ||
-          'development-jwt-secret-key-must-be-at-least-32-characters-long';
-        const expiresIn = (process.env.JWT_ACCESS_TTL || '15m') as any;
+      inject: [ENV],
+      useFactory: (env: Env) => {
         return {
-          secret,
-          signOptions: { expiresIn },
+          secret: env.JWT_SECRET,
+          signOptions: { expiresIn: env.JWT_ACCESS_TTL as any },
         };
       },
     }),
