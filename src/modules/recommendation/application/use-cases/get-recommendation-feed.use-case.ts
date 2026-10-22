@@ -24,7 +24,9 @@ export class GetRecommendationFeedUseCase {
     input: GetRecommendationFeedInput,
   ): Promise<Result<PagedRecommendationFeed, ProfileNotFoundError>> {
     if (!this.recommendationRepository.findFeed) {
-      throw new Error('findFeed is not implemented on RecommendationRepositoryPort');
+      throw new Error(
+        'findFeed is not implemented on RecommendationRepositoryPort',
+      );
     }
 
     const feed = await this.recommendationRepository.findFeed(

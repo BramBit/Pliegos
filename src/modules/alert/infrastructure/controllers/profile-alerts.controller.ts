@@ -7,9 +7,18 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
+  ApiQuery,
+} from '@nestjs/swagger';
 import { asProfileId } from '../../../shared/domain/typed-id';
-import { ZodValidationPipe, uuidParamSchema } from '../../../shared/infrastructure/http/zod-validation.pipe';
+import {
+  ZodValidationPipe,
+  uuidParamSchema,
+} from '../../../shared/infrastructure/http/zod-validation.pipe';
 import {
   CurrentUser,
   CurrentUserPayload,
@@ -24,10 +33,7 @@ import { ProfileAccessService } from '../../../profile/application/services/prof
 import { DomainErrorException } from '../../../shared/infrastructure/http/global-exception.filter';
 import { GetProfileAlertsUseCase } from '../../application/use-cases/get-profile-alerts.use-case';
 import { MarkAllAlertsReadUseCase } from '../../application/use-cases/mark-all-alerts-read.use-case';
-import {
-  ListAlertsQuery,
-  listAlertsQuerySchema,
-} from './dtos/list-alerts.dto';
+import { ListAlertsQuery, listAlertsQuerySchema } from './dtos/list-alerts.dto';
 
 @ApiTags('Alerts')
 @Controller('profiles')

@@ -11,12 +11,16 @@ import { writeFileSync, mkdirSync } from 'node:fs';
 import { Pool } from 'pg';
 import { PostgresOpportunityRepository } from '../src/modules/opportunity/infrastructure/adapters/persistence/postgres-opportunity.repository';
 import { OllamaAdapter } from '../src/modules/recommendation/infrastructure/adapters/ollama/ollama.adapter';
-import { MatchingService, buildProfileQuery } from '../src/modules/recommendation/domain/services/matching.service';
+import {
+  MatchingService,
+  buildProfileQuery,
+} from '../src/modules/recommendation/domain/services/matching.service';
 import { Profile } from '../src/modules/profile/domain/entities/profile.entity';
 import { asProfileId, asUserId } from '../src/modules/shared/domain/typed-id';
 
 const DATABASE_URL =
-  process.env.DATABASE_URL || 'postgres://postgres:postgres@localhost:5433/pliegos';
+  process.env.DATABASE_URL ||
+  'postgres://postgres:postgres@localhost:5433/pliegos';
 const TOP_N = Number(process.argv[2]) || 30;
 const BOTTOM_N = 5;
 const CANDIDATES = Number(process.env.GOLDEN_CANDIDATES) || 5000;
@@ -27,13 +31,25 @@ const PROFILES: Profile[] = [
     ownerId: asUserId('golden'),
     sector: 'Tecnologías de la Información y Desarrollo de Software',
     capabilities: [
-      { name: 'Desarrollo de software a la medida y plataformas web', yearsOfExperience: 7 },
+      {
+        name: 'Desarrollo de software a la medida y plataformas web',
+        yearsOfExperience: 7,
+      },
       { name: 'Ciberseguridad y auditoría de sistemas', yearsOfExperience: 5 },
-      { name: 'Infraestructura tecnológica y soporte de TI', yearsOfExperience: 6 },
+      {
+        name: 'Infraestructura tecnológica y soporte de TI',
+        yearsOfExperience: 6,
+      },
     ],
     preferences: {
       categoryCodes: ['V1.81111500', 'V1.80111600', 'V1.43230000'],
-      keywords: ['software', 'sistemas de información', 'ciberseguridad', 'tecnología', 'datos'],
+      keywords: [
+        'software',
+        'sistemas de información',
+        'ciberseguridad',
+        'tecnología',
+        'datos',
+      ],
       amountRange: { min: 50_000_000, max: 500_000_000 },
       departments: ['Distrito Capital de Bogotá', 'Cundinamarca', 'Antioquia'],
     },
@@ -49,7 +65,13 @@ const PROFILES: Profile[] = [
     ],
     preferences: {
       categoryCodes: ['V1.72141000', 'V1.81101500', 'V1.72121100'],
-      keywords: ['interventoría', 'mantenimiento vial', 'pavimentación', 'obras civiles', 'puentes'],
+      keywords: [
+        'interventoría',
+        'mantenimiento vial',
+        'pavimentación',
+        'obras civiles',
+        'puentes',
+      ],
       amountRange: { min: 150_000_000, max: 1_500_000_000 },
       departments: ['Santander', 'Boyacá', 'Cundinamarca', 'Tolima'],
     },
@@ -79,8 +101,12 @@ async function main() {
        LIMIT $1`,
       [CANDIDATES],
     );
-    const found = await Promise.all(rows.map((r) => repo.findById(r.id as never)));
-    const candidates = found.filter((o): o is NonNullable<typeof o> => o !== null);
+    const found = await Promise.all(
+      rows.map((r) => repo.findById(r.id as never)),
+    );
+    const candidates = found.filter(
+      (o): o is NonNullable<typeof o> => o !== null,
+    );
     console.log(`Candidatos accionables con embedding: ${candidates.length}`);
 
     const lines: string[] = [
@@ -102,14 +128,21 @@ async function main() {
         [`[${profileVec.join(',')}]`, candidates.map((c) => c.id)],
       );
       const cosById = new Map(sims.rows.map((r) => [r.id, Number(r.cos)]));
-      const scored: { opp: (typeof candidates)[number]; b: Awaited<ReturnType<typeof matching.computeBreakdown>> }[] = [];
+      const scored: {
+        opp: (typeof candidates)[number];
+        b: Awaited<ReturnType<typeof matching.computeBreakdown>>;
+      }[] = [];
       for (const opp of candidates) {
-        const semantic = MatchingService.normalizeCosine(cosById.get(opp.id) ?? 0);
+        const semantic = MatchingService.normalizeCosine(
+          cosById.get(opp.id) ?? 0,
+        );
         const b = await matching.computeBreakdown(opp, profile, semantic);
         scored.push({ opp, b });
       }
       scored.sort((a, b) => b.b.combinedScore - a.b.combinedScore);
-      console.log(`  ${scored.length} procesos en ${((Date.now() - t0) / 1000).toFixed(1)}s`);
+      console.log(
+        `  ${scored.length} procesos en ${((Date.now() - t0) / 1000).toFixed(1)}s`,
+      );
 
       const dist = [0.8, 0.6, 0.4].map(
         (t) => `≥${t}: ${scored.filter((s) => s.b.combinedScore >= t).length}`,
@@ -140,7 +173,9 @@ async function main() {
       );
       scored
         .slice(-BOTTOM_N)
-        .forEach((s, i) => lines.push(row(scored.length - BOTTOM_N + i + 1, s)));
+        .forEach((s, i) =>
+          lines.push(row(scored.length - BOTTOM_N + i + 1, s)),
+        );
       lines.push('');
     }
 

@@ -2,7 +2,12 @@ import { Injectable } from '@nestjs/common';
 import { Pool, QueryResult } from 'pg';
 import { ProfileRepositoryPort } from '../../../domain/ports/profile.repository.port';
 import { Profile } from '../../../domain/entities/profile.entity';
-import { ProfileId, UserId, asProfileId, asUserId } from '../../../../shared/domain/typed-id';
+import {
+  ProfileId,
+  UserId,
+  asProfileId,
+  asUserId,
+} from '../../../../shared/domain/typed-id';
 
 interface ProfileRow {
   id: string;
@@ -82,7 +87,9 @@ export class PostgresProfileRepository implements ProfileRepositoryPort {
   }
 
   async delete(id: ProfileId): Promise<boolean> {
-    const res = await this.pool.query('DELETE FROM profiles WHERE id = $1', [id]);
+    const res = await this.pool.query('DELETE FROM profiles WHERE id = $1', [
+      id,
+    ]);
     return (res.rowCount ?? 0) > 0;
   }
 

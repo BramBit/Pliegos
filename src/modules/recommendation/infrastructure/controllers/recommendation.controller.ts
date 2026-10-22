@@ -11,7 +11,10 @@ import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { RegisterFeedbackUseCase } from '../../application/use-cases/register-feedback.use-case';
 import { UndoFeedbackUseCase } from '../../application/use-cases/undo-feedback.use-case';
 import { asRecommendationId, asUserId } from '../../../shared/domain/typed-id';
-import { ZodValidationPipe, uuidParamSchema } from '../../../shared/infrastructure/http/zod-validation.pipe';
+import {
+  ZodValidationPipe,
+  uuidParamSchema,
+} from '../../../shared/infrastructure/http/zod-validation.pipe';
 import { DomainErrorException } from '../../../shared/infrastructure/http/global-exception.filter';
 import {
   CurrentUser,

@@ -5,7 +5,10 @@ import {
   SourceUnavailableError,
   createSourceUnavailableError,
 } from '../../../shared/domain/errors';
-import { asOpportunityId, OpportunityId } from '../../../shared/domain/typed-id';
+import {
+  asOpportunityId,
+  OpportunityId,
+} from '../../../shared/domain/typed-id';
 import {
   OpportunitySourcePort,
   SourceFetchOptions,
@@ -45,7 +48,12 @@ export interface ISyncOpportunitiesUseCase {
 }
 
 const ONE_DAY_MS = 86_400_000;
-const MATERIAL_CHANGE_FIELDS = new Set(['closingDate', 'amount', 'description', 'status']);
+const MATERIAL_CHANGE_FIELDS = new Set([
+  'closingDate',
+  'amount',
+  'description',
+  'status',
+]);
 
 export class SyncOpportunitiesUseCase implements ISyncOpportunitiesUseCase {
   private readonly logger: LoggerService;
@@ -80,7 +88,8 @@ export class SyncOpportunitiesUseCase implements ISyncOpportunitiesUseCase {
         const state = await this.repository.getSyncState('SECOP');
         existingWatermark = state?.watermark ?? null;
       } catch (dbError) {
-        const msg = dbError instanceof Error ? dbError.message : String(dbError);
+        const msg =
+          dbError instanceof Error ? dbError.message : String(dbError);
         this.logger.error(`Failed to read sync_state for SECOP: ${msg}`);
         throw dbError;
       }
@@ -111,7 +120,10 @@ export class SyncOpportunitiesUseCase implements ISyncOpportunitiesUseCase {
     let maxLastPublishedAt: Date | null = existingWatermark;
     const trackPublishedDate = (date: Date) => {
       if (!isNaN(date.getTime())) {
-        if (!maxLastPublishedAt || date.getTime() > maxLastPublishedAt.getTime()) {
+        if (
+          !maxLastPublishedAt ||
+          date.getTime() > maxLastPublishedAt.getTime()
+        ) {
           maxLastPublishedAt = date;
         }
       }
@@ -141,7 +153,7 @@ export class SyncOpportunitiesUseCase implements ISyncOpportunitiesUseCase {
 
     // Pass 2: Currently open competitive processes regardless of watermark
     const openCompetitiveResult = await this.runPass(
-       undefined,
+      undefined,
       {
         maxRecords: input.maxRecords,
         mode: 'openCompetitive',
@@ -168,7 +180,8 @@ export class SyncOpportunitiesUseCase implements ISyncOpportunitiesUseCase {
           watermark: maxLastPublishedAt,
         });
       } catch (dbError) {
-        const msg = dbError instanceof Error ? dbError.message : String(dbError);
+        const msg =
+          dbError instanceof Error ? dbError.message : String(dbError);
         this.logger.error(`Failed to update sync_state for SECOP: ${msg}`);
         throw dbError;
       }
@@ -204,19 +217,31 @@ export class SyncOpportunitiesUseCase implements ISyncOpportunitiesUseCase {
   private async runPass(
     since: Date | undefined,
     fetchOptions: SourceFetchOptions,
-    counters: { created: number; updated: number; unchanged: number; skipped: number },
+    counters: {
+      created: number;
+      updated: number;
+      unchanged: number;
+      skipped: number;
+    },
     seenInRun: Set<string>,
     onLastPublishedAt?: (date: Date) => void,
   ): Promise<Result<void, SourceUnavailableError>> {
-    const iterator = this.source.fetchPages(since, fetchOptions)[Symbol.asyncIterator]();
+    const iterator = this.source
+      .fetchPages(since, fetchOptions)
+      [Symbol.asyncIterator]();
 
     while (true) {
       let nextResult: IteratorResult<SourceOpportunity[]>;
       try {
         nextResult = await iterator.next();
       } catch (sourceError) {
-        const msg = sourceError instanceof Error ? sourceError.message : String(sourceError);
-        this.logger.warn(`SECOP source unavailable during ${fetchOptions.mode ?? 'sync'}: ${msg}`);
+        const msg =
+          sourceError instanceof Error
+            ? sourceError.message
+            : String(sourceError);
+        this.logger.warn(
+          `SECOP source unavailable during ${fetchOptions.mode ?? 'sync'}: ${msg}`,
+        );
         return err(createSourceUnavailableError('SECOP'));
       }
 
@@ -231,7 +256,8 @@ export class SyncOpportunitiesUseCase implements ISyncOpportunitiesUseCase {
           fetchOptions.now ?? new Date(),
         );
       } catch (dbError) {
-        const msg = dbError instanceof Error ? dbError.message : String(dbError);
+        const msg =
+          dbError instanceof Error ? dbError.message : String(dbError);
         this.logger.error(`Database error while persisting SECOP page: ${msg}`);
         throw dbError;
       }
@@ -242,7 +268,12 @@ export class SyncOpportunitiesUseCase implements ISyncOpportunitiesUseCase {
 
   private async processPage(
     sourceOpportunities: SourceOpportunity[],
-    counters: { created: number; updated: number; unchanged: number; skipped: number },
+    counters: {
+      created: number;
+      updated: number;
+      unchanged: number;
+      skipped: number;
+    },
     seenInRun: Set<string>,
     onLastPublishedAt?: (date: Date) => void,
     now: Date = new Date(),
@@ -263,14 +294,18 @@ export class SyncOpportunitiesUseCase implements ISyncOpportunitiesUseCase {
     if (validItems.length === 0) return;
 
     const externalIds = validItems.map((item) => item.externalId);
-    const existingRecords = await this.repository.findByExternalIds(externalIds);
+    const existingRecords =
+      await this.repository.findByExternalIds(externalIds);
     const existingByExternalId = new Map<string, Opportunity>(
       existingRecords.map((opp) => [opp.source.externalId, opp]),
     );
 
     const toSave: Opportunity[] = [];
     const toEnqueue: OpportunityId[] = [];
-    const opportunitiesWithMaterialChanges: Array<{ id: OpportunityId; materialChanges: Change[] }> = [];
+    const opportunitiesWithMaterialChanges: Array<{
+      id: OpportunityId;
+      materialChanges: Change[];
+    }> = [];
     let pageCreated = 0;
     let pageUpdated = 0;
     let pageUnchanged = 0;
@@ -401,7 +436,11 @@ export class SyncOpportunitiesUseCase implements ISyncOpportunitiesUseCase {
       for (const item of opportunitiesWithMaterialChanges) {
         const watchers = await this.watchRepository.findWatchers(item.id);
         if (watchers.length > 0) {
-          const alerts = AlertPlanner.planAlerts(item.id, item.materialChanges, watchers);
+          const alerts = AlertPlanner.planAlerts(
+            item.id,
+            item.materialChanges,
+            watchers,
+          );
           if (alerts.length > 0) {
             await this.alertRepository.createMany(alerts);
           }
@@ -421,11 +460,18 @@ export class SyncOpportunitiesUseCase implements ISyncOpportunitiesUseCase {
     }
   }
 
-  private compareSourceWithStored(existing: Opportunity, src: SourceOpportunity): Change[] {
+  private compareSourceWithStored(
+    existing: Opportunity,
+    src: SourceOpportunity,
+  ): Change[] {
     const changes: Change[] = [];
     const now = new Date();
 
-    const pushChange = (field: string, previousValue: string, newValue: string) => {
+    const pushChange = (
+      field: string,
+      previousValue: string,
+      newValue: string,
+    ) => {
       changes.push({
         field,
         previousValue,
@@ -443,13 +489,17 @@ export class SyncOpportunitiesUseCase implements ISyncOpportunitiesUseCase {
       pushChange('description', existing.description, src.description);
     }
 
-    const oldAmount = existing.amountKnown ? String(existing.amount.amount) : 'null';
+    const oldAmount = existing.amountKnown
+      ? String(existing.amount.amount)
+      : 'null';
     const newAmount = src.amount !== null ? String(src.amount) : 'null';
     if (oldAmount !== newAmount) {
       pushChange('amount', oldAmount, newAmount);
     }
 
-    const oldClosing = existing.closingDate ? existing.closingDate.toISOString() : 'null';
+    const oldClosing = existing.closingDate
+      ? existing.closingDate.toISOString()
+      : 'null';
     const newClosing = src.closingDate ? src.closingDate.toISOString() : 'null';
     if (oldClosing !== newClosing) {
       pushChange('closingDate', oldClosing, newClosing);

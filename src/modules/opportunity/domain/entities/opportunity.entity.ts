@@ -1,6 +1,9 @@
 import { OpportunityId } from '../../../shared/domain/typed-id';
 import { Result, ok, err } from '../../../shared/domain/result';
-import { ValidationError, createValidationError } from '../../../shared/domain/errors';
+import {
+  ValidationError,
+  createValidationError,
+} from '../../../shared/domain/errors';
 import {
   Money,
   Location,
@@ -68,13 +71,25 @@ export const createOpportunity = (
   if (!props.title || props.title.trim() === '') {
     missingFields.push('title');
   }
-  if (!props.contractingEntity || !props.contractingEntity.name || props.contractingEntity.name.trim() === '') {
+  if (
+    !props.contractingEntity ||
+    !props.contractingEntity.name ||
+    props.contractingEntity.name.trim() === ''
+  ) {
     missingFields.push('contractingEntity.name');
   }
-  if (!props.source || !props.source.externalId || props.source.externalId.trim() === '') {
+  if (
+    !props.source ||
+    !props.source.externalId ||
+    props.source.externalId.trim() === ''
+  ) {
     missingFields.push('source.externalId');
   }
-  if (!props.publishedAt || !(props.publishedAt instanceof Date) || isNaN(props.publishedAt.getTime())) {
+  if (
+    !props.publishedAt ||
+    !(props.publishedAt instanceof Date) ||
+    isNaN(props.publishedAt.getTime())
+  ) {
     missingFields.push('publishedAt');
   }
 
@@ -98,7 +113,10 @@ export const createOpportunity = (
     contractType: props.contractType,
     procurementModality: props.procurementModality,
     isCompetitive: props.isCompetitive ?? true,
-    categoryCode: props.categoryCode && props.categoryCode.trim() !== '' ? props.categoryCode.trim() : null,
+    categoryCode:
+      props.categoryCode && props.categoryCode.trim() !== ''
+        ? props.categoryCode.trim()
+        : null,
     publishedAt: props.publishedAt,
     lastPublishedAt: props.lastPublishedAt ?? props.publishedAt,
     closingDate: props.closingDate ?? null,
@@ -137,7 +155,10 @@ export const MAX_INDEX_DESCRIPTION_LENGTH = 1500;
  * If description is empty or equals title (case-insensitive), uses the title only.
  */
 export function buildIndexText(
-  opportunity: Pick<Opportunity, 'title' | 'description' | 'contractingEntity' | 'contractType'>,
+  opportunity: Pick<
+    Opportunity,
+    'title' | 'description' | 'contractingEntity' | 'contractType'
+  >,
 ): string {
   const title = (opportunity.title ?? '').trim();
   const description = (opportunity.description ?? '').trim();
@@ -147,7 +168,9 @@ export function buildIndexText(
     ? description.slice(0, MAX_INDEX_DESCRIPTION_LENGTH)
     : '';
 
-  const lead = truncatedDescription ? `${title}. ${truncatedDescription}` : title;
+  const lead = truncatedDescription
+    ? `${title}. ${truncatedDescription}`
+    : title;
   return `${lead}. Entidad: ${opportunity.contractingEntity.name}. Tipo: ${opportunity.contractType}.`;
 }
 
@@ -173,5 +196,3 @@ export function isRecommendable(
   const threshold = new Date(now.getTime() - SEVEN_DAYS_MS);
   return opportunity.closingDate.getTime() >= threshold.getTime();
 }
-
-

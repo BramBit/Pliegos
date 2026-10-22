@@ -3,10 +3,17 @@ import * as path from 'node:path';
 import { Pool } from 'pg';
 import { loadEnv } from '../src/config/env';
 import { Profile } from '../src/modules/profile/domain/entities/profile.entity';
-import { asProfileId, asUserId, OpportunityId } from '../src/modules/shared/domain/typed-id';
+import {
+  asProfileId,
+  asUserId,
+  OpportunityId,
+} from '../src/modules/shared/domain/typed-id';
 import { PostgresOpportunityRepository } from '../src/modules/opportunity/infrastructure/adapters/persistence/postgres-opportunity.repository';
 import { OllamaAdapter } from '../src/modules/recommendation/infrastructure/adapters/ollama/ollama.adapter';
-import { MatchingService, buildProfileQuery } from '../src/modules/recommendation/domain/services/matching.service';
+import {
+  MatchingService,
+  buildProfileQuery,
+} from '../src/modules/recommendation/domain/services/matching.service';
 import { Opportunity } from '../src/modules/opportunity/domain/entities/opportunity.entity';
 
 export interface EvalCandidate {
@@ -60,7 +67,9 @@ async function main() {
   const profilesPath = path.join(rootDir, 'eval', 'profiles.json');
   const candidatesOutPath = path.join(rootDir, 'eval', 'candidates.json');
 
-  const rawProfiles = JSON.parse(fs.readFileSync(profilesPath, 'utf8')) as Array<{
+  const rawProfiles = JSON.parse(
+    fs.readFileSync(profilesPath, 'utf8'),
+  ) as Array<{
     id: string;
     ownerId: string;
     sector: string;
@@ -118,7 +127,9 @@ async function main() {
       rows = fallback.rows;
     }
 
-    const loaded = await Promise.all(rows.map((r) => repo.findById(r.id as OpportunityId)));
+    const loaded = await Promise.all(
+      rows.map((r) => repo.findById(r.id as OpportunityId)),
+    );
     const actionable = loaded.filter((o): o is Opportunity => o !== null);
 
     console.log(`actionable_pool=${actionable.length}`);
@@ -140,17 +151,30 @@ async function main() {
       const scored: Array<{ opp: Opportunity; score: number }> = [];
       for (const opp of actionable) {
         const rawCos = cosById.get(opp.id);
-        const semantic = rawCos !== undefined ? MatchingService.normalizeCosine(rawCos) : null;
-        const breakdown = await matching.computeBreakdown(opp, profile, semantic);
+        const semantic =
+          rawCos !== undefined ? MatchingService.normalizeCosine(rawCos) : null;
+        const breakdown = await matching.computeBreakdown(
+          opp,
+          profile,
+          semantic,
+        );
         scored.push({ opp, score: breakdown.combinedScore });
       }
 
-      scored.sort((a, b) => b.score - a.score || a.opp.id.localeCompare(b.opp.id));
+      scored.sort(
+        (a, b) => b.score - a.score || a.opp.id.localeCompare(b.opp.id),
+      );
 
       const top30 = scored.slice(0, TOP_COUNT).map((s) => s.opp);
       const topIds = new Set(top30.map((o) => o.id));
-      const remaining = scored.slice(TOP_COUNT).map((s) => s.opp).filter((o) => !topIds.has(o.id));
-      const random30 = seededShuffle(remaining, 20261017 + idx).slice(0, RANDOM_COUNT);
+      const remaining = scored
+        .slice(TOP_COUNT)
+        .map((s) => s.opp)
+        .filter((o) => !topIds.has(o.id));
+      const random30 = seededShuffle(remaining, 20261017 + idx).slice(
+        0,
+        RANDOM_COUNT,
+      );
 
       const combined = [...top30, ...random30].map(toEvalCandidate);
       output[profile.id] = combined;
@@ -161,7 +185,11 @@ async function main() {
     }
 
     fs.mkdirSync(path.dirname(candidatesOutPath), { recursive: true });
-    fs.writeFileSync(candidatesOutPath, JSON.stringify(output, null, 2) + '\n', 'utf8');
+    fs.writeFileSync(
+      candidatesOutPath,
+      JSON.stringify(output, null, 2) + '\n',
+      'utf8',
+    );
   } finally {
     await pool.end();
   }

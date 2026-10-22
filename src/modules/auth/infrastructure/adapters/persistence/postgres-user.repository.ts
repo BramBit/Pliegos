@@ -5,7 +5,11 @@ import {
   CreateUserProps,
   CreateRefreshTokenProps,
 } from '../../../domain/ports/user.repository.port';
-import { User, UserRole, RefreshToken } from '../../../domain/entities/user.entity';
+import {
+  User,
+  UserRole,
+  RefreshToken,
+} from '../../../domain/entities/user.entity';
 import { UserId, asUserId } from '../../../../shared/domain/typed-id';
 
 interface UserRow {
@@ -46,7 +50,9 @@ export class PostgresUserRepository implements UserRepositoryPort {
 
   async findByEmail(email: string): Promise<User | null> {
     const query = 'SELECT * FROM users WHERE lower(email) = lower($1);';
-    const res: QueryResult<UserRow> = await this.pool.query(query, [email.trim()]);
+    const res: QueryResult<UserRow> = await this.pool.query(query, [
+      email.trim(),
+    ]);
     if (res.rows.length === 0) return null;
     return this.mapUserRow(res.rows[0]);
   }
@@ -58,7 +64,9 @@ export class PostgresUserRepository implements UserRepositoryPort {
     return this.mapUserRow(res.rows[0]);
   }
 
-  async createRefreshToken(props: CreateRefreshTokenProps): Promise<RefreshToken> {
+  async createRefreshToken(
+    props: CreateRefreshTokenProps,
+  ): Promise<RefreshToken> {
     const query = `
       INSERT INTO refresh_tokens (user_id, token_hash, expires_at)
       VALUES ($1, $2, $3)
@@ -74,7 +82,9 @@ export class PostgresUserRepository implements UserRepositoryPort {
 
   async findRefreshToken(tokenHash: string): Promise<RefreshToken | null> {
     const query = 'SELECT * FROM refresh_tokens WHERE token_hash = $1;';
-    const res: QueryResult<RefreshTokenRow> = await this.pool.query(query, [tokenHash]);
+    const res: QueryResult<RefreshTokenRow> = await this.pool.query(query, [
+      tokenHash,
+    ]);
     if (res.rows.length === 0) return null;
     return this.mapRefreshTokenRow(res.rows[0]);
   }

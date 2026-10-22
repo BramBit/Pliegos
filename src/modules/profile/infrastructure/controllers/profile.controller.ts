@@ -11,14 +11,23 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
+  ApiQuery,
+} from '@nestjs/swagger';
 import { ConfigureProfileUseCase } from '../../application/use-cases/configure-profile.use-case';
 import { GetProfileByIdUseCase } from '../../application/use-cases/get-profile-by-id.use-case';
 import { GetProfilesByOwnerUseCase } from '../../application/use-cases/get-profiles-by-owner.use-case';
 import { DeleteProfileUseCase } from '../../application/use-cases/delete-profile.use-case';
 import { asProfileId, asUserId } from '../../../shared/domain/typed-id';
 import { createProfileNotFoundError } from '../../../shared/domain/errors';
-import { ZodValidationPipe, uuidParamSchema } from '../../../shared/infrastructure/http/zod-validation.pipe';
+import {
+  ZodValidationPipe,
+  uuidParamSchema,
+} from '../../../shared/infrastructure/http/zod-validation.pipe';
 import { DomainErrorException } from '../../../shared/infrastructure/http/global-exception.filter';
 import {
   ErrorEnvelopeDto,
@@ -70,7 +79,8 @@ export class ProfileController {
   })
   async list(
     @CurrentUser() user: CurrentUserPayload,
-    @Query(new ZodValidationPipe(listProfilesQuerySchema)) query?: ListProfilesQuery,
+    @Query(new ZodValidationPipe(listProfilesQuerySchema))
+    query?: ListProfilesQuery,
   ): Promise<ProfilePageDto> {
     const page = query?.page ?? 1;
     const pageSize = query?.pageSize ?? 20;
@@ -98,7 +108,8 @@ export class ProfileController {
   @Get(':id')
   @ApiOperation({
     summary: 'Obtener un perfil por ID',
-    description: 'Retorna el perfil completo de un contratista perteneciente al usuario autenticado.',
+    description:
+      'Retorna el perfil completo de un contratista perteneciente al usuario autenticado.',
   })
   @ApiParam({
     name: 'id',
@@ -120,12 +131,17 @@ export class ProfileController {
     @CurrentUser() user: CurrentUserPayload,
   ): Promise<ProfileDto> {
     if (this.profileAccessService) {
-      const profile = await this.profileAccessService.assertOwner(asProfileId(id), user);
+      const profile = await this.profileAccessService.assertOwner(
+        asProfileId(id),
+        user,
+      );
       return toProfileDto(profile);
     }
 
     if (!this.getProfileByIdUseCase) {
-      throw new DomainErrorException(createProfileNotFoundError(asProfileId(id)));
+      throw new DomainErrorException(
+        createProfileNotFoundError(asProfileId(id)),
+      );
     }
 
     const result = await this.getProfileByIdUseCase.execute({
@@ -148,7 +164,8 @@ export class ProfileController {
   })
   @ApiResponse({
     status: HttpStatus.CREATED,
-    description: 'Perfil guardado exitosamente y trabajo de recomendación encolado',
+    description:
+      'Perfil guardado exitosamente y trabajo de recomendación encolado',
     type: ProfileDto,
   })
   @ApiResponse({
@@ -177,7 +194,10 @@ export class ProfileController {
           categoryCodes: body.preferences.categoryCodes,
           keywords: body.preferences.keywords,
           amountRange: body.preferences.amountRange
-            ? { min: body.preferences.amountRange.min, max: body.preferences.amountRange.max }
+            ? {
+                min: body.preferences.amountRange.min,
+                max: body.preferences.amountRange.max,
+              }
             : null,
           departments: body.preferences.departments,
         },
@@ -250,7 +270,10 @@ export class ProfileController {
           categoryCodes: body.preferences.categoryCodes,
           keywords: body.preferences.keywords,
           amountRange: body.preferences.amountRange
-            ? { min: body.preferences.amountRange.min, max: body.preferences.amountRange.max }
+            ? {
+                min: body.preferences.amountRange.min,
+                max: body.preferences.amountRange.max,
+              }
             : null,
           departments: body.preferences.departments,
         },

@@ -56,12 +56,16 @@ describe('loadEnv', () => {
     try {
       loadEnv(withoutDb);
     } catch (error) {
-      expect((error as EnvValidationError).problems.join('\n')).toContain('DATABASE_URL');
+      expect((error as EnvValidationError).problems.join('\n')).toContain(
+        'DATABASE_URL',
+      );
     }
   });
 
   it('fails when DATABASE_URL is an empty string', () => {
-    expect(() => loadEnv({ ...validEnv, DATABASE_URL: '' })).toThrow(EnvValidationError);
+    expect(() => loadEnv({ ...validEnv, DATABASE_URL: '' })).toThrow(
+      EnvValidationError,
+    );
   });
 
   it('fails when PORT is not numeric', () => {
@@ -70,7 +74,9 @@ describe('loadEnv', () => {
       throw new Error('expected loadEnv to throw');
     } catch (error) {
       expect(error).toBeInstanceOf(EnvValidationError);
-      expect((error as EnvValidationError).problems.join('\n')).toContain('PORT');
+      expect((error as EnvValidationError).problems.join('\n')).toContain(
+        'PORT',
+      );
     }
   });
 
@@ -88,7 +94,9 @@ describe('loadEnv', () => {
     const { JWT_SECRET: _omitted, ...withoutSecret } = validEnv;
     expect(() => loadEnv(withoutSecret)).toThrow(EnvValidationError);
 
-    expect(() => loadEnv({ ...validEnv, JWT_SECRET: 'short-secret' })).toThrow(EnvValidationError);
+    expect(() => loadEnv({ ...validEnv, JWT_SECRET: 'short-secret' })).toThrow(
+      EnvValidationError,
+    );
   });
 
   it('rejects template placeholder JWT_SECRET in production mode', () => {
@@ -96,7 +104,8 @@ describe('loadEnv', () => {
       loadEnv({
         ...validEnv,
         NODE_ENV: 'production',
-        JWT_SECRET: 'development-jwt-secret-key-must-be-at-least-32-characters-long',
+        JWT_SECRET:
+          'development-jwt-secret-key-must-be-at-least-32-characters-long',
       }),
     ).toThrow(EnvValidationError);
 
@@ -104,7 +113,8 @@ describe('loadEnv', () => {
       loadEnv({
         ...validEnv,
         NODE_ENV: 'production',
-        JWT_SECRET: 'development-jwt-secret-key-must-be-at-least-32-characters-long',
+        JWT_SECRET:
+          'development-jwt-secret-key-must-be-at-least-32-characters-long',
       });
       throw new Error('expected to throw');
     } catch (err) {
@@ -118,9 +128,12 @@ describe('loadEnv', () => {
     const env = loadEnv({
       ...validEnv,
       NODE_ENV: 'development',
-      JWT_SECRET: 'development-jwt-secret-key-must-be-at-least-32-characters-long',
+      JWT_SECRET:
+        'development-jwt-secret-key-must-be-at-least-32-characters-long',
     });
-    expect(env.JWT_SECRET).toBe('development-jwt-secret-key-must-be-at-least-32-characters-long');
+    expect(env.JWT_SECRET).toBe(
+      'development-jwt-secret-key-must-be-at-least-32-characters-long',
+    );
   });
 
   it('handles MAX_PROFILES_PER_USER defaults, overrides and validations', () => {
@@ -130,8 +143,12 @@ describe('loadEnv', () => {
     const envCustom = loadEnv({ ...validEnv, MAX_PROFILES_PER_USER: '8' });
     expect(envCustom.MAX_PROFILES_PER_USER).toBe(8);
 
-    expect(() => loadEnv({ ...validEnv, MAX_PROFILES_PER_USER: '-1' })).toThrow(EnvValidationError);
-    expect(() => loadEnv({ ...validEnv, MAX_PROFILES_PER_USER: 'invalid' })).toThrow(EnvValidationError);
+    expect(() => loadEnv({ ...validEnv, MAX_PROFILES_PER_USER: '-1' })).toThrow(
+      EnvValidationError,
+    );
+    expect(() =>
+      loadEnv({ ...validEnv, MAX_PROFILES_PER_USER: 'invalid' }),
+    ).toThrow(EnvValidationError);
   });
 
   describe('CORS configuration', () => {
@@ -164,7 +181,10 @@ describe('loadEnv', () => {
         NODE_ENV: 'production',
         CORS_ORIGINS: 'https://app.pliegos.co, https://admin.pliegos.co',
       });
-      expect(multiple.origin).toEqual(['https://app.pliegos.co', 'https://admin.pliegos.co']);
+      expect(multiple.origin).toEqual([
+        'https://app.pliegos.co',
+        'https://admin.pliegos.co',
+      ]);
       expect(multiple.credentials).toBe(false);
     });
   });

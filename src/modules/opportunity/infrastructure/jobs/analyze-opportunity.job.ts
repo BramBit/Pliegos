@@ -1,5 +1,11 @@
 import { createHash } from 'node:crypto';
-import { Inject, Injectable, Logger, LoggerService, Optional } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  Logger,
+  LoggerService,
+  Optional,
+} from '@nestjs/common';
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import {
   ANALYSIS_QUEUE_NAME,
@@ -16,8 +22,14 @@ import {
   TextGeneratorPort,
 } from '../../../recommendation/domain/ports/ai-provider.port';
 import { buildSafeSummaryUserMessage } from '../../../recommendation/infrastructure/adapters/ollama/ollama.adapter';
-import { SEARCH_INDEX_PORT, SearchIndexPort } from '../../domain/ports/search-index.port';
-import { Opportunity, withOpportunityAnalysis } from '../../domain/entities/opportunity.entity';
+import {
+  SEARCH_INDEX_PORT,
+  SearchIndexPort,
+} from '../../domain/ports/search-index.port';
+import {
+  Opportunity,
+  withOpportunityAnalysis,
+} from '../../domain/entities/opportunity.entity';
 import {
   Analysis,
   Requirement,
@@ -33,7 +45,10 @@ export interface IJobLike<T = any> {
 }
 
 export function computeAnalysisContentHash(
-  opportunity: Pick<Opportunity, 'title' | 'description' | 'contractingEntity' | 'contractType'>,
+  opportunity: Pick<
+    Opportunity,
+    'title' | 'description' | 'contractingEntity' | 'contractType'
+  >,
   embeddingModel: string = 'nomic-embed-text',
 ): string {
   const payload = [
@@ -46,9 +61,14 @@ export function computeAnalysisContentHash(
   return createHash('sha256').update(payload, 'utf8').digest('hex');
 }
 
-export function hasGeneratedSummary(analysis: Analysis | null | undefined): boolean {
+export function hasGeneratedSummary(
+  analysis: Analysis | null | undefined,
+): boolean {
   if (!analysis) return false;
-  if (analysis.summaryStatus === 'ready' || analysis.summaryStatus === 'fallback') {
+  if (
+    analysis.summaryStatus === 'ready' ||
+    analysis.summaryStatus === 'fallback'
+  ) {
     return true;
   }
   if (!analysis.summaryStatus && Boolean(analysis.summary?.trim())) {
@@ -68,17 +88,20 @@ export class AnalyzeOpportunityJob extends WorkerHost {
   constructor(
     @Inject(OPPORTUNITY_REPOSITORY_PORT)
     private readonly opportunityRepository: OpportunityRepositoryPort,
-    @Inject(TEXT_GENERATOR_PORT) private readonly textGenerator: TextGeneratorPort,
+    @Inject(TEXT_GENERATOR_PORT)
+    private readonly textGenerator: TextGeneratorPort,
     @Inject(SEARCH_INDEX_PORT) private readonly searchIndex: SearchIndexPort,
     @Optional() @Inject('ANALYSIS_JOB_LOGGER') logger?: LoggerService,
-    @Optional() @Inject(EMBEDDER_PORT) embedderOrModel?: Pick<EmbedderPort, 'model'> | string,
+    @Optional()
+    @Inject(EMBEDDER_PORT)
+    embedderOrModel?: Pick<EmbedderPort, 'model'> | string,
   ) {
     super();
     this.logger = logger ?? new Logger(AnalyzeOpportunityJob.name);
     this.embeddingModel =
       typeof embedderOrModel === 'string'
         ? embedderOrModel
-        : embedderOrModel?.model ?? 'nomic-embed-text';
+        : (embedderOrModel?.model ?? 'nomic-embed-text');
   }
 
   /**
@@ -91,7 +114,8 @@ export class AnalyzeOpportunityJob extends WorkerHost {
     const shouldSummarize = summarize !== false;
 
     const runWork = async () => {
-      const opportunity = await this.opportunityRepository.findById(opportunityId);
+      const opportunity =
+        await this.opportunityRepository.findById(opportunityId);
       if (!opportunity) {
         this.logger.warn(
           `AnalyzeOpportunityJob: Opportunity ${opportunityId} not found in repository. Skipping analysis.`,
@@ -99,7 +123,10 @@ export class AnalyzeOpportunityJob extends WorkerHost {
         return;
       }
 
-      const contentHash = computeAnalysisContentHash(opportunity, this.embeddingModel);
+      const contentHash = computeAnalysisContentHash(
+        opportunity,
+        this.embeddingModel,
+      );
       const embeddingUpToDate =
         opportunity.analysis?.contentHash === contentHash &&
         Boolean(opportunity.analysis?.embeddingGeneratedAt);
@@ -121,7 +148,9 @@ export class AnalyzeOpportunityJob extends WorkerHost {
         return;
       }
 
-      this.logger.log(`AnalyzeOpportunityJob: Starting analysis for Opportunity ${opportunityId}...`);
+      this.logger.log(
+        `AnalyzeOpportunityJob: Starting analysis for Opportunity ${opportunityId}...`,
+      );
 
       let summary = '';
       let summaryStatus: SummaryStatus = 'unavailable';
@@ -133,12 +162,20 @@ export class AnalyzeOpportunityJob extends WorkerHost {
         );
 
         try {
-          const rawSummary = (await this.textGenerator.summarize(userMessage)).trim();
-          if (rawSummary.length > 0 && rawSummary.length <= MAX_SUMMARY_OUTPUT_CHARS) {
+          const rawSummary = (
+            await this.textGenerator.summarize(userMessage)
+          ).trim();
+          if (
+            rawSummary.length > 0 &&
+            rawSummary.length <= MAX_SUMMARY_OUTPUT_CHARS
+          ) {
             summary = rawSummary;
             summaryStatus = 'ready';
           } else {
-            summary = (opportunity.description ?? '').slice(0, FALLBACK_DESCRIPTION_CHARS);
+            summary = (opportunity.description ?? '').slice(
+              0,
+              FALLBACK_DESCRIPTION_CHARS,
+            );
             summaryStatus = 'fallback';
           }
         } catch (error) {
@@ -146,10 +183,16 @@ export class AnalyzeOpportunityJob extends WorkerHost {
           this.logger.warn(
             `AnalyzeOpportunityJob: LLM summarize failed for Opportunity ${opportunityId} (${msg}); using fallback.`,
           );
-          summary = (opportunity.description ?? '').slice(0, FALLBACK_DESCRIPTION_CHARS);
+          summary = (opportunity.description ?? '').slice(
+            0,
+            FALLBACK_DESCRIPTION_CHARS,
+          );
           summaryStatus = 'fallback';
         }
-      } else if (opportunity.analysis?.contentHash === contentHash && opportunity.analysis.summaryStatus) {
+      } else if (
+        opportunity.analysis?.contentHash === contentHash &&
+        opportunity.analysis.summaryStatus
+      ) {
         summary = opportunity.analysis.summary;
         summaryStatus = opportunity.analysis.summaryStatus;
       }
@@ -168,7 +211,10 @@ export class AnalyzeOpportunityJob extends WorkerHost {
         contentHash,
       };
 
-      const analyzedOpportunity = withOpportunityAnalysis(opportunity, analysis);
+      const analyzedOpportunity = withOpportunityAnalysis(
+        opportunity,
+        analysis,
+      );
 
       if (!embeddingUpToDate) {
         await this.searchIndex.indexOpportunity(analyzedOpportunity);

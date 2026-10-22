@@ -52,7 +52,10 @@ export class SearchOpportunitiesUseCase implements ISearchOpportunitiesUseCase {
     const trimmedQuery = rawQuery?.trim();
     const filters: OpportunityFilters = input.filters ?? {};
     const page = Math.max(1, Math.trunc(filters.page ?? 1));
-    const pageSize = Math.min(Math.max(1, Math.trunc(filters.pageSize ?? 20)), 50);
+    const pageSize = Math.min(
+      Math.max(1, Math.trunc(filters.pageSize ?? 20)),
+      50,
+    );
 
     if (trimmedQuery && trimmedQuery.length > 0) {
       const [queryVector] = await this.embedder.embed([trimmedQuery]);

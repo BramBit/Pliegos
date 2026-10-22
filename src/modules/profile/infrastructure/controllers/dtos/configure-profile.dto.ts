@@ -61,7 +61,10 @@ export class AmountRangeDto {
 }
 
 export class CapabilityDto {
-  @ApiProperty({ description: 'Nombre o denominación de la capacidad técnica', example: 'Desarrollo Cloud y DevOps' })
+  @ApiProperty({
+    description: 'Nombre o denominación de la capacidad técnica',
+    example: 'Desarrollo Cloud y DevOps',
+  })
   name!: string;
 
   @ApiProperty({ description: 'Años de experiencia demostrable', example: 5 })
@@ -77,7 +80,8 @@ export class ProfilePreferencesDto {
   categoryCodes!: string[];
 
   @ApiProperty({
-    description: 'Palabras clave libres que alimentan la similitud semántica con IA',
+    description:
+      'Palabras clave libres que alimentan la similitud semántica con IA',
     example: ['software', 'ciberseguridad', 'consultoría ti'],
     type: [String],
   })
@@ -90,7 +94,8 @@ export class ProfilePreferencesDto {
   amountRange?: AmountRangeDto | null;
 
   @ApiProperty({
-    description: 'Departamentos de interés geográfico (vacío = sin preferencia, deben ser válidos en Colombia)',
+    description:
+      'Departamentos de interés geográfico (vacío = sin preferencia, deben ser válidos en Colombia)',
     example: ['Antioquia', 'Bogotá D.C.'],
     type: [String],
   })
@@ -99,13 +104,15 @@ export class ProfilePreferencesDto {
 
 export class ConfigureProfileDto {
   @ApiPropertyOptional({
-    description: 'ID único del perfil en caso de actualización (omite para generar uno nuevo automáticamente)',
+    description:
+      'ID único del perfil en caso de actualización (omite para generar uno nuevo automáticamente)',
     example: 'd9b2d63d-a232-4d2c-8cb4-e5e6b72a44f1',
   })
   profileId?: string;
 
   @ApiPropertyOptional({
-    description: 'Identificador del usuario propietario del perfil (provisto automáticamente del token)',
+    description:
+      'Identificador del usuario propietario del perfil (provisto automáticamente del token)',
     example: 'user-empresa-123',
   })
   ownerId?: string;
@@ -130,7 +137,8 @@ export class ConfigureProfileDto {
   alertsEnabled?: boolean;
 
   @ApiPropertyOptional({
-    description: 'Anticipación en días para alertar sobre cierre de convocatorias',
+    description:
+      'Anticipación en días para alertar sobre cierre de convocatorias',
     example: 3,
     default: 3,
   })

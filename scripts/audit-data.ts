@@ -59,23 +59,35 @@ async function main() {
     const unspecified = await num(
       `SELECT count(*) AS n FROM opportunities WHERE category_code IN ('UNSPECIFIED', 'V1.00000000')`,
     );
-    console.log(`UNSPECIFIED or V1.00000000: ${unspecified} (${pct(unspecified, total)})`);
+    console.log(
+      `UNSPECIFIED or V1.00000000: ${unspecified} (${pct(unspecified, total)})`,
+    );
 
     section('3. closing_date NULL, by modality');
-    const closing = await pool.query<{ value: string; total: string; nulls: string }>(
+    const closing = await pool.query<{
+      value: string;
+      total: string;
+      nulls: string;
+    }>(
       `SELECT procurement_modality AS value, count(*) AS total,
               count(*) FILTER (WHERE closing_date IS NULL) AS nulls
        FROM opportunities GROUP BY 1 ORDER BY 2 DESC`,
     );
-    const nullClosing = await num('SELECT count(*) AS n FROM opportunities WHERE closing_date IS NULL');
-    console.log(`overall closing_date NULL: ${nullClosing} (${pct(nullClosing, total)})`);
+    const nullClosing = await num(
+      'SELECT count(*) AS n FROM opportunities WHERE closing_date IS NULL',
+    );
+    console.log(
+      `overall closing_date NULL: ${nullClosing} (${pct(nullClosing, total)})`,
+    );
     for (const row of closing.rows) {
       console.log(
         `  ${row.value}: ${row.nulls}/${row.total} (${pct(Number(row.nulls), Number(row.total))})`,
       );
     }
 
-    section("4. department / city placeholders ('No Definido', 'No Aplica', empty)");
+    section(
+      "4. department / city placeholders ('No Definido', 'No Aplica', empty)",
+    );
     for (const column of ['department', 'city']) {
       const placeholders = await num(
         `SELECT count(*) AS n FROM opportunities WHERE ${column} IN ('No Definido', 'No Aplica')`,
@@ -83,15 +95,21 @@ async function main() {
       const empty = await num(
         `SELECT count(*) AS n FROM opportunities WHERE ${column} IS NOT NULL AND btrim(${column}) = ''`,
       );
-      const nulls = await num(`SELECT count(*) AS n FROM opportunities WHERE ${column} IS NULL`);
+      const nulls = await num(
+        `SELECT count(*) AS n FROM opportunities WHERE ${column} IS NULL`,
+      );
       console.log(`${column}:`);
-      console.log(`  'No Definido' or 'No Aplica': ${placeholders} (${pct(placeholders, total)})`);
+      console.log(
+        `  'No Definido' or 'No Aplica': ${placeholders} (${pct(placeholders, total)})`,
+      );
       console.log(`  empty string: ${empty} (${pct(empty, total)})`);
       console.log(`  NULL: ${nulls} (${pct(nulls, total)})`);
     }
 
     section('5. amount = 0');
-    const zeroAmount = await num('SELECT count(*) AS n FROM opportunities WHERE amount = 0');
+    const zeroAmount = await num(
+      'SELECT count(*) AS n FROM opportunities WHERE amount = 0',
+    );
     console.log(`amount = 0: ${zeroAmount} (${pct(zeroAmount, total)})`);
 
     section('6. published_at');
@@ -118,12 +136,22 @@ async function main() {
     console.log(`pairs appearing more than once: ${repeatedPairs}`);
 
     section('8. Analysis and embeddings');
-    const withoutAnalysis = await num('SELECT count(*) AS n FROM opportunities WHERE analysis IS NULL');
-    console.log(`without analysis: ${withoutAnalysis} (${pct(withoutAnalysis, total)})`);
-    const embeddings = await num('SELECT count(*) AS n FROM opportunity_embeddings');
+    const withoutAnalysis = await num(
+      'SELECT count(*) AS n FROM opportunities WHERE analysis IS NULL',
+    );
+    console.log(
+      `without analysis: ${withoutAnalysis} (${pct(withoutAnalysis, total)})`,
+    );
+    const embeddings = await num(
+      'SELECT count(*) AS n FROM opportunity_embeddings',
+    );
     console.log(`rows in opportunity_embeddings: ${embeddings}`);
-    const unknownStatus = await num("SELECT count(*) AS n FROM opportunities WHERE status = 'Unknown'");
-    console.log(`status = 'Unknown': ${unknownStatus} (${pct(unknownStatus, total)})`);
+    const unknownStatus = await num(
+      "SELECT count(*) AS n FROM opportunities WHERE status = 'Unknown'",
+    );
+    console.log(
+      `status = 'Unknown': ${unknownStatus} (${pct(unknownStatus, total)})`,
+    );
 
     section('9. Coverage of recommendable rows');
     const cov = await pool.query<{
@@ -158,12 +186,24 @@ async function main() {
     const r = cov.rows[0];
     const recTotal = Number(r.recommendable);
     console.log(`total recommendable: ${recTotal}`);
-    console.log(`with embedding: ${r.with_emb} (${pct(Number(r.with_emb), recTotal)})`);
-    console.log(`with description: ${r.with_desc} (${pct(Number(r.with_desc), recTotal)})`);
-    console.log(`with valid category: ${r.with_cat} (${pct(Number(r.with_cat), recTotal)})`);
-    console.log(`with department: ${r.with_dept} (${pct(Number(r.with_dept), recTotal)})`);
-    console.log(`with known amount: ${r.with_amount} (${pct(Number(r.with_amount), recTotal)})`);
-    console.log(`with future closing date: ${r.with_future_closing} (${pct(Number(r.with_future_closing), recTotal)})`);
+    console.log(
+      `with embedding: ${r.with_emb} (${pct(Number(r.with_emb), recTotal)})`,
+    );
+    console.log(
+      `with description: ${r.with_desc} (${pct(Number(r.with_desc), recTotal)})`,
+    );
+    console.log(
+      `with valid category: ${r.with_cat} (${pct(Number(r.with_cat), recTotal)})`,
+    );
+    console.log(
+      `with department: ${r.with_dept} (${pct(Number(r.with_dept), recTotal)})`,
+    );
+    console.log(
+      `with known amount: ${r.with_amount} (${pct(Number(r.with_amount), recTotal)})`,
+    );
+    console.log(
+      `with future closing date: ${r.with_future_closing} (${pct(Number(r.with_future_closing), recTotal)})`,
+    );
   } finally {
     await pool.end();
   }

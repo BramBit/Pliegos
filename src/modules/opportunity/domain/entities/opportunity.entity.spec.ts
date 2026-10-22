@@ -51,7 +51,9 @@ describe('Opportunity Entity', () => {
       const opp = result.value;
       expect(opp.id).toBe('opp-001');
       expect(opp.title).toBe('Adquisición de licencias de software');
-      expect(opp.description).toBe('Licenciamiento anual para servidores institucionales');
+      expect(opp.description).toBe(
+        'Licenciamiento anual para servidores institucionales',
+      );
       expect(opp.amount.amount).toBe(50000000);
       expect(opp.amount.currency).toBe('COP');
       expect(opp.amountKnown).toBe(true);
@@ -90,7 +92,12 @@ describe('Opportunity Entity', () => {
       id: asOpportunityId(''),
       title: '',
       contractingEntity: { name: '', taxId: '' },
-      source: { sourceName: 'SECOP' as const, externalId: '', humanReference: '', originalUrl: '' },
+      source: {
+        sourceName: 'SECOP' as const,
+        externalId: '',
+        humanReference: '',
+        originalUrl: '',
+      },
       publishedAt: new Date('invalid-date'),
     };
 
@@ -129,7 +136,9 @@ describe('Opportunity Entity', () => {
 
     const analysis = {
       summary: 'Resumen del pliego técnico',
-      requirements: [{ text: 'Experiencia mínima 3 años', type: 'technical' as const }],
+      requirements: [
+        { text: 'Experiencia mínima 3 años', type: 'technical' as const },
+      ],
       embeddingGeneratedAt: new Date('2026-10-02T12:00:00.000Z'),
     };
 
@@ -276,4 +285,3 @@ describe('Opportunity Entity', () => {
     });
   });
 });
-

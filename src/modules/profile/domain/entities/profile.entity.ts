@@ -1,7 +1,13 @@
 import { ProfileId, UserId } from '../../../shared/domain/typed-id';
-import { Capability, ProfilePreferences } from '../value-objects/profile.value-objects';
+import {
+  Capability,
+  ProfilePreferences,
+} from '../value-objects/profile.value-objects';
 import { Result, ok, err } from '../../../shared/domain/result';
-import { ValidationError, createValidationError } from '../../../shared/domain/errors';
+import {
+  ValidationError,
+  createValidationError,
+} from '../../../shared/domain/errors';
 
 export interface Profile {
   readonly id: ProfileId;
@@ -29,7 +35,9 @@ export interface CreateProfileProps {
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-export const createProfile = (props: CreateProfileProps): Result<Profile, ValidationError> => {
+export const createProfile = (
+  props: CreateProfileProps,
+): Result<Profile, ValidationError> => {
   const missingFields: string[] = [];
 
   if (!props.id || props.id.trim() === '') {
@@ -65,7 +73,11 @@ export const createProfile = (props: CreateProfileProps): Result<Profile, Valida
   }
 
   const deadlineDays = props.deadlineAlertDays ?? 3;
-  if (!Number.isInteger(deadlineDays) || deadlineDays < 1 || deadlineDays > 30) {
+  if (
+    !Number.isInteger(deadlineDays) ||
+    deadlineDays < 1 ||
+    deadlineDays > 30
+  ) {
     return err(
       createValidationError(
         ['deadlineAlertDays'],

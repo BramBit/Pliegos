@@ -1,5 +1,9 @@
 import { randomUUID } from 'node:crypto';
-import { asAlertId, OpportunityId, ProfileId } from '../../../shared/domain/typed-id';
+import {
+  asAlertId,
+  OpportunityId,
+  ProfileId,
+} from '../../../shared/domain/typed-id';
 import { Change } from '../../../opportunity/domain/value-objects/opportunity.value-objects';
 import { Alert, AlertTrigger, createAlert } from '../entities/alert.entity';
 

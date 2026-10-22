@@ -23,10 +23,11 @@ export class UndoFeedbackUseCase implements IUndoFeedbackUseCase {
     userId?: UserId;
   }): Promise<Result<void, RecommendationNotFoundError>> {
     if (this.recommendationRepository.clearFeedbackWithWatch) {
-      const updated = await this.recommendationRepository.clearFeedbackWithWatch(
-        input.recommendationId,
-        input.userId,
-      );
+      const updated =
+        await this.recommendationRepository.clearFeedbackWithWatch(
+          input.recommendationId,
+          input.userId,
+        );
       if (!updated) {
         return err(createRecommendationNotFoundError(input.recommendationId));
       }

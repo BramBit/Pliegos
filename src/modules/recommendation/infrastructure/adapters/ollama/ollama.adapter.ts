@@ -41,7 +41,10 @@ export function sanitizeSummaryInput(input: string): string {
  * Builds the safe user message "<dato>{title}\n{description, max 3000 chars}</dato>"
  * after stripping control characters and "<dato>" / "</dato>" from the inputs.
  */
-export function buildSafeSummaryUserMessage(title: string, description: string): string {
+export function buildSafeSummaryUserMessage(
+  title: string,
+  description: string,
+): string {
   const cleanTitle = sanitizeSummaryInput(title);
   const cleanDescription = sanitizeSummaryInput(description).slice(
     0,
@@ -61,7 +64,10 @@ function ensureSafeDatoEnvelope(text: string): string {
     const rawDescription = inner.slice(newlineIndex + 1);
     return buildSafeSummaryUserMessage(rawTitle, rawDescription);
   }
-  const cleanSingle = sanitizeSummaryInput(inner).slice(0, MAX_SUMMARY_DESCRIPTION_CHARS);
+  const cleanSingle = sanitizeSummaryInput(inner).slice(
+    0,
+    MAX_SUMMARY_DESCRIPTION_CHARS,
+  );
   return `<dato>${cleanSingle}</dato>`;
 }
 
@@ -77,7 +83,10 @@ export class OllamaAdapter implements EmbedderPort, TextGeneratorPort {
   private readonly logger: LoggerService;
 
   constructor(options?: OllamaAdapterOptions) {
-    this.baseUrl = (options?.baseUrl ?? DEFAULT_OLLAMA_BASE_URL).replace(/\/+$/, '');
+    this.baseUrl = (options?.baseUrl ?? DEFAULT_OLLAMA_BASE_URL).replace(
+      /\/+$/,
+      '',
+    );
     this.model = options?.embedModel ?? DEFAULT_EMBED_MODEL;
     this.chatModel = options?.chatModel ?? DEFAULT_CHAT_MODEL;
     this.embedTimeoutMs = options?.embedTimeoutMs ?? DEFAULT_EMBED_TIMEOUT_MS;
@@ -92,8 +101,14 @@ export class OllamaAdapter implements EmbedderPort, TextGeneratorPort {
    * Throws on empty input or when any returned vector does not have 768 dimensions.
    */
   async embed(texts: string[]): Promise<number[][]> {
-    if (!Array.isArray(texts) || texts.length === 0 || texts.some((t) => !t || t.trim() === '')) {
-      throw new Error('Ollama embed error: cannot generate embedding for empty text');
+    if (
+      !Array.isArray(texts) ||
+      texts.length === 0 ||
+      texts.some((t) => !t || t.trim() === '')
+    ) {
+      throw new Error(
+        'Ollama embed error: cannot generate embedding for empty text',
+      );
     }
 
     const batchUrl = `${this.baseUrl}/api/embed`;
@@ -124,8 +139,14 @@ export class OllamaAdapter implements EmbedderPort, TextGeneratorPort {
     }
 
     const data = (await response.json()) as { embeddings?: number[][] };
-    if (!data || !Array.isArray(data.embeddings) || data.embeddings.length !== texts.length) {
-      throw new Error(`Ollama embed error: invalid response format from model ${this.model}`);
+    if (
+      !data ||
+      !Array.isArray(data.embeddings) ||
+      data.embeddings.length !== texts.length
+    ) {
+      throw new Error(
+        `Ollama embed error: invalid response format from model ${this.model}`,
+      );
     }
 
     for (const vec of data.embeddings) {
@@ -196,7 +217,9 @@ export class OllamaAdapter implements EmbedderPort, TextGeneratorPort {
 
       const data = (await response.json()) as { embedding?: number[] };
       if (!data || !Array.isArray(data.embedding)) {
-        throw new Error(`Ollama embed error: invalid response format from model ${this.model}`);
+        throw new Error(
+          `Ollama embed error: invalid response format from model ${this.model}`,
+        );
       }
 
       this.assertValidDimensions(data.embedding);

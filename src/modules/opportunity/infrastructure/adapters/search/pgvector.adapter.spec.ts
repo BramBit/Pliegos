@@ -77,7 +77,9 @@ describe('reciprocalRankFusion (Pure Domain Unit Tests)', () => {
     const query = buildProfileOrTsQuery(
       'Tecnología de la información. Desarrollo web, ciberseguridad & pentesting! 2026',
     );
-    expect(query).toBe('Tecnología | información | Desarrollo | web | ciberseguridad | pentesting | 2026');
+    expect(query).toBe(
+      'Tecnología | información | Desarrollo | web | ciberseguridad | pentesting | 2026',
+    );
   });
 });
 
@@ -104,7 +106,9 @@ describe('PgVectorAdapter', () => {
       expect(mockPool.query).toHaveBeenCalledTimes(1);
       const queryText = (mockPool.query as jest.Mock).mock.calls[0][0];
       expect(queryText).toContain('CREATE EXTENSION IF NOT EXISTS vector');
-      expect(queryText).toContain(`CREATE TABLE IF NOT EXISTS ${DEFAULT_TABLE_NAME}`);
+      expect(queryText).toContain(
+        `CREATE TABLE IF NOT EXISTS ${DEFAULT_TABLE_NAME}`,
+      );
       expect(queryText).toContain('embedding_model TEXT NOT NULL');
       expect(queryText).toContain(`vector(${PGVECTOR_DIMENSIONS})`);
       expect(queryText).toContain('USING hnsw (embedding vector_cosine_ops)');
@@ -208,10 +212,7 @@ describe('PgVectorAdapter', () => {
 
     it('performs semantic search filtering by embedding_model and ordering by cosine distance (<=>)', async () => {
       (mockPool.query as jest.Mock).mockResolvedValue({
-        rows: [
-          { opportunity_id: 'opp-1' },
-          { opportunity_id: 'opp-2' },
-        ],
+        rows: [{ opportunity_id: 'opp-1' }, { opportunity_id: 'opp-2' }],
       });
 
       const adapter = new PgVectorAdapter({ pool: mockPool, embedder });
@@ -391,7 +392,12 @@ describe('PgVectorAdapter', () => {
         },
       );
 
-      await oppRepo.saveMany([oppBoth, oppKeywordOnly, oppVectorOnly, oppDirect]);
+      await oppRepo.saveMany([
+        oppBoth,
+        oppKeywordOnly,
+        oppVectorOnly,
+        oppDirect,
+      ]);
 
       // Index vectors for oppBoth, oppVectorOnly, and oppDirect (oppKeywordOnly has no vector)
       await pgVector.indexVector(oppBoth.id, queryVector, {

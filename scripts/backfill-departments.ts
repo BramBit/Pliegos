@@ -22,10 +22,15 @@ async function main() {
     const copyRes = await pool.query(
       'UPDATE opportunities SET department_raw = department WHERE department_raw IS NULL AND department IS NOT NULL;',
     );
-    console.log(`Initialized department_raw for ${copyRes.rowCount ?? 0} rows.`);
+    console.log(
+      `Initialized department_raw for ${copyRes.rowCount ?? 0} rows.`,
+    );
 
     // 2. Query distinct department_raw values
-    const distinctRes = await pool.query<{ department_raw: string; count: string }>(
+    const distinctRes = await pool.query<{
+      department_raw: string;
+      count: string;
+    }>(
       'SELECT department_raw, COUNT(*)::text as count FROM opportunities WHERE department_raw IS NOT NULL GROUP BY department_raw ORDER BY count DESC;',
     );
 
@@ -49,7 +54,9 @@ async function main() {
     }
 
     console.log('\n--- Canonical Departments Updated ---');
-    const sortedCanonical = Object.entries(canonicalCounts).sort((a, b) => b[1] - a[1]);
+    const sortedCanonical = Object.entries(canonicalCounts).sort(
+      (a, b) => b[1] - a[1],
+    );
     for (const [dept, cnt] of sortedCanonical) {
       console.log(`  ${dept}: ${cnt}`);
     }

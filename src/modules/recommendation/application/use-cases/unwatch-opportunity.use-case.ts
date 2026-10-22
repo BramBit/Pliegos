@@ -22,7 +22,10 @@ export class UnwatchOpportunityUseCase {
       return err(createProfileNotFoundError(input.profileId));
     }
 
-    await this.watchRepository.removeWatch(input.profileId, input.opportunityId);
+    await this.watchRepository.removeWatch(
+      input.profileId,
+      input.opportunityId,
+    );
     return ok(undefined);
   }
 }

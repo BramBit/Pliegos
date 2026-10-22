@@ -12,7 +12,10 @@ describe('RolesGuard', () => {
     guard = new RolesGuard(reflector);
   });
 
-  function createMockContext(user?: { sub: string; role: string }): ExecutionContext {
+  function createMockContext(user?: {
+    sub: string;
+    role: string;
+  }): ExecutionContext {
     return {
       getHandler: () => ({}),
       getClass: () => ({}),

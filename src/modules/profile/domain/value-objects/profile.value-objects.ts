@@ -1,5 +1,8 @@
 import { Result, ok, err } from '../../../shared/domain/result';
-import { ValidationError, createValidationError } from '../../../shared/domain/errors';
+import {
+  ValidationError,
+  createValidationError,
+} from '../../../shared/domain/errors';
 import { normalizeUnspsc } from '../../../opportunity/infrastructure/adapters/secop/normalizers';
 import { canonicalizeDepartment } from './colombian-departments';
 
@@ -20,7 +23,10 @@ export interface Capability {
   readonly yearsOfExperience: number;
 }
 
-export const createAmountRange = (min: number, max: number): Result<AmountRange, ValidationError> => {
+export const createAmountRange = (
+  min: number,
+  max: number,
+): Result<AmountRange, ValidationError> => {
   if (
     typeof min !== 'number' ||
     typeof max !== 'number' ||
@@ -30,13 +36,19 @@ export const createAmountRange = (min: number, max: number): Result<AmountRange,
     max < 0
   ) {
     return err(
-      createValidationError(['amountRange'], 'Amount range min and max must be non-negative finite numbers'),
+      createValidationError(
+        ['amountRange'],
+        'Amount range min and max must be non-negative finite numbers',
+      ),
     );
   }
 
   if (min > max) {
     return err(
-      createValidationError(['amountRange'], `Amount range min (${min}) cannot exceed max (${max})`),
+      createValidationError(
+        ['amountRange'],
+        `Amount range min (${min}) cannot exceed max (${max})`,
+      ),
     );
   }
 

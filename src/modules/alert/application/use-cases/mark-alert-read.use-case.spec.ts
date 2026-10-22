@@ -1,6 +1,10 @@
 import { MarkAlertReadUseCase } from './mark-alert-read.use-case';
 import { AlertRepositoryPort } from '../../domain/ports/alert.repository.port';
-import { asAlertId, asOpportunityId, asProfileId } from '../../../shared/domain/typed-id';
+import {
+  asAlertId,
+  asOpportunityId,
+  asProfileId,
+} from '../../../shared/domain/typed-id';
 import { Alert } from '../../domain/entities/alert.entity';
 
 describe('MarkAlertReadUseCase', () => {

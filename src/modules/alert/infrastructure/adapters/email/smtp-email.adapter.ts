@@ -52,7 +52,10 @@ export class SmtpEmailAdapter implements NotificationPort {
     }
   }
 
-  async send(to: NotificationRecipient, content: NotificationContent): Promise<void> {
+  async send(
+    to: NotificationRecipient,
+    content: NotificationContent,
+  ): Promise<void> {
     const recipient = to.name
       ? `"${to.name.replace(/"/g, '')}" <${to.email}>`
       : to.email;
@@ -66,10 +69,14 @@ export class SmtpEmailAdapter implements NotificationPort {
         html: content.html,
       });
 
-      this.logger.log(`[SmtpEmailAdapter] Email sent to ${recipient}: "${content.subject}"`);
+      this.logger.log(
+        `[SmtpEmailAdapter] Email sent to ${recipient}: "${content.subject}"`,
+      );
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      this.logger.error(`[SmtpEmailAdapter] Failed to send email to ${recipient}: ${message}`);
+      this.logger.error(
+        `[SmtpEmailAdapter] Failed to send email to ${recipient}: ${message}`,
+      );
       throw error;
     }
   }

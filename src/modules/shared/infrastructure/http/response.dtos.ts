@@ -6,7 +6,10 @@ import {
 } from '../../../opportunity/domain/value-objects/opportunity.value-objects';
 import { Profile } from '../../../profile/domain/entities/profile.entity';
 import { Recommendation } from '../../../recommendation/domain/entities/recommendation.entity';
-import { Alert, AlertTrigger } from '../../../alert/domain/entities/alert.entity';
+import {
+  Alert,
+  AlertTrigger,
+} from '../../../alert/domain/entities/alert.entity';
 import type { AlertInboxItem } from '../../../alert/domain/ports/alert.repository.port';
 
 const ONE_DAY_MS = 86_400_000;
@@ -32,7 +35,9 @@ export class ErrorEnvelopeDto {
 }
 
 export class ContractingEntityDto {
-  @ApiProperty({ example: 'Ministerio de Tecnologías de la Información y las Comunicaciones' })
+  @ApiProperty({
+    example: 'Ministerio de Tecnologías de la Información y las Comunicaciones',
+  })
   name!: string;
 
   @ApiProperty({ example: '899999053-1' })
@@ -57,7 +62,10 @@ export class SourceReferenceDto {
   @ApiProperty({ example: 'MINTIC-LP-012-2026' })
   humanReference!: string;
 
-  @ApiProperty({ example: 'https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=CO1.NTC.1' })
+  @ApiProperty({
+    example:
+      'https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=CO1.NTC.1',
+  })
   originalUrl!: string;
 }
 
@@ -68,13 +76,18 @@ export class OpportunitySummary {
   @ApiProperty({ example: 'Servicio de desarrollo de software a la medida' })
   title!: string;
 
-  @ApiProperty({ example: 'Desarrollo e implementación de plataforma web en arquitectura hexagonal' })
+  @ApiProperty({
+    example:
+      'Desarrollo e implementación de plataforma web en arquitectura hexagonal',
+  })
   description!: string;
 
   @ApiProperty({ type: ContractingEntityDto })
   contractingEntity!: ContractingEntityDto;
 
-  @ApiProperty({ example: 'Ministerio de Tecnologías de la Información y las Comunicaciones' })
+  @ApiProperty({
+    example: 'Ministerio de Tecnologías de la Información y las Comunicaciones',
+  })
   entityName!: string;
 
   @ApiProperty({ type: LocationDto })
@@ -89,7 +102,8 @@ export class OpportunitySummary {
   @ApiProperty({
     type: Number,
     nullable: true,
-    description: 'Amount in COP, or null when the opportunity does not declare a known amount',
+    description:
+      'Amount in COP, or null when the opportunity does not declare a known amount',
     example: 150000000,
   })
   amount!: number | null;
@@ -118,13 +132,18 @@ export class OpportunitySummary {
   @ApiProperty({ example: '2026-10-10T12:00:00.000Z' })
   lastPublishedAt!: string;
 
-  @ApiProperty({ type: String, nullable: true, example: '2026-10-30T17:00:00.000Z' })
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    example: '2026-10-30T17:00:00.000Z',
+  })
   closingDate!: string | null;
 
   @ApiProperty({
     type: Number,
     nullable: true,
-    description: 'Whole days remaining until closingDate, or null when closingDate is null',
+    description:
+      'Whole days remaining until closingDate, or null when closingDate is null',
     example: 12,
   })
   daysToClose!: number | null;
@@ -133,7 +152,15 @@ export class OpportunitySummary {
   isOpenForSubmission!: boolean;
 
   @ApiProperty({
-    enum: ['Draft', 'Published', 'Amended', 'Closed', 'Awarded', 'Cancelled', 'Unknown'],
+    enum: [
+      'Draft',
+      'Published',
+      'Amended',
+      'Closed',
+      'Awarded',
+      'Cancelled',
+      'Unknown',
+    ],
     example: 'Published',
   })
   status!: OpportunityStatus;
@@ -141,7 +168,10 @@ export class OpportunitySummary {
   @ApiProperty({ type: SourceReferenceDto })
   source!: SourceReferenceDto;
 
-  @ApiProperty({ example: 'https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=CO1.NTC.1' })
+  @ApiProperty({
+    example:
+      'https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=CO1.NTC.1',
+  })
   sourceUrl!: string;
 
   @ApiProperty({
@@ -155,12 +185,19 @@ export class RequirementDto {
   @ApiProperty({ example: 'Experiencia específica en desarrollo web' })
   text!: string;
 
-  @ApiProperty({ enum: ['technical', 'financial', 'legal'], example: 'technical' })
+  @ApiProperty({
+    enum: ['technical', 'financial', 'legal'],
+    example: 'technical',
+  })
   type!: 'technical' | 'financial' | 'legal';
 }
 
 export class AnalysisDto {
-  @ApiProperty({ type: String, nullable: true, example: 'Resumen analítico conciso del proceso.' })
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    example: 'Resumen analítico conciso del proceso.',
+  })
   summary!: string | null;
 
   @ApiProperty({
@@ -172,7 +209,11 @@ export class AnalysisDto {
   @ApiProperty({ type: [RequirementDto] })
   requirements!: RequirementDto[];
 
-  @ApiProperty({ type: String, nullable: true, example: '2026-10-10T12:05:00.000Z' })
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    example: '2026-10-10T12:05:00.000Z',
+  })
   embeddingGeneratedAt!: string | null;
 }
 
@@ -194,7 +235,11 @@ export class ChangeDto {
 }
 
 export class OpportunityDetail extends OpportunitySummary {
-  @ApiProperty({ type: String, nullable: true, example: 'Resumen analítico conciso del proceso.' })
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    example: 'Resumen analítico conciso del proceso.',
+  })
   summary!: string | null;
 
   @ApiProperty({ type: AnalysisDto, nullable: true })
@@ -209,7 +254,8 @@ export class MatchedFactorDto {
     enum: ['semanticSimilarity', 'categoryMatch', 'amountFit', 'locationMatch'],
     example: 'semanticSimilarity',
   })
-  factor!: 'semanticSimilarity' | 'categoryMatch' | 'amountFit' | 'locationMatch';
+  factor!:
+    'semanticSimilarity' | 'categoryMatch' | 'amountFit' | 'locationMatch';
 
   @ApiProperty({ example: 0.85 })
   score!: number;
@@ -265,13 +311,15 @@ export class RecommendationDto {
   @ApiPropertyOptional({
     type: String,
     nullable: true,
-    description: 'Timestamp de la última corrida de recomendaciones para este perfil',
+    description:
+      'Timestamp de la última corrida de recomendaciones para este perfil',
     example: '2026-10-18T14:30:00.000Z',
   })
   lastRefreshedAt?: string | null;
 
   @ApiPropertyOptional({
-    description: 'Indica si la recuperación de candidatos operó en modo degradado',
+    description:
+      'Indica si la recuperación de candidatos operó en modo degradado',
     example: false,
   })
   degraded?: boolean;
@@ -314,10 +362,18 @@ export class ProfileDto {
   @ApiProperty({ example: 'user-contractor-01' })
   ownerId!: string;
 
-  @ApiPropertyOptional({ type: String, nullable: true, example: 'Contratista Demo SAS' })
+  @ApiPropertyOptional({
+    type: String,
+    nullable: true,
+    example: 'Contratista Demo SAS',
+  })
   name!: string | null;
 
-  @ApiPropertyOptional({ type: String, nullable: true, example: 'contacto@contratista.com' })
+  @ApiPropertyOptional({
+    type: String,
+    nullable: true,
+    example: 'contacto@contratista.com',
+  })
   contactEmail!: string | null;
 
   @ApiProperty({ example: true, default: true })
@@ -352,7 +408,11 @@ export class AlertDto {
   })
   trigger!: AlertTrigger;
 
-  @ApiProperty({ type: String, nullable: true, example: '2026-10-16T08:01:00.000Z' })
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    example: '2026-10-16T08:01:00.000Z',
+  })
   deliveredAt!: string | null;
 }
 
@@ -387,13 +447,15 @@ export class RecommendationPageDto extends Page<RecommendationDto> {
   @ApiPropertyOptional({
     type: String,
     nullable: true,
-    description: 'Timestamp de la última corrida de recomendaciones para este perfil',
+    description:
+      'Timestamp de la última corrida de recomendaciones para este perfil',
     example: '2026-10-18T14:30:00.000Z',
   })
   lastRefreshedAt?: string | null;
 
   @ApiPropertyOptional({
-    description: 'Indica si la recuperación de candidatos operó en modo degradado',
+    description:
+      'Indica si la recuperación de candidatos operó en modo degradado',
     example: false,
   })
   degraded?: boolean;
@@ -417,7 +479,11 @@ export class AlertItemOpportunitySummaryDto {
   @ApiProperty({ example: 150000000 })
   amount!: number;
 
-  @ApiProperty({ type: String, nullable: true, example: '2026-10-25T22:00:00.000Z' })
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    example: '2026-10-25T22:00:00.000Z',
+  })
   closingDate!: string | null;
 }
 
@@ -440,7 +506,11 @@ export class AlertInboxItemDto {
   @ApiProperty({ type: String, nullable: true, example: null })
   readAt!: string | null;
 
-  @ApiPropertyOptional({ type: String, nullable: true, example: '2026-10-18T10:01:00.000Z' })
+  @ApiPropertyOptional({
+    type: String,
+    nullable: true,
+    example: '2026-10-18T10:01:00.000Z',
+  })
   deliveredAt?: string | null;
 
   @ApiProperty({ type: AlertItemOpportunitySummaryDto })
@@ -480,16 +550,28 @@ export class WatchedOpportunityPageDto extends Page<WatchedOpportunityDto> {
 }
 
 export class ProfileSummaryDto {
-  @ApiProperty({ example: 14, description: 'Recomendaciones pendientes de feedback' })
+  @ApiProperty({
+    example: 14,
+    description: 'Recomendaciones pendientes de feedback',
+  })
   newRecommendations!: number;
 
-  @ApiProperty({ example: 3, description: 'Convocatorias en lista de vigilancia' })
+  @ApiProperty({
+    example: 3,
+    description: 'Convocatorias en lista de vigilancia',
+  })
   watching!: number;
 
-  @ApiProperty({ example: 1, description: 'Convocatorias en vigilancia con cierre en menos de 7 días' })
+  @ApiProperty({
+    example: 1,
+    description: 'Convocatorias en vigilancia con cierre en menos de 7 días',
+  })
   closingSoon!: number;
 
-  @ApiProperty({ example: 0, description: 'Alertas no leídas (0 hasta Fase 5)' })
+  @ApiProperty({
+    example: 0,
+    description: 'Alertas no leídas (0 hasta Fase 5)',
+  })
   unreadAlerts!: number;
 }
 
@@ -547,7 +629,10 @@ export function deriveSummaryStatus(opportunity: Opportunity): SummaryStatus {
   if (opportunity.analysis?.summaryStatus) {
     return opportunity.analysis.summaryStatus;
   }
-  if (opportunity.analysis?.summary && opportunity.analysis.summary.trim() !== '') {
+  if (
+    opportunity.analysis?.summary &&
+    opportunity.analysis.summary.trim() !== ''
+  ) {
     return 'ready';
   }
   return 'unavailable';
@@ -581,12 +666,18 @@ export function toOpportunitySummaryDto(
     isCompetitive: opportunity.isCompetitive,
     categoryCode: opportunity.categoryCode ?? null,
     publishedAt: opportunity.publishedAt.toISOString(),
-    lastPublishedAt: (opportunity.lastPublishedAt ?? opportunity.publishedAt).toISOString(),
-    closingDate: opportunity.closingDate ? opportunity.closingDate.toISOString() : null,
+    lastPublishedAt: (
+      opportunity.lastPublishedAt ?? opportunity.publishedAt
+    ).toISOString(),
+    closingDate: opportunity.closingDate
+      ? opportunity.closingDate.toISOString()
+      : null,
     daysToClose: computeDaysToClose(opportunity.closingDate, now),
     isOpenForSubmission:
-      (opportunity.status === 'Published' || opportunity.status === 'Amended') &&
-      (opportunity.closingDate === null || opportunity.closingDate.getTime() >= now.getTime()),
+      (opportunity.status === 'Published' ||
+        opportunity.status === 'Amended') &&
+      (opportunity.closingDate === null ||
+        opportunity.closingDate.getTime() >= now.getTime()),
     status: opportunity.status,
     source: {
       sourceName: opportunity.source.sourceName,
@@ -617,10 +708,12 @@ export function toOpportunityDetailDto(
       ? {
           summary,
           summaryStatus,
-          requirements: (opportunity.analysis.requirements ?? []).map((req) => ({
-            text: req.text,
-            type: req.type,
-          })),
+          requirements: (opportunity.analysis.requirements ?? []).map(
+            (req) => ({
+              text: req.text,
+              type: req.type,
+            }),
+          ),
           embeddingGeneratedAt: opportunity.analysis.embeddingGeneratedAt
             ? new Date(opportunity.analysis.embeddingGeneratedAt).toISOString()
             : null,
@@ -659,11 +752,15 @@ export function toRecommendationDto(
     feedback: recommendation.feedback
       ? {
           decision: recommendation.feedback.decision,
-          recordedAt: new Date(recommendation.feedback.recordedAt).toISOString(),
+          recordedAt: new Date(
+            recommendation.feedback.recordedAt,
+          ).toISOString(),
         }
       : null,
     opportunity: opportunity ? toOpportunitySummaryDto(opportunity, now) : null,
-    lastRefreshedAt: meta?.lastRefreshedAt ? new Date(meta.lastRefreshedAt).toISOString() : null,
+    lastRefreshedAt: meta?.lastRefreshedAt
+      ? new Date(meta.lastRefreshedAt).toISOString()
+      : null,
     degraded: meta?.degraded ?? false,
   };
 }
@@ -722,7 +819,9 @@ export function toAlertDto(alert: Alert): AlertDto {
     profileId: alert.profileId,
     opportunityId: alert.opportunityId,
     trigger: alert.trigger,
-    deliveredAt: alert.deliveredAt ? new Date(alert.deliveredAt).toISOString() : null,
+    deliveredAt: alert.deliveredAt
+      ? new Date(alert.deliveredAt).toISOString()
+      : null,
   };
 }
 
@@ -745,4 +844,3 @@ export function toAlertInboxItemDto(item: AlertInboxItem): AlertInboxItemDto {
     },
   };
 }
-

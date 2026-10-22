@@ -136,7 +136,9 @@ export class PostgresAlertRepository implements AlertRepositoryPort {
     const offset = (safePage - 1) * safeSize;
 
     const countQuery = `SELECT COUNT(*) FROM alerts WHERE profile_id = $1;`;
-    const countRes = await this.pool.query<{ count: string }>(countQuery, [profileId]);
+    const countRes = await this.pool.query<{ count: string }>(countQuery, [
+      profileId,
+    ]);
     const total = parseInt(countRes.rows[0]?.count ?? '0', 10);
 
     const query = `
@@ -180,7 +182,9 @@ export class PostgresAlertRepository implements AlertRepositoryPort {
         title: row.opp_title ?? '',
         entity: row.opp_entity ?? '',
         amount: Number(row.opp_amount ?? 0),
-        closingDate: row.opp_closing_date ? new Date(row.opp_closing_date) : null,
+        closingDate: row.opp_closing_date
+          ? new Date(row.opp_closing_date)
+          : null,
       },
     }));
 

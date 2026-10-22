@@ -4,13 +4,22 @@ import { Queue } from 'bullmq';
 import { Pool } from 'pg';
 import { DATABASE_POOL } from '../shared/infrastructure/persistence/database.module';
 import { AiModule } from '../shared/infrastructure/ai/ai.module';
-import { EMBEDDER_PORT, EmbedderPort } from '../recommendation/domain/ports/ai-provider.port';
+import {
+  EMBEDDER_PORT,
+  EmbedderPort,
+} from '../recommendation/domain/ports/ai-provider.port';
 import { OPPORTUNITY_REPOSITORY_PORT } from './domain/ports/opportunity.repository.port';
 import { OPPORTUNITY_SOURCE_PORT } from './domain/ports/opportunity-source.port';
 import { SEARCH_INDEX_PORT } from './domain/ports/search-index.port';
 import { ANALYSIS_QUEUE_PORT } from './domain/ports/analysis-queue.port';
-import { WATCH_REPOSITORY_PORT, WatchRepositoryPort } from '../recommendation/domain/ports/watch.repository.port';
-import { ALERT_REPOSITORY_PORT, AlertRepositoryPort } from '../alert/domain/ports/alert.repository.port';
+import {
+  WATCH_REPOSITORY_PORT,
+  WatchRepositoryPort,
+} from '../recommendation/domain/ports/watch.repository.port';
+import {
+  ALERT_REPOSITORY_PORT,
+  AlertRepositoryPort,
+} from '../alert/domain/ports/alert.repository.port';
 import { RecommendationModule } from '../recommendation/recommendation.module';
 import { AlertModule } from '../alert/alert.module';
 import { PostgresOpportunityRepository } from './infrastructure/adapters/persistence/postgres-opportunity.repository';
@@ -81,7 +90,9 @@ import { ENV, Env, isWorkerRole } from '../../config/env';
         alertRepo: AlertRepositoryPort,
         env: Env,
       ) => {
-        const refreshQueue = new BullMQRecommendationRefreshQueueAdapter(refreshQueueRaw);
+        const refreshQueue = new BullMQRecommendationRefreshQueueAdapter(
+          refreshQueueRaw,
+        );
         return new SyncOpportunitiesUseCase(
           source,
           repo,

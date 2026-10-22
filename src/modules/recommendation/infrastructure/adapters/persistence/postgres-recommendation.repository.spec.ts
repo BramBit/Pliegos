@@ -31,7 +31,8 @@ describe('PostgresRecommendationRepository (Real Test Database)', () => {
     await pool.query('DELETE FROM profile_embeddings;');
     await pool.query('DELETE FROM recommendations;');
     for (const id of ['prof-rec-1', 'prof-fb']) await seedProfile(pool, id);
-    for (const id of ['opp-1', 'opp-2', 'opp-3', 'opp-fb']) await seedOpportunity(pool, id);
+    for (const id of ['opp-1', 'opp-2', 'opp-3', 'opp-fb'])
+      await seedOpportunity(pool, id);
   });
 
   it('saves and finds recommendations by profile ordered by score descending', async () => {
@@ -92,7 +93,7 @@ describe('PostgresRecommendationRepository (Real Test Database)', () => {
       id: asRecommendationId('rec-orig-1'),
       profileId,
       opportunityId: asOpportunityId('opp-1'),
-      score: 0.70,
+      score: 0.7,
       explanation: { summary: 'Initial 1', matchedFactors: [] },
       feedback: {
         decision: 'Participate',
@@ -104,7 +105,10 @@ describe('PostgresRecommendationRepository (Real Test Database)', () => {
       profileId,
       opportunityId: asOpportunityId('opp-2'),
       score: 0.65,
-      explanation: { summary: 'Initial 2 (stale, no feedback)', matchedFactors: [] },
+      explanation: {
+        summary: 'Initial 2 (stale, no feedback)',
+        matchedFactors: [],
+      },
       feedback: null,
     });
 
@@ -122,7 +126,7 @@ describe('PostgresRecommendationRepository (Real Test Database)', () => {
         id: asRecommendationId('rec-3'),
         profileId,
         opportunityId: asOpportunityId('opp-3'),
-        score: 0.80,
+        score: 0.8,
         explanation: { summary: 'New 3', matchedFactors: [] },
         feedback: null,
       },
@@ -208,7 +212,9 @@ describe('PostgresRecommendationRepository (Real Test Database)', () => {
     expect(retrieved).not.toBeNull();
     expect(retrieved?.feedback).not.toBeNull();
     expect(retrieved?.feedback?.decision).toBe('Participate');
-    expect(retrieved?.feedback?.recordedAt).toEqual(new Date('2026-03-15T10:00:00.000Z'));
+    expect(retrieved?.feedback?.recordedAt).toEqual(
+      new Date('2026-03-15T10:00:00.000Z'),
+    );
   });
 
   it('returns null when recommendation is not found', async () => {
@@ -305,8 +311,12 @@ describe('PostgresRecommendationRepository (Real Test Database)', () => {
         id: asRecommendationId('rec-f-1'),
         profileId,
         opportunityId: asOpportunityId('opp-1'),
-        score: 0.90,
-        explanation: { summary: 'Match 1', matchedFactors: [], unavailableFactors: [] },
+        score: 0.9,
+        explanation: {
+          summary: 'Match 1',
+          matchedFactors: [],
+          unavailableFactors: [],
+        },
         feedback: { decision: 'Participate', recordedAt: new Date() },
       });
 
@@ -315,8 +325,12 @@ describe('PostgresRecommendationRepository (Real Test Database)', () => {
         id: asRecommendationId('rec-f-2'),
         profileId,
         opportunityId: asOpportunityId('opp-2'),
-        score: 0.60,
-        explanation: { summary: 'Match 2', matchedFactors: [], unavailableFactors: [] },
+        score: 0.6,
+        explanation: {
+          summary: 'Match 2',
+          matchedFactors: [],
+          unavailableFactors: [],
+        },
         feedback: null,
       });
 
@@ -352,14 +366,19 @@ describe('PostgresRecommendationRepository (Real Test Database)', () => {
 
       // Test 3: minScore 0.80
       queryCount = 0;
-      const feedScore = await countedRepo.findFeed(profileId, { state: 'all', minScore: 0.80 });
+      const feedScore = await countedRepo.findFeed(profileId, {
+        state: 'all',
+        minScore: 0.8,
+      });
       expect(queryCount).toBe(1); // EXACTLY ONE QUERY
       expect(feedScore.total).toBe(1);
       expect(feedScore.items[0].id).toBe('rec-f-1');
 
       // Test 4: unknown profile
       queryCount = 0;
-      const feedMissing = await countedRepo.findFeed(asProfileId('00000000-0000-0000-0000-000000000000'));
+      const feedMissing = await countedRepo.findFeed(
+        asProfileId('00000000-0000-0000-0000-000000000000'),
+      );
       expect(queryCount).toBe(1); // EXACTLY ONE QUERY
       expect(feedMissing.profileExists).toBe(false);
       expect(feedMissing.total).toBe(0);

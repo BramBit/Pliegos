@@ -53,7 +53,8 @@ export class OpportunityController {
   })
   @ApiResponse({
     status: HttpStatus.OK,
-    description: 'Página de oportunidades que cumplen los criterios de búsqueda y filtrado',
+    description:
+      'Página de oportunidades que cumplen los criterios de búsqueda y filtrado',
     type: OpportunitySummaryPageDto,
   })
   @ApiResponse({
@@ -70,7 +71,7 @@ export class OpportunityController {
       filters: {
         categoryCode: query.categoryPrefix,
         department: query.department
-          ? canonicalizeDepartment(query.department) ?? query.department
+          ? (canonicalizeDepartment(query.department) ?? query.department)
           : undefined,
         amountMin: query.minAmount,
         amountMax: query.maxAmount,
@@ -112,7 +113,8 @@ export class OpportunityController {
   })
   @ApiResponse({
     status: HttpStatus.OK,
-    description: 'Detalle de la oportunidad con estado de resumen (pending | ready | fallback | unavailable)',
+    description:
+      'Detalle de la oportunidad con estado de resumen (pending | ready | fallback | unavailable)',
     type: OpportunityDetail,
   })
   @ApiResponse({
@@ -124,7 +126,9 @@ export class OpportunityController {
     @Param('id', new ZodValidationPipe(z.string().min(1))) id: string,
   ): Promise<OpportunityDetail> {
     if (!this.getOpportunityByIdUseCase) {
-      throw new DomainErrorException(createOpportunityNotFoundError(asOpportunityId(id)));
+      throw new DomainErrorException(
+        createOpportunityNotFoundError(asOpportunityId(id)),
+      );
     }
 
     const result = await this.getOpportunityByIdUseCase.execute({
@@ -135,6 +139,9 @@ export class OpportunityController {
       throw new DomainErrorException(result.error);
     }
 
-    return toOpportunityDetailDto(result.value.opportunity, result.value.summaryStatus);
+    return toOpportunityDetailDto(
+      result.value.opportunity,
+      result.value.summaryStatus,
+    );
   }
 }

@@ -86,15 +86,22 @@ describe('Opportunity Value Objects', () => {
   describe('Opportunity Domain Structures', () => {
     it('instantiates valid domain structures', () => {
       const location: Location = { city: 'Bogotá', department: 'Bogotá D.C.' };
-      const entity: ContractingEntity = { name: 'Alcaldía Mayor', taxId: '899999061-9' };
+      const entity: ContractingEntity = {
+        name: 'Alcaldía Mayor',
+        taxId: '899999061-9',
+      };
       const source: SourceReference = {
         sourceName: 'SECOP',
         externalId: 'CO1.REQ.2577563',
         humanReference: 'EDP-545-2022',
-        originalUrl: 'https://community.secop.gov.co/Public/Tenders/ContractNoticeManagement/Index?processId=2577563',
+        originalUrl:
+          'https://community.secop.gov.co/Public/Tenders/ContractNoticeManagement/Index?processId=2577563',
       };
       const status: OpportunityStatus = 'Published';
-      const requirement: Requirement = { text: 'Certificación ISO 9001', type: 'technical' };
+      const requirement: Requirement = {
+        text: 'Certificación ISO 9001',
+        type: 'technical',
+      };
       const factor: MatchedFactor = {
         factor: 'categoryMatch',
         score: 1.0,
@@ -110,7 +117,10 @@ describe('Opportunity Value Objects', () => {
         newValue: '2026-10-20',
         detectedAt: new Date(),
       };
-      const feedback: Feedback = { decision: 'Participate', recordedAt: new Date() };
+      const feedback: Feedback = {
+        decision: 'Participate',
+        recordedAt: new Date(),
+      };
       const analysis: Analysis = {
         summary: 'Servicios de desarrollo de software',
         requirements: [requirement],

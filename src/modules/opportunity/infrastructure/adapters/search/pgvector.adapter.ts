@@ -10,9 +10,15 @@ import {
   reciprocalRankFusion,
   buildProfileOrTsQuery,
 } from '../../../domain/ports/search-index.port';
-import { Opportunity, buildIndexText } from '../../../domain/entities/opportunity.entity';
+import {
+  Opportunity,
+  buildIndexText,
+} from '../../../domain/entities/opportunity.entity';
 import { OpportunityFilters } from '../../../domain/value-objects/opportunity-filters';
-import { OpportunityId, asOpportunityId } from '../../../../shared/domain/typed-id';
+import {
+  OpportunityId,
+  asOpportunityId,
+} from '../../../../shared/domain/typed-id';
 import { EmbedderPort } from '../../../../recommendation/domain/ports/ai-provider.port';
 
 export { reciprocalRankFusion, buildProfileOrTsQuery };
@@ -184,12 +190,18 @@ export class PgVectorAdapter implements SearchIndexPort {
       whereClauses.push(`contract_type = $${params.length}`);
     }
 
-    if (typeof filters.amountMin === 'number' && Number.isFinite(filters.amountMin)) {
+    if (
+      typeof filters.amountMin === 'number' &&
+      Number.isFinite(filters.amountMin)
+    ) {
       params.push(filters.amountMin);
       whereClauses.push(`amount >= $${params.length}`);
     }
 
-    if (typeof filters.amountMax === 'number' && Number.isFinite(filters.amountMax)) {
+    if (
+      typeof filters.amountMax === 'number' &&
+      Number.isFinite(filters.amountMax)
+    ) {
       params.push(filters.amountMax);
       whereClauses.push(`amount <= $${params.length}`);
     }
@@ -206,7 +218,8 @@ export class PgVectorAdapter implements SearchIndexPort {
       LIMIT $${limitParamIndex};
     `;
 
-    const result: QueryResult<{ opportunity_id: string }> = await this.pool.query(sql, params);
+    const result: QueryResult<{ opportunity_id: string }> =
+      await this.pool.query(sql, params);
 
     return result.rows.map((row) => asOpportunityId(row.opportunity_id));
   }
@@ -237,8 +250,14 @@ export class PgVectorAdapter implements SearchIndexPort {
         AND embedding_model = $3;
     `;
 
-    const result: QueryResult<{ opportunity_id: string; cosine: number | string }> =
-      await this.pool.query(sql, [vectorString, opportunityIds, this.embeddingModel]);
+    const result: QueryResult<{
+      opportunity_id: string;
+      cosine: number | string;
+    }> = await this.pool.query(sql, [
+      vectorString,
+      opportunityIds,
+      this.embeddingModel,
+    ]);
 
     const out = new Map<OpportunityId, number>();
     for (const row of result.rows) {
@@ -263,7 +282,10 @@ export class PgVectorAdapter implements SearchIndexPort {
       this.runFullTextCandidateQuery(query, filters, branchLimit),
     ]);
 
-    if (vectorOutcome.status === 'rejected' && fulltextOutcome.status === 'rejected') {
+    if (
+      vectorOutcome.status === 'rejected' &&
+      fulltextOutcome.status === 'rejected'
+    ) {
       throw vectorOutcome.reason ?? fulltextOutcome.reason;
     }
 
@@ -367,22 +389,34 @@ export class PgVectorAdapter implements SearchIndexPort {
       clauses.push(`o.status = $${params.length}`);
     }
 
-    if (filters.closingAfter instanceof Date && !isNaN(filters.closingAfter.getTime())) {
+    if (
+      filters.closingAfter instanceof Date &&
+      !isNaN(filters.closingAfter.getTime())
+    ) {
       params.push(filters.closingAfter);
       clauses.push(`o.closing_date >= $${params.length}`);
     }
 
-    if (filters.closingBefore instanceof Date && !isNaN(filters.closingBefore.getTime())) {
+    if (
+      filters.closingBefore instanceof Date &&
+      !isNaN(filters.closingBefore.getTime())
+    ) {
       params.push(filters.closingBefore);
       clauses.push(`o.closing_date <= $${params.length}`);
     }
 
-    if (typeof filters.amountMin === 'number' && Number.isFinite(filters.amountMin)) {
+    if (
+      typeof filters.amountMin === 'number' &&
+      Number.isFinite(filters.amountMin)
+    ) {
       params.push(filters.amountMin);
       clauses.push(`o.amount >= $${params.length}`);
     }
 
-    if (typeof filters.amountMax === 'number' && Number.isFinite(filters.amountMax)) {
+    if (
+      typeof filters.amountMax === 'number' &&
+      Number.isFinite(filters.amountMax)
+    ) {
       params.push(filters.amountMax);
       clauses.push(`o.amount <= $${params.length}`);
     }

@@ -36,7 +36,10 @@ export interface SourceFetchOptions {
 }
 
 export interface OpportunitySourcePort {
-  fetchPages(since?: Date, options?: SourceFetchOptions): AsyncIterable<SourceOpportunity[]>;
+  fetchPages(
+    since?: Date,
+    options?: SourceFetchOptions,
+  ): AsyncIterable<SourceOpportunity[]>;
 }
 
 export const OPPORTUNITY_SOURCE_PORT = Symbol('OPPORTUNITY_SOURCE_PORT');

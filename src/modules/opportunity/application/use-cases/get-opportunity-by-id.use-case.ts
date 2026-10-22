@@ -30,7 +30,9 @@ export class GetOpportunityByIdUseCase {
   async execute(input: {
     opportunityId: OpportunityId;
   }): Promise<Result<GetOpportunityByIdOutput, OpportunityNotFoundError>> {
-    const opportunity = await this.opportunityRepository.findById(input.opportunityId);
+    const opportunity = await this.opportunityRepository.findById(
+      input.opportunityId,
+    );
     if (!opportunity) {
       return err(createOpportunityNotFoundError(input.opportunityId));
     }
@@ -42,7 +44,8 @@ export class GetOpportunityByIdUseCase {
         summary: opportunity.analysis?.summary ?? '',
         summaryStatus,
         requirements: opportunity.analysis?.requirements ?? [],
-        embeddingGeneratedAt: opportunity.analysis?.embeddingGeneratedAt ?? null,
+        embeddingGeneratedAt:
+          opportunity.analysis?.embeddingGeneratedAt ?? null,
         contentHash: opportunity.analysis?.contentHash,
       };
       return ok({
@@ -52,7 +55,9 @@ export class GetOpportunityByIdUseCase {
     }
 
     if (this.analysisQueue) {
-      await this.analysisQueue.enqueueAnalysis(opportunity.id, { summarize: true });
+      await this.analysisQueue.enqueueAnalysis(opportunity.id, {
+        summarize: true,
+      });
     }
 
     const pendingAnalysis: Analysis = {

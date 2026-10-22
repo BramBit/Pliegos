@@ -40,11 +40,13 @@ describe('GracefulShutdownService', () => {
     mockQueue.add = jest.fn();
 
     mockDiscoveryService = {
-      getProviders: jest.fn().mockReturnValue([
-        { instance: mockWorkerHost },
-        { instance: mockQueue },
-        { instance: { some: 'other-provider' } },
-      ]),
+      getProviders: jest
+        .fn()
+        .mockReturnValue([
+          { instance: mockWorkerHost },
+          { instance: mockQueue },
+          { instance: { some: 'other-provider' } },
+        ]),
     };
 
     service = new GracefulShutdownService(
@@ -60,11 +62,7 @@ describe('GracefulShutdownService', () => {
     expect(mockWorker.close).toHaveBeenCalledTimes(1);
     expect(mockQueue.close).toHaveBeenCalledTimes(1);
 
-    expect(executionOrder).toEqual([
-      'pool.end',
-      'worker.close',
-      'queue.close',
-    ]);
+    expect(executionOrder).toEqual(['pool.end', 'worker.close', 'queue.close']);
   });
 
   it('is idempotent and runs shutdown sequence only once if called repeatedly', async () => {

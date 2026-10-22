@@ -5,7 +5,11 @@ import { seedProfile, seedOpportunity } from '../../../shared/testing/seed';
 import { PostgresAlertRepository } from '../../infrastructure/adapters/persistence/postgres-alert.repository';
 import { ScanDeadlinesUseCase } from './scan-deadlines.use-case';
 import { FixedClock } from '../../../shared/domain/clock';
-import { asOpportunityId, asProfileId, asRecommendationId } from '../../../shared/domain/typed-id';
+import {
+  asOpportunityId,
+  asProfileId,
+  asRecommendationId,
+} from '../../../shared/domain/typed-id';
 
 const TEST_DATABASE_URL = requireTestDatabaseUrl();
 
@@ -49,16 +53,16 @@ describe('ScanDeadlinesUseCase (Real Test Database & FixedClock)', () => {
     // Opportunity closing in 2 days: 2026-10-21T17:00:00.000Z
     const closingDate1 = new Date('2026-10-21T17:00:00.000Z');
     await seedOpportunity(pool, oppId);
-    await pool.query('UPDATE opportunities SET closing_date = $1 WHERE id = $2;', [
-      closingDate1,
-      oppId,
-    ]);
+    await pool.query(
+      'UPDATE opportunities SET closing_date = $1 WHERE id = $2;',
+      [closingDate1, oppId],
+    );
 
     // Add watch on the opportunity
-    await pool.query('INSERT INTO watches (profile_id, opportunity_id) VALUES ($1, $2);', [
-      profileId,
-      oppId,
-    ]);
+    await pool.query(
+      'INSERT INTO watches (profile_id, opportunity_id) VALUES ($1, $2);',
+      [profileId, oppId],
+    );
 
     const useCase = new ScanDeadlinesUseCase(pool, alertRepo, clock);
 
@@ -88,10 +92,10 @@ describe('ScanDeadlinesUseCase (Real Test Database & FixedClock)', () => {
 
     // 3. Changed closing date: update closing date to 2026-10-22 (still within 3 days)
     const closingDate2 = new Date('2026-10-22T12:00:00.000Z');
-    await pool.query('UPDATE opportunities SET closing_date = $1 WHERE id = $2;', [
-      closingDate2,
-      oppId,
-    ]);
+    await pool.query(
+      'UPDATE opportunities SET closing_date = $1 WHERE id = $2;',
+      [closingDate2, oppId],
+    );
 
     const res3 = await useCase.execute();
     expect(res3.ok).toBe(true);
@@ -112,19 +116,22 @@ describe('ScanDeadlinesUseCase (Real Test Database & FixedClock)', () => {
     const oppId = asOpportunityId('opp-deadline-far');
 
     await seedProfile(pool, profileId);
-    await pool.query('UPDATE profiles SET deadline_alert_days = 3 WHERE id = $1;', [profileId]);
+    await pool.query(
+      'UPDATE profiles SET deadline_alert_days = 3 WHERE id = $1;',
+      [profileId],
+    );
 
     // Closing in 5 days
     const closingFar = new Date('2026-10-24T12:00:00.000Z');
     await seedOpportunity(pool, oppId);
-    await pool.query('UPDATE opportunities SET closing_date = $1 WHERE id = $2;', [
-      closingFar,
-      oppId,
-    ]);
-    await pool.query('INSERT INTO watches (profile_id, opportunity_id) VALUES ($1, $2);', [
-      profileId,
-      oppId,
-    ]);
+    await pool.query(
+      'UPDATE opportunities SET closing_date = $1 WHERE id = $2;',
+      [closingFar, oppId],
+    );
+    await pool.query(
+      'INSERT INTO watches (profile_id, opportunity_id) VALUES ($1, $2);',
+      [profileId, oppId],
+    );
 
     const useCase = new ScanDeadlinesUseCase(pool, alertRepo, clock);
     const res = await useCase.execute();
@@ -148,14 +155,14 @@ describe('ScanDeadlinesUseCase (Real Test Database & FixedClock)', () => {
 
     const closingSoon = new Date('2026-10-20T12:00:00.000Z');
     await seedOpportunity(pool, oppId);
-    await pool.query('UPDATE opportunities SET closing_date = $1 WHERE id = $2;', [
-      closingSoon,
-      oppId,
-    ]);
-    await pool.query('INSERT INTO watches (profile_id, opportunity_id) VALUES ($1, $2);', [
-      profileId,
-      oppId,
-    ]);
+    await pool.query(
+      'UPDATE opportunities SET closing_date = $1 WHERE id = $2;',
+      [closingSoon, oppId],
+    );
+    await pool.query(
+      'INSERT INTO watches (profile_id, opportunity_id) VALUES ($1, $2);',
+      [profileId, oppId],
+    );
 
     const useCase = new ScanDeadlinesUseCase(pool, alertRepo, clock);
     const res = await useCase.execute();
@@ -181,7 +188,9 @@ describe('ScanDeadlinesUseCase (Real Test Database & FixedClock)', () => {
         expect(res.value.reason).toBe('lock_busy');
       }
     } finally {
-      await client.query("SELECT pg_advisory_unlock(hashtext('scan-deadlines'))");
+      await client.query(
+        "SELECT pg_advisory_unlock(hashtext('scan-deadlines'))",
+      );
       client.release();
     }
   });
@@ -200,10 +209,10 @@ describe('ScanDeadlinesUseCase (Real Test Database & FixedClock)', () => {
     for (let i = 1; i <= 7; i++) {
       const oppId = asOpportunityId(`opp-rec-${i}`);
       await seedOpportunity(pool, oppId);
-      await pool.query('UPDATE opportunities SET closing_date = $1 WHERE id = $2;', [
-        closingIn2Days,
-        oppId,
-      ]);
+      await pool.query(
+        'UPDATE opportunities SET closing_date = $1 WHERE id = $2;',
+        [closingIn2Days, oppId],
+      );
 
       await pool.query(
         `INSERT INTO recommendations (id, profile_id, opportunity_id, score, explanation, feedback)
@@ -218,7 +227,13 @@ describe('ScanDeadlinesUseCase (Real Test Database & FixedClock)', () => {
       );
     }
 
-    const useCase = new ScanDeadlinesUseCase(pool, alertRepo, clock, undefined, true);
+    const useCase = new ScanDeadlinesUseCase(
+      pool,
+      alertRepo,
+      clock,
+      undefined,
+      true,
+    );
     const res = await useCase.execute();
 
     expect(res.ok).toBe(true);
@@ -230,6 +245,8 @@ describe('ScanDeadlinesUseCase (Real Test Database & FixedClock)', () => {
     const alerts = await alertRepo.findUndelivered();
     expect(alerts).toHaveLength(5);
     expect(alerts.every((a) => a.trigger === 'DeadlineApproaching')).toBe(true);
-    expect(alerts.every((a) => a.changeKey === 'deadline:2026-10-21')).toBe(true);
+    expect(alerts.every((a) => a.changeKey === 'deadline:2026-10-21')).toBe(
+      true,
+    );
   });
 });

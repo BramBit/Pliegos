@@ -51,9 +51,13 @@ export class PgAdvisoryLock {
     } finally {
       if (acquired) {
         try {
-          await client.query('SELECT pg_advisory_unlock(hashtext($1));', [name]);
+          await client.query('SELECT pg_advisory_unlock(hashtext($1));', [
+            name,
+          ]);
         } catch (err) {
-          logger.error(`Error unlocking "${name}": ${err instanceof Error ? err.message : String(err)}`);
+          logger.error(
+            `Error unlocking "${name}": ${err instanceof Error ? err.message : String(err)}`,
+          );
         }
       }
       client.release();

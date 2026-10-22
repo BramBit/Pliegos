@@ -1,7 +1,10 @@
 import { Module } from '@nestjs/common';
 import { BullModule, getQueueToken } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
-import { ADMIN_QUEUE_PORT, ADMIN_TASKS_QUEUE_NAME } from './domain/ports/admin-queue.port';
+import {
+  ADMIN_QUEUE_PORT,
+  ADMIN_TASKS_QUEUE_NAME,
+} from './domain/ports/admin-queue.port';
 import { BullMQAdminQueueAdapter } from './infrastructure/adapters/queue/bullmq-admin-queue.adapter';
 import { AdminTaskProcessor } from './infrastructure/jobs/admin-task.processor';
 import { AdminController } from './infrastructure/controllers/admin.controller';

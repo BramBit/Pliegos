@@ -1,4 +1,10 @@
-import { Inject, Injectable, Logger, LoggerService, Optional } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  Logger,
+  LoggerService,
+  Optional,
+} from '@nestjs/common';
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import {
   REFRESH_RECOMMENDATIONS_QUEUE_NAME,

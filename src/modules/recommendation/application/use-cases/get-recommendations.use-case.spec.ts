@@ -17,7 +17,10 @@ import {
   ProfileEmbeddingRecord,
   RecommendationRun,
 } from '../../domain/ports/recommendation.repository.port';
-import { MatchingService, cosine } from '../../domain/services/matching.service';
+import {
+  MatchingService,
+  cosine,
+} from '../../domain/services/matching.service';
 import { Profile } from '../../../profile/domain/entities/profile.entity';
 import { Opportunity } from '../../../opportunity/domain/entities/opportunity.entity';
 import { Recommendation } from '../../domain/entities/recommendation.entity';
@@ -57,7 +60,10 @@ class FakeOpportunityRepo implements OpportunityRepositoryPort {
     this.opportunities.push(...opportunities);
   }
 
-  async saveAnalysis(id: OpportunityId, analysis: Opportunity['analysis']): Promise<void> {
+  async saveAnalysis(
+    id: OpportunityId,
+    analysis: Opportunity['analysis'],
+  ): Promise<void> {
     const idx = this.opportunities.findIndex((o) => o.id === id);
     if (idx >= 0) {
       this.opportunities[idx] = { ...this.opportunities[idx], analysis };
@@ -87,7 +93,9 @@ class FakeRecommendationRepo implements RecommendationRepositoryPort {
   public runs: RecommendationRun[] = [];
 
   async save(recommendation: Recommendation): Promise<void> {
-    const idx = this.recommendations.findIndex((r) => r.id === recommendation.id);
+    const idx = this.recommendations.findIndex(
+      (r) => r.id === recommendation.id,
+    );
     if (idx >= 0) {
       this.recommendations[idx] = recommendation;
     } else {
@@ -105,7 +113,8 @@ class FakeRecommendationRepo implements RecommendationRepositoryPort {
     for (const rec of incoming) {
       keptOppIds.add(rec.opportunityId);
       const existingIdx = this.recommendations.findIndex(
-        (r) => r.profileId === profileId && r.opportunityId === rec.opportunityId,
+        (r) =>
+          r.profileId === profileId && r.opportunityId === rec.opportunityId,
       );
       if (existingIdx >= 0) {
         const prev = this.recommendations[existingIdx];
@@ -143,7 +152,9 @@ class FakeRecommendationRepo implements RecommendationRepositoryPort {
     return this.recommendations.find((r) => r.id === id) ?? null;
   }
 
-  async getProfileEmbedding(profileId: ProfileId): Promise<ProfileEmbeddingRecord | null> {
+  async getProfileEmbedding(
+    profileId: ProfileId,
+  ): Promise<ProfileEmbeddingRecord | null> {
     return this.profileEmbeddings.get(profileId) ?? null;
   }
 
@@ -172,7 +183,9 @@ class FakeSearchIndex implements SearchIndexPort {
   constructor(private readonly embedder: HashEmbedder) {}
 
   async indexOpportunity(opportunity: Opportunity): Promise<void> {
-    const [vec] = await this.embedder.embed([`${opportunity.title} ${opportunity.description}`]);
+    const [vec] = await this.embedder.embed([
+      `${opportunity.title} ${opportunity.description}`,
+    ]);
     this.vectorsByOppId.set(opportunity.id, vec);
   }
 
@@ -384,7 +397,9 @@ describe('RefreshRecommendationsUseCase & GetRecommendationsUseCase (P2.6)', () 
     expect(embedder.calls).toBe(0);
     expect(recRepo.recommendations).toHaveLength(1);
     expect(second.value.recommendations[0].id).toBe(firstId);
-    expect(second.value.recommendations[0].feedback?.decision).toBe('Participate');
+    expect(second.value.recommendations[0].feedback?.decision).toBe(
+      'Participate',
+    );
     expect(recRepo.runs).toHaveLength(2);
   });
 
@@ -438,7 +453,10 @@ describe('RefreshRecommendationsUseCase & GetRecommendationsUseCase (P2.6)', () 
     // oppLow (< 0.45) is not persisted
     expect(recRepo.recommendations).toHaveLength(2);
 
-    const limited = await getUseCase.execute({ profileId: testProfile.id, limit: 1 });
+    const limited = await getUseCase.execute({
+      profileId: testProfile.id,
+      limit: 1,
+    });
     expect(limited.ok).toBe(true);
     if (limited.ok) {
       expect(limited.value).toHaveLength(1);
@@ -478,9 +496,11 @@ describe('RefreshRecommendationsUseCase & GetRecommendationsUseCase (P2.6)', () 
 
     const enqueued: Array<{ id: OpportunityId; summarize?: boolean }> = [];
     const fakeAnalysisQueue = {
-      enqueueAnalysis: jest.fn(async (id: OpportunityId, opts?: { summarize?: boolean }) => {
-        enqueued.push({ id, summarize: opts?.summarize });
-      }),
+      enqueueAnalysis: jest.fn(
+        async (id: OpportunityId, opts?: { summarize?: boolean }) => {
+          enqueued.push({ id, summarize: opts?.summarize });
+        },
+      ),
     };
 
     const refreshWithQueue = new RefreshRecommendationsUseCase(
@@ -498,6 +518,8 @@ describe('RefreshRecommendationsUseCase & GetRecommendationsUseCase (P2.6)', () 
 
     // Only opp-unsummarized (in top 50 and lacking a summary) is enqueued;
     // opp-already-summarized (already has summary) and opp-low (below threshold) are not.
-    expect(enqueued).toEqual([{ id: asOpportunityId('opp-unsummarized'), summarize: true }]);
+    expect(enqueued).toEqual([
+      { id: asOpportunityId('opp-unsummarized'), summarize: true },
+    ]);
   });
 });

@@ -4,7 +4,10 @@ import {
   OpportunityId,
 } from '../../../shared/domain/typed-id';
 import { Result, ok, err } from '../../../shared/domain/result';
-import { ValidationError, createValidationError } from '../../../shared/domain/errors';
+import {
+  ValidationError,
+  createValidationError,
+} from '../../../shared/domain/errors';
 import {
   Explanation,
   Feedback,

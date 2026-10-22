@@ -4,7 +4,11 @@ import { migrateTestDatabase } from '../../../../shared/testing/migrate-test-dat
 import { seedProfile, seedOpportunity } from '../../../../shared/testing/seed';
 import { PostgresWatchRepository } from './postgres-watch.repository';
 import { PostgresRecommendationRepository } from './postgres-recommendation.repository';
-import { asProfileId, asOpportunityId, asRecommendationId } from '../../../../shared/domain/typed-id';
+import {
+  asProfileId,
+  asOpportunityId,
+  asRecommendationId,
+} from '../../../../shared/domain/typed-id';
 
 const TEST_DATABASE_URL = requireTestDatabaseUrl();
 
@@ -75,17 +79,17 @@ describe('PostgresWatchRepository & Summary (Real Test Database)', () => {
 
     // Set closing_date for opp1 to in 3 days (closing soon <= 7 days)
     const in3Days = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
-    await pool.query('UPDATE opportunities SET closing_date = $1 WHERE id = $2;', [
-      in3Days,
-      opp1,
-    ]);
+    await pool.query(
+      'UPDATE opportunities SET closing_date = $1 WHERE id = $2;',
+      [in3Days, opp1],
+    );
 
     // Set closing_date for opp2 to in 15 days (> 7 days, not closing soon)
     const in15Days = new Date(Date.now() + 15 * 24 * 60 * 60 * 1000);
-    await pool.query('UPDATE opportunities SET closing_date = $1 WHERE id = $2;', [
-      in15Days,
-      opp2,
-    ]);
+    await pool.query(
+      'UPDATE opportunities SET closing_date = $1 WHERE id = $2;',
+      [in15Days, opp2],
+    );
 
     // Create 2 recommendations: 1 new (feedback NULL), 1 with feedback
     await recRepo.save({
@@ -126,16 +130,17 @@ describe('PostgresWatchRepository & Summary (Real Test Database)', () => {
     expect(summaryWithAlert?.unreadAlerts).toBe(1);
 
     // Mark alert as read and verify unreadAlerts decreases to 0
-    await pool.query(
-      `UPDATE alerts SET read_at = NOW() WHERE id = $1;`,
-      ['alert-test-summary-1'],
-    );
+    await pool.query(`UPDATE alerts SET read_at = NOW() WHERE id = $1;`, [
+      'alert-test-summary-1',
+    ]);
     const summaryRead = await watchRepo.getProfileSummary(profileId);
     expect(summaryRead?.unreadAlerts).toBe(0);
   });
 
   it('returns null summary when profile does not exist', async () => {
-    const summary = await watchRepo.getProfileSummary(asProfileId('00000000-0000-0000-0000-000000000000'));
+    const summary = await watchRepo.getProfileSummary(
+      asProfileId('00000000-0000-0000-0000-000000000000'),
+    );
     expect(summary).toBeNull();
   });
 
@@ -147,14 +152,14 @@ describe('PostgresWatchRepository & Summary (Real Test Database)', () => {
     const profileId2 = asProfileId('prof-watch-2');
 
     // Set prof-watch-2 to alerts_enabled = false
-    await pool.query('UPDATE profiles SET alerts_enabled = false, contact_email = $1 WHERE id = $2;', [
-      'user2@test.com',
-      profileId2,
-    ]);
-    await pool.query('UPDATE profiles SET alerts_enabled = true, contact_email = $1 WHERE id = $2;', [
-      'user1@test.com',
-      profileId1,
-    ]);
+    await pool.query(
+      'UPDATE profiles SET alerts_enabled = false, contact_email = $1 WHERE id = $2;',
+      ['user2@test.com', profileId2],
+    );
+    await pool.query(
+      'UPDATE profiles SET alerts_enabled = true, contact_email = $1 WHERE id = $2;',
+      ['user1@test.com', profileId1],
+    );
 
     await watchRepo.addWatch(profileId1, oppId1);
     await watchRepo.addWatch(profileId2, oppId1);
@@ -162,11 +167,21 @@ describe('PostgresWatchRepository & Summary (Real Test Database)', () => {
     const watchers = await watchRepo.findWatchers(oppId1);
     expect(watchers).toHaveLength(2);
     expect(watchers).toEqual([
-      { profileId: profileId1, alertsEnabled: true, contactEmail: 'user1@test.com' },
-      { profileId: profileId2, alertsEnabled: false, contactEmail: 'user2@test.com' },
+      {
+        profileId: profileId1,
+        alertsEnabled: true,
+        contactEmail: 'user1@test.com',
+      },
+      {
+        profileId: profileId2,
+        alertsEnabled: false,
+        contactEmail: 'user2@test.com',
+      },
     ]);
 
-    const noWatchers = await watchRepo.findWatchers(asOpportunityId('opp-watch-3'));
+    const noWatchers = await watchRepo.findWatchers(
+      asOpportunityId('opp-watch-3'),
+    );
     expect(noWatchers).toHaveLength(0);
   });
 });

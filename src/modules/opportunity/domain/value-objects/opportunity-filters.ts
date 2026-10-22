@@ -1,6 +1,7 @@
 import { OpportunityStatus } from './opportunity.value-objects';
 
-export type OpportunitySortField = 'publishedAt' | 'closingDate' | 'amount' | 'relevance';
+export type OpportunitySortField =
+  'publishedAt' | 'closingDate' | 'amount' | 'relevance';
 export type SortOrder = 'asc' | 'desc';
 
 export interface OpportunityFilters {

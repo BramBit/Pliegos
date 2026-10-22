@@ -3,7 +3,11 @@ import {
   AlertRepositoryPort,
   PaginatedAlertInbox,
 } from '../../domain/ports/alert.repository.port';
-import { asAlertId, asOpportunityId, asProfileId } from '../../../shared/domain/typed-id';
+import {
+  asAlertId,
+  asOpportunityId,
+  asProfileId,
+} from '../../../shared/domain/typed-id';
 
 describe('GetProfileAlertsUseCase', () => {
   let mockRepo: jest.Mocked<AlertRepositoryPort>;

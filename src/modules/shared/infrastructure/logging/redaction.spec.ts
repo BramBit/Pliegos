@@ -3,9 +3,12 @@ import { redact, redactString } from './redaction';
 describe('Redaction Utilities', () => {
   describe('redactString', () => {
     it('redacts email addresses', () => {
-      const input = 'Contact user at john.doe@example.com or admin@pliegos.co for help.';
+      const input =
+        'Contact user at john.doe@example.com or admin@pliegos.co for help.';
       const output = redactString(input);
-      expect(output).toBe('Contact user at [REDACTED_EMAIL] or [REDACTED_EMAIL] for help.');
+      expect(output).toBe(
+        'Contact user at [REDACTED_EMAIL] or [REDACTED_EMAIL] for help.',
+      );
     });
 
     it('redacts JWT tokens', () => {
@@ -24,13 +27,17 @@ describe('Redaction Utilities', () => {
     });
 
     it('redacts password in database connection strings', () => {
-      const input = 'Connecting to postgres://postgres:SuperSecretPassword123@localhost:5432/pliegos';
+      const input =
+        'Connecting to postgres://postgres:SuperSecretPassword123@localhost:5432/pliegos';
       const output = redactString(input);
-      expect(output).toBe('Connecting to postgres://postgres:[REDACTED]@localhost:5432/pliegos');
+      expect(output).toBe(
+        'Connecting to postgres://postgres:[REDACTED]@localhost:5432/pliegos',
+      );
     });
 
     it('redacts key-value password assignments in text', () => {
-      const input = 'Connecting with password=mySecretPass and token="xyzSecretToken"';
+      const input =
+        'Connecting with password=mySecretPass and token="xyzSecretToken"';
       const output = redactString(input);
       expect(output).toContain('password=[REDACTED]');
       expect(output).toContain('token="[REDACTED]"');
@@ -77,7 +84,9 @@ describe('Redaction Utilities', () => {
     });
 
     it('redacts Error objects message and stack', () => {
-      const err = new Error('Failed to login for user test@test.com with password=secret');
+      const err = new Error(
+        'Failed to login for user test@test.com with password=secret',
+      );
       const redactedErr = redact(err) as Record<string, unknown>;
 
       expect(redactedErr.message).toContain('[REDACTED_EMAIL]');

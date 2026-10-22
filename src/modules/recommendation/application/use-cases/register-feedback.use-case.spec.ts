@@ -18,10 +18,15 @@ class FakeRecommendationRepository implements RecommendationRepositoryPort {
   }
 
   async findByProfile(profileId: ProfileId): Promise<Recommendation[]> {
-    return Array.from(this.store.values()).filter((r) => r.profileId === profileId);
+    return Array.from(this.store.values()).filter(
+      (r) => r.profileId === profileId,
+    );
   }
 
-  async findById(id: RecommendationId, _userId?: UserId): Promise<Recommendation | null> {
+  async findById(
+    id: RecommendationId,
+    _userId?: UserId,
+  ): Promise<Recommendation | null> {
     return this.store.get(id) ?? null;
   }
 }

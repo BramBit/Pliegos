@@ -1,6 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
-import { ScheduleModule, SchedulerRegistry, CronExpression } from '@nestjs/schedule';
+import {
+  ScheduleModule,
+  SchedulerRegistry,
+  CronExpression,
+} from '@nestjs/schedule';
 import {
   SchedulerAdapter,
   SYNC_OPPORTUNITIES_CRON,
@@ -107,7 +111,9 @@ describe('SchedulerAdapter (Driving Adapter per Technical Design §8)', () => {
       await schedulerAdapter.handleSyncOpportunities();
 
       expect(mockSyncOpportunitiesUseCase.execute).toHaveBeenCalledTimes(1);
-      expect(mockSyncOpportunitiesUseCase.execute).toHaveBeenCalledWith({ maxRecords: 5000 });
+      expect(mockSyncOpportunitiesUseCase.execute).toHaveBeenCalledWith({
+        maxRecords: 5000,
+      });
     });
 
     it('should handle domain error from SyncOpportunitiesUseCase gracefully without throwing', async () => {
@@ -299,7 +305,10 @@ describe('SchedulerAdapter (Driving Adapter per Technical Design §8)', () => {
       await adapter.handleSyncOpportunities();
 
       expect(mockPipelineRepo.startRun).toHaveBeenCalledWith('sync');
-      expect(mockPipelineRepo.failRun).toHaveBeenCalledWith('run-456', 'Network failure');
+      expect(mockPipelineRepo.failRun).toHaveBeenCalledWith(
+        'run-456',
+        'Network failure',
+      );
     });
   });
 });

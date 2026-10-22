@@ -38,7 +38,11 @@ export interface ErrorEnvelope {
 
 export class DomainErrorException extends Error {
   constructor(public readonly domainError: DomainError) {
-    super('message' in domainError && domainError.message ? domainError.message : domainError.type);
+    super(
+      'message' in domainError && domainError.message
+        ? domainError.message
+        : domainError.type,
+    );
     this.name = 'DomainErrorException';
   }
 }
@@ -60,7 +64,9 @@ function isDomainErrorObject(value: unknown): value is DomainError {
 export class GlobalExceptionFilter implements ExceptionFilter {
   private readonly logger: LoggerService;
 
-  constructor(@Optional() @Inject('EXCEPTION_FILTER_LOGGER') logger?: LoggerService) {
+  constructor(
+    @Optional() @Inject('EXCEPTION_FILTER_LOGGER') logger?: LoggerService,
+  ) {
     this.logger = logger ?? new Logger(GlobalExceptionFilter.name);
   }
 
@@ -110,10 +116,13 @@ export class GlobalExceptionFilter implements ExceptionFilter {
             statusCode: HttpStatus.BAD_REQUEST,
             error: 'ValidationError',
             message:
-              typeof domainErr.message === 'string' && domainErr.message.length > 0
+              typeof domainErr.message === 'string' &&
+              domainErr.message.length > 0
                 ? domainErr.message
                 : 'Validation failed',
-            ...(domainErr.fields !== undefined ? { details: domainErr.fields } : {}),
+            ...(domainErr.fields !== undefined
+              ? { details: domainErr.fields }
+              : {}),
             requestId,
           };
         case 'ProfileNotFoundError':
@@ -184,7 +193,8 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       return {
         statusCode,
         error: this.defaultErrorLabel(statusCode),
-        message: typeof rawResponse === 'string' ? rawResponse : exception.message,
+        message:
+          typeof rawResponse === 'string' ? rawResponse : exception.message,
         requestId,
       };
     }

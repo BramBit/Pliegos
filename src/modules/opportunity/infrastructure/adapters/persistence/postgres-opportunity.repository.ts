@@ -5,12 +5,18 @@ import {
   SyncState,
 } from '../../../domain/ports/opportunity.repository.port';
 import { Opportunity } from '../../../domain/entities/opportunity.entity';
-import { OpportunityId, asOpportunityId } from '../../../../shared/domain/typed-id';
+import {
+  OpportunityId,
+  asOpportunityId,
+} from '../../../../shared/domain/typed-id';
 import {
   OpportunityFilters,
   PagedOpportunitiesResult,
 } from '../../../domain/value-objects/opportunity-filters';
-import { Analysis, OpportunityStatus } from '../../../domain/value-objects/opportunity.value-objects';
+import {
+  Analysis,
+  OpportunityStatus,
+} from '../../../domain/value-objects/opportunity.value-objects';
 import { canonicalizeDepartment } from '../../../../shared/domain/colombian-departments';
 
 export class OpportunityLockBusyError extends Error {
@@ -95,7 +101,10 @@ export class PostgresOpportunityRepository implements OpportunityRepositoryPort 
   constructor(private readonly pool: Pool) {}
 
   async save(opportunity: Opportunity): Promise<void> {
-    await this.pool.query(UPSERT_OPPORTUNITY_SQL, this.toRowValues(opportunity));
+    await this.pool.query(
+      UPSERT_OPPORTUNITY_SQL,
+      this.toRowValues(opportunity),
+    );
   }
 
   async saveMany(opportunities: Opportunity[]): Promise<void> {
@@ -105,7 +114,10 @@ export class PostgresOpportunityRepository implements OpportunityRepositoryPort 
     try {
       await client.query('BEGIN');
       for (const opportunity of opportunities) {
-        await client.query(UPSERT_OPPORTUNITY_SQL, this.toRowValues(opportunity));
+        await client.query(
+          UPSERT_OPPORTUNITY_SQL,
+          this.toRowValues(opportunity),
+        );
       }
       await client.query('COMMIT');
     } catch (error) {
@@ -123,7 +135,10 @@ export class PostgresOpportunityRepository implements OpportunityRepositoryPort 
     );
   }
 
-  async withAnalysisLock<T>(id: OpportunityId, work: () => Promise<T>): Promise<T> {
+  async withAnalysisLock<T>(
+    id: OpportunityId,
+    work: () => Promise<T>,
+  ): Promise<T> {
     const client: PoolClient = await this.pool.connect();
     let acquired = false;
     try {
@@ -212,7 +227,10 @@ export class PostgresOpportunityRepository implements OpportunityRepositoryPort 
       source: string;
       last_success_at: Date | null;
       watermark: Date | null;
-    }>('SELECT source, last_success_at, watermark FROM sync_state WHERE source = $1', [source]);
+    }>(
+      'SELECT source, last_success_at, watermark FROM sync_state WHERE source = $1',
+      [source],
+    );
 
     if (res.rows.length === 0) return null;
     const row = res.rows[0];
@@ -243,7 +261,10 @@ export class PostgresOpportunityRepository implements OpportunityRepositoryPort 
     );
   }
 
-  private buildWhereClauses(filters: OpportunityFilters, params: unknown[]): string[] {
+  private buildWhereClauses(
+    filters: OpportunityFilters,
+    params: unknown[],
+  ): string[] {
     const where: string[] = [];
 
     if (filters.categoryCode && filters.categoryCode.trim() !== '') {
@@ -276,22 +297,34 @@ export class PostgresOpportunityRepository implements OpportunityRepositoryPort 
       where.push(`status = $${params.length}`);
     }
 
-    if (filters.closingAfter instanceof Date && !isNaN(filters.closingAfter.getTime())) {
+    if (
+      filters.closingAfter instanceof Date &&
+      !isNaN(filters.closingAfter.getTime())
+    ) {
       params.push(filters.closingAfter);
       where.push(`closing_date >= $${params.length}`);
     }
 
-    if (filters.closingBefore instanceof Date && !isNaN(filters.closingBefore.getTime())) {
+    if (
+      filters.closingBefore instanceof Date &&
+      !isNaN(filters.closingBefore.getTime())
+    ) {
       params.push(filters.closingBefore);
       where.push(`closing_date <= $${params.length}`);
     }
 
-    if (typeof filters.amountMin === 'number' && Number.isFinite(filters.amountMin)) {
+    if (
+      typeof filters.amountMin === 'number' &&
+      Number.isFinite(filters.amountMin)
+    ) {
       params.push(filters.amountMin);
       where.push(`amount >= $${params.length}`);
     }
 
-    if (typeof filters.amountMax === 'number' && Number.isFinite(filters.amountMax)) {
+    if (
+      typeof filters.amountMax === 'number' &&
+      Number.isFinite(filters.amountMax)
+    ) {
       params.push(filters.amountMax);
       where.push(`amount <= $${params.length}`);
     }
@@ -329,18 +362,29 @@ export class PostgresOpportunityRepository implements OpportunityRepositoryPort 
     const params: unknown[] = [];
     const where = this.buildWhereClauses(filters, params);
     const orderBy = this.buildOrderBySql(filters);
-    const limit = Math.min(Math.max(Math.trunc(filters.pageSize ?? filters.limit ?? 100), 1), 1000);
+    const limit = Math.min(
+      Math.max(Math.trunc(filters.pageSize ?? filters.limit ?? 100), 1),
+      1000,
+    );
 
     const whereSql = where.length > 0 ? `WHERE ${where.join(' AND ')}` : '';
     const query = `SELECT * FROM opportunities ${whereSql} ORDER BY ${orderBy} LIMIT ${limit};`;
 
-    const res: QueryResult<OpportunityRow> = await this.pool.query(query, params);
+    const res: QueryResult<OpportunityRow> = await this.pool.query(
+      query,
+      params,
+    );
     return res.rows.map((row) => this.mapRowToEntity(row));
   }
 
-  async findPaged(filters: OpportunityFilters): Promise<PagedOpportunitiesResult> {
+  async findPaged(
+    filters: OpportunityFilters,
+  ): Promise<PagedOpportunitiesResult> {
     const page = Math.max(1, Math.trunc(filters.page ?? 1));
-    const pageSize = Math.min(Math.max(1, Math.trunc(filters.pageSize ?? filters.limit ?? 20)), 50);
+    const pageSize = Math.min(
+      Math.max(1, Math.trunc(filters.pageSize ?? filters.limit ?? 20)),
+      50,
+    );
     const offset = (page - 1) * pageSize;
 
     const params: unknown[] = [];
@@ -383,7 +427,9 @@ export class PostgresOpportunityRepository implements OpportunityRepositoryPort 
 
   private mapRowToEntity(row: OpportunityRow): Opportunity {
     const analysisRaw =
-      typeof row.analysis === 'string' ? JSON.parse(row.analysis) : row.analysis;
+      typeof row.analysis === 'string'
+        ? JSON.parse(row.analysis)
+        : row.analysis;
     const changeHistoryRaw =
       typeof row.change_history === 'string'
         ? JSON.parse(change_history_string(row.change_history))
@@ -413,11 +459,14 @@ export class PostgresOpportunityRepository implements OpportunityRepositoryPort 
       isCompetitive: row.is_competitive ?? true,
       categoryCode: row.category_code ?? null,
       publishedAt,
-      lastPublishedAt: row.last_published_at ? new Date(row.last_published_at) : publishedAt,
+      lastPublishedAt: row.last_published_at
+        ? new Date(row.last_published_at)
+        : publishedAt,
       closingDate: row.closing_date ? new Date(row.closing_date) : null,
       isOpenForSubmission:
         (row.status === 'Published' || row.status === 'Amended') &&
-        (row.closing_date === null || new Date(row.closing_date).getTime() >= Date.now()),
+        (row.closing_date === null ||
+          new Date(row.closing_date).getTime() >= Date.now()),
       status: row.status as OpportunityStatus,
       sourceStatus: row.source_status ?? null,
       source: {

@@ -1,8 +1,15 @@
 import { MatchingService, ScoringWeights, cosine } from './matching.service';
 import { Opportunity } from '../../../opportunity/domain/entities/opportunity.entity';
 import { Profile } from '../../../profile/domain/entities/profile.entity';
-import { asOpportunityId, asProfileId, asUserId } from '../../../shared/domain/typed-id';
-import { Money, createMoney } from '../../../opportunity/domain/value-objects/money.vo';
+import {
+  asOpportunityId,
+  asProfileId,
+  asUserId,
+} from '../../../shared/domain/typed-id';
+import {
+  Money,
+  createMoney,
+} from '../../../opportunity/domain/value-objects/money.vo';
 import { HashEmbedder } from '../../../shared/testing/hash-embedder';
 
 const mustCreateMoney = (amount: number): Money => {
@@ -14,7 +21,9 @@ const mustCreateMoney = (amount: number): Money => {
 describe('MatchingService', () => {
   let service: MatchingService;
 
-  const createTestOpportunity = (overrides?: Partial<Opportunity>): Opportunity => {
+  const createTestOpportunity = (
+    overrides?: Partial<Opportunity>,
+  ): Opportunity => {
     return {
       id: asOpportunityId('opp-100'),
       title: 'Desarrollo de plataforma cloud',
@@ -100,7 +109,11 @@ describe('MatchingService', () => {
         },
       });
 
-      const breakdown = await service.computeBreakdown(opportunity, profile, 0.8);
+      const breakdown = await service.computeBreakdown(
+        opportunity,
+        profile,
+        0.8,
+      );
 
       expect(breakdown.semanticSimilarity).toBe(0.8);
       expect(breakdown.categoryMatch).toBe(0.0);
@@ -118,7 +131,9 @@ describe('MatchingService', () => {
         description:
           'Alta coincidencia semántica con las capacidades y palabras clave de tu perfil',
       });
-      expect(breakdown.explanation.summary).toContain('Alta coincidencia semántica');
+      expect(breakdown.explanation.summary).toContain(
+        'Alta coincidencia semántica',
+      );
     });
 
     it('uses constructor-injected thresholds or explicit bounds for cosine normalization', () => {
@@ -139,7 +154,10 @@ describe('MatchingService', () => {
 
       expect(MatchingService.normalizeCosine(0.4)).toBeCloseTo(0, 6);
       expect(MatchingService.normalizeCosine(0.75)).toBeCloseTo(1, 6);
-      expect(MatchingService.normalizeCosine(0.7, 0.5, 0.9)).toBeCloseTo(0.5, 6);
+      expect(MatchingService.normalizeCosine(0.7, 0.5, 0.9)).toBeCloseTo(
+        0.5,
+        6,
+      );
     });
   });
 
@@ -175,7 +193,9 @@ describe('MatchingService', () => {
         score: 1.0,
         description: 'Coincide con tu categoría de interés',
       });
-      expect(breakdown.explanation.summary).toContain('Coincide con tu categoría de interés');
+      expect(breakdown.explanation.summary).toContain(
+        'Coincide con tu categoría de interés',
+      );
     });
 
     it('computes partial category match (0.6) for shared UNSPSC segment/family prefix with score 0.2100', async () => {
@@ -204,7 +224,9 @@ describe('MatchingService', () => {
     });
 
     it('returns 0.0 for unrelated UNSPSC categories', async () => {
-      const opportunity = createTestOpportunity({ categoryCode: 'V1.80111500' });
+      const opportunity = createTestOpportunity({
+        categoryCode: 'V1.80111500',
+      });
       const profile = createTestProfile({
         preferences: {
           categoryCodes: ['V1.43230000'],
@@ -275,7 +297,9 @@ describe('MatchingService', () => {
         score: 1.0,
         description: 'El monto está dentro de tu rango declarado',
       });
-      expect(breakdown.explanation.summary).toContain('El monto está dentro de tu rango declarado');
+      expect(breakdown.explanation.summary).toContain(
+        'El monto está dentro de tu rango declarado',
+      );
     });
 
     it('treats null amountRange or amountKnown=false as unavailable (not zero and not 1.0)', async () => {
@@ -297,10 +321,18 @@ describe('MatchingService', () => {
 
       // semantic=1.0 (0.35), category=1.0 (0.35), amount=unavailable, location=1.0 (0.10)
       // combinedScore = (0.35 + 0.35 + 0.10) / 0.80 = 1.0
-      const breakdown = await service.computeBreakdown(opportunity, profile, 1.0);
+      const breakdown = await service.computeBreakdown(
+        opportunity,
+        profile,
+        1.0,
+      );
       expect(breakdown.combinedScore).toBe(1.0);
-      expect(breakdown.unavailableFactors).toContain('La oportunidad no declara un monto válido');
-      expect(breakdown.matchedFactors.map((f) => f.factor)).not.toContain('amountFit');
+      expect(breakdown.unavailableFactors).toContain(
+        'La oportunidad no declara un monto válido',
+      );
+      expect(breakdown.matchedFactors.map((f) => f.factor)).not.toContain(
+        'amountFit',
+      );
     });
   });
 
@@ -397,7 +429,11 @@ describe('MatchingService', () => {
         },
       });
 
-      const breakdown = await service.computeBreakdown(opportunity, profile, null);
+      const breakdown = await service.computeBreakdown(
+        opportunity,
+        profile,
+        null,
+      );
       expect(breakdown.locationMatch).toBe(1.0);
       expect(breakdown.combinedScore).toBe(1.0);
     });
@@ -406,7 +442,8 @@ describe('MatchingService', () => {
       const opportunity = createTestOpportunity({
         location: {
           city: 'San Andrés',
-          department: 'Archipiélago de San Andrés, Providencia y Santa Catalina',
+          department:
+            'Archipiélago de San Andrés, Providencia y Santa Catalina',
         },
       });
       const profile = createTestProfile({
@@ -418,7 +455,11 @@ describe('MatchingService', () => {
         },
       });
 
-      const breakdown = await service.computeBreakdown(opportunity, profile, null);
+      const breakdown = await service.computeBreakdown(
+        opportunity,
+        profile,
+        null,
+      );
       expect(breakdown.locationMatch).toBe(1.0);
       expect(breakdown.combinedScore).toBe(1.0);
     });
@@ -445,7 +486,11 @@ describe('MatchingService', () => {
       // Available weights sum = 0.35 + 0.20 + 0.10 = 0.65
       // Weighted numerator = 0.35 * 0.8 + 0.20 * 1.0 + 0.10 * 1.0 = 0.28 + 0.20 + 0.10 = 0.58
       // Expected score = 0.58 / 0.65 = 0.89230769... -> 0.8923
-      const breakdown = await service.computeBreakdown(opportunity, profile, 0.8);
+      const breakdown = await service.computeBreakdown(
+        opportunity,
+        profile,
+        0.8,
+      );
 
       expect(breakdown.combinedScore).toBe(0.8923);
       expect(breakdown.unavailableFactors).toEqual([
@@ -475,7 +520,11 @@ describe('MatchingService', () => {
         },
       });
 
-      const breakdown = await service.computeBreakdown(opportunity, profile, null);
+      const breakdown = await service.computeBreakdown(
+        opportunity,
+        profile,
+        null,
+      );
       expect(breakdown.combinedScore).toBe(0);
       expect(breakdown.matchedFactors).toEqual([]);
       expect(breakdown.unavailableFactors.length).toBeGreaterThanOrEqual(4);
@@ -506,7 +555,9 @@ describe('MatchingService', () => {
       expect(recommendation.explanation.matchedFactors).toHaveLength(4);
       expect(recommendation.explanation.unavailableFactors).toEqual([]);
 
-      const factorNames = recommendation.explanation.matchedFactors.map((f) => f.factor);
+      const factorNames = recommendation.explanation.matchedFactors.map(
+        (f) => f.factor,
+      );
       expect(factorNames).toEqual([
         'semanticSimilarity',
         'categoryMatch',
@@ -535,10 +586,9 @@ describe('MatchingService', () => {
 
       expect(recommendation.score).toBe(0.535);
       expect(recommendation.explanation.matchedFactors).toHaveLength(2);
-      expect(recommendation.explanation.matchedFactors.map((f) => f.factor)).toEqual([
-        'semanticSimilarity',
-        'categoryMatch',
-      ]);
+      expect(
+        recommendation.explanation.matchedFactors.map((f) => f.factor),
+      ).toEqual(['semanticSimilarity', 'categoryMatch']);
     });
 
     it('produces fallback summary when no factors meet the 0.6 threshold', async () => {
@@ -581,7 +631,9 @@ describe('MatchingService', () => {
 
       const breakdown = await service.computeBreakdown(opportunity, profile, 0);
       expect(breakdown.locationMatch).toBe(0.0);
-      expect(breakdown.unavailableFactors).toContain('La oportunidad no declara departamento');
+      expect(breakdown.unavailableFactors).toContain(
+        'La oportunidad no declara departamento',
+      );
     });
 
     it('handles null semanticSimilarity by excluding semantic weight and renormalizing available factors', async () => {
@@ -592,7 +644,11 @@ describe('MatchingService', () => {
       });
       const profile = createTestProfile();
 
-      const breakdown = await service.computeBreakdown(opportunity, profile, null);
+      const breakdown = await service.computeBreakdown(
+        opportunity,
+        profile,
+        null,
+      );
       expect(breakdown.semanticSimilarity).toBe(0);
       expect(breakdown.categoryMatch).toBe(1.0);
       expect(breakdown.amountFit).toBe(1.0);
@@ -625,7 +681,11 @@ describe('MatchingService', () => {
         },
       });
 
-      const recommendation = await customService.score(opportunity, profile, 0.9);
+      const recommendation = await customService.score(
+        opportunity,
+        profile,
+        0.9,
+      );
 
       expect(recommendation.score).toBe(0.94);
     });

@@ -27,7 +27,15 @@ export const listOpportunitiesQuerySchema = z
       z.coerce.number().nonnegative().optional(),
     ),
     status: z
-      .enum(['Draft', 'Published', 'Amended', 'Closed', 'Awarded', 'Cancelled', 'Unknown'])
+      .enum([
+        'Draft',
+        'Published',
+        'Amended',
+        'Closed',
+        'Awarded',
+        'Cancelled',
+        'Unknown',
+      ])
       .optional(),
     modality: z.string().trim().optional(),
     closingAfter: z.preprocess(
@@ -38,9 +46,13 @@ export const listOpportunitiesQuerySchema = z
       (val) => (val === '' ? undefined : val),
       z.coerce.date().optional(),
     ),
-    onlyCompetitive: z.preprocess(booleanPreprocessor, z.boolean()).default(true),
+    onlyCompetitive: z
+      .preprocess(booleanPreprocessor, z.boolean())
+      .default(true),
     onlyOpen: z.preprocess(booleanPreprocessor, z.boolean()).default(true),
-    sort: z.enum(['publishedAt', 'closingDate', 'amount', 'relevance']).optional(),
+    sort: z
+      .enum(['publishedAt', 'closingDate', 'amount', 'relevance'])
+      .optional(),
     order: z.enum(['asc', 'desc']).default('desc'),
     page: z.preprocess(
       (val) => (val === '' ? undefined : val),
@@ -66,14 +78,19 @@ export const listOpportunitiesQuerySchema = z
   .transform((data) => ({
     ...data,
     sort: (data.sort ??
-      (data.q && data.q.trim().length > 0 ? 'relevance' : 'publishedAt')) as OpportunitySortField,
+      (data.q && data.q.trim().length > 0
+        ? 'relevance'
+        : 'publishedAt')) as OpportunitySortField,
   }));
 
-export type ListOpportunitiesQueryInput = z.infer<typeof listOpportunitiesQuerySchema>;
+export type ListOpportunitiesQueryInput = z.infer<
+  typeof listOpportunitiesQuerySchema
+>;
 
 export class ListOpportunitiesQueryDto {
   @ApiPropertyOptional({
-    description: "Consulta en lenguaje natural o palabras clave (habilita búsqueda híbrida y sort='relevance')",
+    description:
+      "Consulta en lenguaje natural o palabras clave (habilita búsqueda híbrida y sort='relevance')",
     example: 'desarrollo de software y plataformas web',
   })
   q?: string;
@@ -85,7 +102,8 @@ export class ListOpportunitiesQueryDto {
   department?: string;
 
   @ApiPropertyOptional({
-    description: 'Prefijo de código UNSPSC para filtrar categorías (ej. V1.4323 o 4323)',
+    description:
+      'Prefijo de código UNSPSC para filtrar categorías (ej. V1.4323 o 4323)',
     example: 'V1.4323',
   })
   categoryPrefix?: string;
@@ -103,44 +121,58 @@ export class ListOpportunitiesQueryDto {
   maxAmount?: number;
 
   @ApiPropertyOptional({
-    enum: ['Draft', 'Published', 'Amended', 'Closed', 'Awarded', 'Cancelled', 'Unknown'],
+    enum: [
+      'Draft',
+      'Published',
+      'Amended',
+      'Closed',
+      'Awarded',
+      'Cancelled',
+      'Unknown',
+    ],
     description: 'Estado administrativo del proceso de contratación',
   })
   status?: OpportunityStatus;
 
   @ApiPropertyOptional({
-    description: 'Modalidad de selección o contratación (ej. Licitación pública, Selección abreviada)',
+    description:
+      'Modalidad de selección o contratación (ej. Licitación pública, Selección abreviada)',
     example: 'Licitación pública',
   })
   modality?: string;
 
   @ApiPropertyOptional({
-    description: 'Filtra procesos con fecha límite de presentación posterior a esta fecha (ISO-8601)',
+    description:
+      'Filtra procesos con fecha límite de presentación posterior a esta fecha (ISO-8601)',
     example: '2026-10-01T00:00:00.000Z',
   })
   closingAfter?: Date;
 
   @ApiPropertyOptional({
-    description: 'Filtra procesos con fecha límite de presentación anterior a esta fecha (ISO-8601)',
+    description:
+      'Filtra procesos con fecha límite de presentación anterior a esta fecha (ISO-8601)',
     example: '2026-12-31T23:59:59.000Z',
   })
   closingBefore?: Date;
 
   @ApiPropertyOptional({
-    description: 'Filtrar exclusivamente procesos competitivos (excluye contratación directa)',
+    description:
+      'Filtrar exclusivamente procesos competitivos (excluye contratación directa)',
     default: true,
   })
   onlyCompetitive?: boolean;
 
   @ApiPropertyOptional({
-    description: 'Filtrar exclusivamente procesos abiertos para presentación de propuestas',
+    description:
+      'Filtrar exclusivamente procesos abiertos para presentación de propuestas',
     default: true,
   })
   onlyOpen?: boolean;
 
   @ApiPropertyOptional({
     enum: ['publishedAt', 'closingDate', 'amount', 'relevance'],
-    description: "Criterio de ordenamiento ('relevance' requiere parámetro 'q')",
+    description:
+      "Criterio de ordenamiento ('relevance' requiere parámetro 'q')",
     default: 'publishedAt',
   })
   sort?: OpportunitySortField;

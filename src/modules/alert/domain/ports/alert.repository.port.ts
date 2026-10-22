@@ -1,5 +1,10 @@
 import { Alert, AlertTrigger } from '../entities/alert.entity';
-import { AlertId, OpportunityId, ProfileId, UserId } from '../../../shared/domain/typed-id';
+import {
+  AlertId,
+  OpportunityId,
+  ProfileId,
+  UserId,
+} from '../../../shared/domain/typed-id';
 
 export interface AlertItemOpportunitySummary {
   readonly id: string;

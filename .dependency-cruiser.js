@@ -6,33 +6,34 @@ module.exports = {
       comment: 'Domain layer cannot depend on infrastructure',
       severity: 'error',
       from: {
-        path: '^src/modules/[^/]+/domain/'
+        path: '^src/modules/[^/]+/domain/',
       },
       to: {
-        path: 'infrastructure'
-      }
+        path: 'infrastructure',
+      },
     },
     {
       name: 'domain-not-to-external-tech',
-      comment: 'Domain layer cannot depend on @nestjs/*, pg, bullmq, or ioredis',
+      comment:
+        'Domain layer cannot depend on @nestjs/*, pg, bullmq, or ioredis',
       severity: 'error',
       from: {
-        path: '^src/modules/[^/]+/domain/'
+        path: '^src/modules/[^/]+/domain/',
       },
       to: {
-        path: '^(@nestjs/|pg|bullmq|ioredis)'
-      }
+        path: '^(@nestjs/|pg|bullmq|ioredis)',
+      },
     },
     {
       name: 'application-not-to-infrastructure',
       comment: 'Application layer cannot depend on infrastructure',
       severity: 'error',
       from: {
-        path: '^src/modules/[^/]+/application/'
+        path: '^src/modules/[^/]+/application/',
       },
       to: {
-        path: 'infrastructure'
-      }
+        path: 'infrastructure',
+      },
     },
     {
       name: 'no-circular',
@@ -40,22 +41,22 @@ module.exports = {
       comment: 'Circular dependency detected',
       from: {},
       to: {
-        circular: true
-      }
-    }
+        circular: true,
+      },
+    },
   ],
   options: {
     doNotFollow: {
-      path: 'node_modules'
+      path: 'node_modules',
     },
     tsPreCompilationDeps: true,
     tsConfig: {
-      fileName: 'tsconfig.json'
+      fileName: 'tsconfig.json',
     },
     enhancedResolveOptions: {
       exportsFields: ['exports'],
       conditionNames: ['import', 'require', 'node', 'default', 'types'],
-      extensions: ['.ts', '.js']
-    }
-  }
+      extensions: ['.ts', '.js'],
+    },
+  },
 };

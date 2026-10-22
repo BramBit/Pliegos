@@ -69,7 +69,9 @@ describe('HealthController', () => {
     });
 
     it('returns 200 degraded when postgres and redis are up but ollama is down', async () => {
-      global.fetch = jest.fn().mockRejectedValue(new Error('Connection refused'));
+      global.fetch = jest
+        .fn()
+        .mockRejectedValue(new Error('Connection refused'));
 
       const result = await controller.ready();
 
@@ -107,7 +109,9 @@ describe('HealthController', () => {
 
     it('throws 503 HttpException when redis is down', async () => {
       (Redis as unknown as jest.Mock).mockImplementationOnce(() => ({
-        connect: jest.fn().mockRejectedValue(new Error('Redis connection refused')),
+        connect: jest
+          .fn()
+          .mockRejectedValue(new Error('Redis connection refused')),
         disconnect: jest.fn(),
       }));
 

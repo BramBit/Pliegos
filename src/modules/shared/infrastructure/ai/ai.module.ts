@@ -5,7 +5,10 @@ import {
 } from '../../../recommendation/domain/ports/ai-provider.port';
 import { OllamaAdapter } from '../../../recommendation/infrastructure/adapters/ollama/ollama.adapter';
 import { AiMetricsService } from './ai-metrics.service';
-import { MeasuredEmbedder, MeasuredTextGenerator } from './measured-ai.decorator';
+import {
+  MeasuredEmbedder,
+  MeasuredTextGenerator,
+} from './measured-ai.decorator';
 import { ENV, Env } from '../../../../config/env';
 
 @Global()
@@ -34,12 +37,26 @@ import { ENV, Env } from '../../../../config/env';
     },
     {
       provide: TEXT_GENERATOR_PORT,
-      useFactory: (adapter: OllamaAdapter, metrics: AiMetricsService, env: Env) => {
-        return new MeasuredTextGenerator(adapter, metrics, 'summarization', env.OLLAMA_CHAT_MODEL);
+      useFactory: (
+        adapter: OllamaAdapter,
+        metrics: AiMetricsService,
+        env: Env,
+      ) => {
+        return new MeasuredTextGenerator(
+          adapter,
+          metrics,
+          'summarization',
+          env.OLLAMA_CHAT_MODEL,
+        );
       },
       inject: [OllamaAdapter, AiMetricsService, ENV],
     },
   ],
-  exports: [EMBEDDER_PORT, TEXT_GENERATOR_PORT, AiMetricsService, OllamaAdapter],
+  exports: [
+    EMBEDDER_PORT,
+    TEXT_GENERATOR_PORT,
+    AiMetricsService,
+    OllamaAdapter,
+  ],
 })
 export class AiModule {}

@@ -26,7 +26,9 @@ describe('PostgresOpportunityRepository (Real Test Database)', () => {
     await pool.query('DELETE FROM sync_state;');
   });
 
-  const createSampleOpportunity = (overrides?: Partial<Opportunity>): Opportunity => ({
+  const createSampleOpportunity = (
+    overrides?: Partial<Opportunity>,
+  ): Opportunity => ({
     id: asOpportunityId('opp-test-1'),
     title: 'Suministro de equipos de computo',
     description: 'Adquisicion de portatiles corporativos de alto desempeno',
@@ -85,7 +87,9 @@ describe('PostgresOpportunityRepository (Real Test Database)', () => {
     expect(found?.categoryCode).toBe('43211500');
     expect(found?.lastPublishedAt).toEqual(opp.lastPublishedAt);
     expect(found?.closingDate).toEqual(opp.closingDate);
-    expect(found?.analysis?.summary).toBe('Compra de 100 computadores portatiles para colegios');
+    expect(found?.analysis?.summary).toBe(
+      'Compra de 100 computadores portatiles para colegios',
+    );
   });
 
   it('persists null categoryCode, isCompetitive=false and amountKnown=false', async () => {
@@ -162,9 +166,16 @@ describe('PostgresOpportunityRepository (Real Test Database)', () => {
 
     await repo.saveMany([opp1, opp2]);
 
-    const found = await repo.findByExternalIds(['EXT-BATCH-1', 'EXT-BATCH-2', 'EXT-MISSING']);
+    const found = await repo.findByExternalIds([
+      'EXT-BATCH-1',
+      'EXT-BATCH-2',
+      'EXT-MISSING',
+    ]);
     expect(found).toHaveLength(2);
-    expect(found.map((o) => o.source.externalId).sort()).toEqual(['EXT-BATCH-1', 'EXT-BATCH-2']);
+    expect(found.map((o) => o.source.externalId).sort()).toEqual([
+      'EXT-BATCH-1',
+      'EXT-BATCH-2',
+    ]);
   });
 
   it('stores and advances sync_state watermark monotonically', async () => {
@@ -239,7 +250,11 @@ describe('PostgresOpportunityRepository (Real Test Database)', () => {
         originalUrl: 'https://secop.gov.co/3',
       },
       categoryCode: '80111600',
-      location: { city: 'Bogota', department: 'Bogotá D.C.', departmentRaw: 'Bogotá D.C.' },
+      location: {
+        city: 'Bogota',
+        department: 'Bogotá D.C.',
+        departmentRaw: 'Bogotá D.C.',
+      },
       amount: { amount: 700_000_000, currency: 'COP' },
     });
 
@@ -247,11 +262,15 @@ describe('PostgresOpportunityRepository (Real Test Database)', () => {
     await repo.save(opp2);
     await repo.save(opp3);
 
-    const filteredByCategory = await repo.findByFilters({ categoryCode: 'V1.43' });
+    const filteredByCategory = await repo.findByFilters({
+      categoryCode: 'V1.43',
+    });
     expect(filteredByCategory).toHaveLength(1);
     expect(filteredByCategory[0].id).toBe('opp-1');
 
-    const filteredByDept = await repo.findByFilters({ department: 'Antioquia' });
+    const filteredByDept = await repo.findByFilters({
+      department: 'Antioquia',
+    });
     expect(filteredByDept).toHaveLength(1);
     expect(filteredByDept[0].id).toBe('opp-1');
 
@@ -321,7 +340,12 @@ describe('PostgresOpportunityRepository (Real Test Database)', () => {
     await repo.save(oppC);
 
     // Test pagination
-    const page1 = await repo.findPaged({ page: 1, pageSize: 2, sort: 'publishedAt', order: 'asc' });
+    const page1 = await repo.findPaged({
+      page: 1,
+      pageSize: 2,
+      sort: 'publishedAt',
+      order: 'asc',
+    });
     expect(page1.total).toBe(3);
     expect(page1.page).toBe(1);
     expect(page1.pageSize).toBe(2);
@@ -329,14 +353,23 @@ describe('PostgresOpportunityRepository (Real Test Database)', () => {
     expect(page1.items[0].id).toBe('opp-paged-1');
     expect(page1.items[1].id).toBe('opp-paged-2');
 
-    const page2 = await repo.findPaged({ page: 2, pageSize: 2, sort: 'publishedAt', order: 'asc' });
+    const page2 = await repo.findPaged({
+      page: 2,
+      pageSize: 2,
+      sort: 'publishedAt',
+      order: 'asc',
+    });
     expect(page2.total).toBe(3);
     expect(page2.page).toBe(2);
     expect(page2.items).toHaveLength(1);
     expect(page2.items[0].id).toBe('opp-paged-3');
 
     // Test sort by amount desc
-    const sortedAmount = await repo.findPaged({ sort: 'amount', order: 'desc', pageSize: 10 });
+    const sortedAmount = await repo.findPaged({
+      sort: 'amount',
+      order: 'desc',
+      pageSize: 10,
+    });
     expect(sortedAmount.items[0].id).toBe('opp-paged-2');
     expect(sortedAmount.items[1].id).toBe('opp-paged-1');
     expect(sortedAmount.items[2].id).toBe('opp-paged-3');
@@ -347,7 +380,9 @@ describe('PostgresOpportunityRepository (Real Test Database)', () => {
     expect(competitiveOnly.items.every((it) => it.isCompetitive)).toBe(true);
 
     // Test filter modality
-    const modalityFiltered = await repo.findPaged({ modality: 'licitación pública' });
+    const modalityFiltered = await repo.findPaged({
+      modality: 'licitación pública',
+    });
     expect(modalityFiltered.total).toBe(1);
     expect(modalityFiltered.items[0].id).toBe('opp-paged-1');
   });

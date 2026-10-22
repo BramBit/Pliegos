@@ -34,7 +34,8 @@ export class HealthController {
   @Get('live')
   @ApiOperation({
     summary: 'Liveness probe',
-    description: 'Indica si el proceso de la aplicación está activo y respondiendo.',
+    description:
+      'Indica si el proceso de la aplicación está activo y respondiendo.',
   })
   @ApiResponse({ status: HttpStatus.OK, description: 'Servicio activo' })
   live(): { status: 'ok'; uptime: number } {
@@ -51,8 +52,14 @@ export class HealthController {
     description:
       'Verifica la conectividad con PostgreSQL, Redis y Ollama. Falla con 503 si PostgreSQL o Redis no responden. Retorna 200 con status degraded si Ollama no responde.',
   })
-  @ApiResponse({ status: HttpStatus.OK, description: 'Servicio listo o degradado' })
-  @ApiResponse({ status: HttpStatus.SERVICE_UNAVAILABLE, description: 'Dependencia crítica caída' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Servicio listo o degradado',
+  })
+  @ApiResponse({
+    status: HttpStatus.SERVICE_UNAVAILABLE,
+    description: 'Dependencia crítica caída',
+  })
   async ready(): Promise<HealthCheckResult> {
     const checks: {
       postgres: 'up' | 'down';

@@ -4,7 +4,12 @@ import { GetProfilesByOwnerUseCase } from './get-profiles-by-owner.use-case';
 import { DeleteProfileUseCase } from './delete-profile.use-case';
 import { ProfileRepositoryPort } from '../../domain/ports/profile.repository.port';
 import { Profile } from '../../domain/entities/profile.entity';
-import { ProfileId, UserId, asProfileId, asUserId } from '../../../shared/domain/typed-id';
+import {
+  ProfileId,
+  UserId,
+  asProfileId,
+  asUserId,
+} from '../../../shared/domain/typed-id';
 import { RecommendationRefreshQueuePort } from '../../../recommendation/domain/ports/recommendation-refresh-queue.port';
 
 class FakeProfileRepository implements ProfileRepositoryPort {
@@ -19,7 +24,9 @@ class FakeProfileRepository implements ProfileRepositoryPort {
   }
 
   async findByOwner(ownerId: UserId): Promise<Profile[]> {
-    return Array.from(this.storage.values()).filter((p) => p.ownerId === ownerId);
+    return Array.from(this.storage.values()).filter(
+      (p) => p.ownerId === ownerId,
+    );
   }
 
   async delete(id: ProfileId): Promise<boolean> {
@@ -81,7 +88,10 @@ describe('Profile Use Cases', () => {
         expect(result.value.ownerId).toBe('user-100');
         expect(result.value.name).toBe('Tech SAS');
         expect(result.value.contactEmail).toBe('contacto@tech.com');
-        expect(result.value.preferences.departments).toEqual(['Antioquia', 'Bogotá D.C.']);
+        expect(result.value.preferences.departments).toEqual([
+          'Antioquia',
+          'Bogotá D.C.',
+        ]);
         expect(repository.storage.has(result.value.id)).toBe(true);
         expect(refreshQueue.enqueued).toContain(result.value.id);
       }
@@ -144,18 +154,31 @@ describe('Profile Use Cases', () => {
     });
 
     it('enforces maxProfilesPerUser limit when creating new profiles', async () => {
-      const limitedUseCase = new ConfigureProfileUseCase(repository, refreshQueue, 2);
+      const limitedUseCase = new ConfigureProfileUseCase(
+        repository,
+        refreshQueue,
+        2,
+      );
 
       // 1st profile -> success
-      const res1 = await limitedUseCase.execute({ profileId: null, data: validProfileData });
+      const res1 = await limitedUseCase.execute({
+        profileId: null,
+        data: validProfileData,
+      });
       expect(res1.ok).toBe(true);
 
       // 2nd profile -> success
-      const res2 = await limitedUseCase.execute({ profileId: null, data: validProfileData });
+      const res2 = await limitedUseCase.execute({
+        profileId: null,
+        data: validProfileData,
+      });
       expect(res2.ok).toBe(true);
 
       // 3rd profile -> rejected
-      const res3 = await limitedUseCase.execute({ profileId: null, data: validProfileData });
+      const res3 = await limitedUseCase.execute({
+        profileId: null,
+        data: validProfileData,
+      });
       expect(res3.ok).toBe(false);
       if (!res3.ok) {
         expect(res3.error.type).toBe('ValidationError');
@@ -181,7 +204,9 @@ describe('Profile Use Cases', () => {
       const found = await getByIdUseCase.execute({ profileId: id });
       expect(found.ok).toBe(true);
 
-      const notFound = await getByIdUseCase.execute({ profileId: asProfileId('unknown') });
+      const notFound = await getByIdUseCase.execute({
+        profileId: asProfileId('unknown'),
+      });
       expect(notFound.ok).toBe(false);
       if (!notFound.ok) {
         expect(notFound.error.type).toBe('ProfileNotFoundError');
@@ -194,9 +219,14 @@ describe('Profile Use Cases', () => {
       const id1 = asProfileId('p-1');
       const id2 = asProfileId('p-2');
       await useCase.execute({ profileId: id1, data: validProfileData });
-      await useCase.execute({ profileId: id2, data: { ...validProfileData, ownerId: asUserId('other-user') } });
+      await useCase.execute({
+        profileId: id2,
+        data: { ...validProfileData, ownerId: asUserId('other-user') },
+      });
 
-      const owned = await getByOwnerUseCase.execute({ ownerId: asUserId('user-100') });
+      const owned = await getByOwnerUseCase.execute({
+        ownerId: asUserId('user-100'),
+      });
       expect(owned.ok).toBe(true);
       if (owned.ok) {
         expect(owned.value).toHaveLength(1);

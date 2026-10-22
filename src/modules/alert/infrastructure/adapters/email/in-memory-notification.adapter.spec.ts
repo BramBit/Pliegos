@@ -31,13 +31,18 @@ describe('InMemoryNotificationAdapter', () => {
     expect(sent[0].content).toEqual(content);
     expect(sent[0].sentAt).toBeInstanceOf(Date);
     expect(fakeLogger.log).toHaveBeenCalledWith(
-      expect.stringContaining('[InMemoryNotificationAdapter] Sent to contratista@ejemplo.com (Empresa SAS): "Nueva adenda detectada"'),
+      expect.stringContaining(
+        '[InMemoryNotificationAdapter] Sent to contratista@ejemplo.com (Empresa SAS): "Nueva adenda detectada"',
+      ),
     );
   });
 
   it('triggers onSend callback when provided', async () => {
     const mockOnSend = jest.fn();
-    const adapter = new InMemoryNotificationAdapter({ onSend: mockOnSend, logger: fakeLogger });
+    const adapter = new InMemoryNotificationAdapter({
+      onSend: mockOnSend,
+      logger: fakeLogger,
+    });
     const to = { email: 'alerta@ejemplo.com' };
     const content = {
       subject: 'Alerta de plazo',

@@ -28,7 +28,8 @@ describe('PostgresAlertRepository (Real Test Database)', () => {
 
   beforeEach(async () => {
     await pool.query('DELETE FROM alerts;');
-    for (const id of ['prof-1', 'prof-2', 'prof-3']) await seedProfile(pool, id);
+    for (const id of ['prof-1', 'prof-2', 'prof-3'])
+      await seedProfile(pool, id);
   });
 
   it('saves an alert and finds only undelivered alerts', async () => {
@@ -239,7 +240,9 @@ describe('PostgresAlertRepository (Real Test Database)', () => {
     const page1 = await repo.findByProfile(asProfileId('prof-1'), 1, 10);
     expect(page1.total).toBe(2);
     expect(page1.items).toHaveLength(2);
-    expect(page1.items[0].opportunitySummary.title).toBe('Licitación Vial Cali');
+    expect(page1.items[0].opportunitySummary.title).toBe(
+      'Licitación Vial Cali',
+    );
     expect(page1.items[0].opportunitySummary.entity).toBe('Alcaldía de Cali');
     expect(page1.items[0].opportunitySummary.amount).toBe(150000000);
     expect(page1.items[0].opportunitySummary.closingDate).toBeInstanceOf(Date);

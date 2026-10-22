@@ -31,4 +31,3 @@ export class DatabaseModule implements OnModuleDestroy {
     // Graceful closure handled when process terminates
   }
 }
-

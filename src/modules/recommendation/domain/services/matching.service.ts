@@ -1,13 +1,19 @@
 import { randomUUID } from 'node:crypto';
 import { cosine } from '../ports/ai-provider.port';
 import { Opportunity } from '../../../opportunity/domain/entities/opportunity.entity';
-import { Profile, buildProfileQuery } from '../../../profile/domain/entities/profile.entity';
+import {
+  Profile,
+  buildProfileQuery,
+} from '../../../profile/domain/entities/profile.entity';
 import { Recommendation } from '../entities/recommendation.entity';
 import {
   Explanation,
   MatchedFactor,
 } from '../../../opportunity/domain/value-objects/opportunity.value-objects';
-import { RecommendationId, asRecommendationId } from '../../../shared/domain/typed-id';
+import {
+  RecommendationId,
+  asRecommendationId,
+} from '../../../shared/domain/typed-id';
 import { normalizeUnspsc } from '../../../opportunity/infrastructure/adapters/secop/normalizers';
 import { canonicalizeDepartment } from '../../../shared/domain/colombian-departments';
 
@@ -23,8 +29,8 @@ export interface ScoringWeights {
 export const DEFAULT_SCORING_WEIGHTS: ScoringWeights = {
   semanticSimilarity: 0.35,
   categoryMatch: 0.35,
-  amountFit: 0.20,
-  locationMatch: 0.10,
+  amountFit: 0.2,
+  locationMatch: 0.1,
 };
 
 export const FACTOR_MATCH_THRESHOLD = 0.6;
@@ -67,15 +73,21 @@ export class MatchingService {
     if (weightsOrConfig && 'semanticSimilarity' in weightsOrConfig) {
       this.weights = weightsOrConfig;
       const config = legacyConfig ?? {};
-      this.semanticCosineLow = config.semanticCosineLow ?? DEFAULT_SEMANTIC_COSINE_LOW;
-      this.semanticCosineHigh = config.semanticCosineHigh ?? DEFAULT_SEMANTIC_COSINE_HIGH;
-      this.minRecommendationScore = config.minRecommendationScore ?? DEFAULT_MIN_RECOMMENDATION_SCORE;
+      this.semanticCosineLow =
+        config.semanticCosineLow ?? DEFAULT_SEMANTIC_COSINE_LOW;
+      this.semanticCosineHigh =
+        config.semanticCosineHigh ?? DEFAULT_SEMANTIC_COSINE_HIGH;
+      this.minRecommendationScore =
+        config.minRecommendationScore ?? DEFAULT_MIN_RECOMMENDATION_SCORE;
     } else {
       const config = weightsOrConfig ?? {};
       this.weights = config.weights ?? DEFAULT_SCORING_WEIGHTS;
-      this.semanticCosineLow = config.semanticCosineLow ?? DEFAULT_SEMANTIC_COSINE_LOW;
-      this.semanticCosineHigh = config.semanticCosineHigh ?? DEFAULT_SEMANTIC_COSINE_HIGH;
-      this.minRecommendationScore = config.minRecommendationScore ?? DEFAULT_MIN_RECOMMENDATION_SCORE;
+      this.semanticCosineLow =
+        config.semanticCosineLow ?? DEFAULT_SEMANTIC_COSINE_LOW;
+      this.semanticCosineHigh =
+        config.semanticCosineHigh ?? DEFAULT_SEMANTIC_COSINE_HIGH;
+      this.minRecommendationScore =
+        config.minRecommendationScore ?? DEFAULT_MIN_RECOMMENDATION_SCORE;
     }
   }
 
@@ -103,7 +115,10 @@ export class MatchingService {
       semanticSimilarity !== null && Number.isFinite(semanticSimilarity);
     let semanticScore = 0;
     if (semanticAvailable) {
-      semanticScore = Math.min(1, Math.max(0, Number(semanticSimilarity.toFixed(4))));
+      semanticScore = Math.min(
+        1,
+        Math.max(0, Number(semanticSimilarity.toFixed(4))),
+      );
       weightedSum += this.weights.semanticSimilarity * semanticScore;
       totalAvailableWeight += this.weights.semanticSimilarity;
 
@@ -116,7 +131,9 @@ export class MatchingService {
         });
       }
     } else {
-      unavailableFactors.push('La oportunidad aún no tiene vector semántico indexado');
+      unavailableFactors.push(
+        'La oportunidad aún no tiene vector semántico indexado',
+      );
     }
 
     // 2. Category match factor
@@ -124,11 +141,15 @@ export class MatchingService {
     const normPrefCategories = (profile.preferences.categoryCodes ?? [])
       .map((c) => normalizeUnspsc(c))
       .filter((c): c is string => c !== null);
-    const categoryAvailable = normOppCategory !== null && normPrefCategories.length > 0;
+    const categoryAvailable =
+      normOppCategory !== null && normPrefCategories.length > 0;
     let categoryMatch = 0;
 
     if (categoryAvailable) {
-      categoryMatch = this.computeCategoryMatch(normOppCategory, normPrefCategories);
+      categoryMatch = this.computeCategoryMatch(
+        normOppCategory,
+        normPrefCategories,
+      );
       weightedSum += this.weights.categoryMatch * categoryMatch;
       totalAvailableWeight += this.weights.categoryMatch;
 
@@ -144,7 +165,9 @@ export class MatchingService {
         unavailableFactors.push('La oportunidad no declara categoría UNSPSC');
       }
       if (normPrefCategories.length === 0) {
-        unavailableFactors.push('El perfil no declara categorías UNSPSC de interés');
+        unavailableFactors.push(
+          'El perfil no declara categorías UNSPSC de interés',
+        );
       }
     }
 
@@ -186,10 +209,7 @@ export class MatchingService {
     let locationMatch = 0;
 
     if (locationAvailable) {
-      locationMatch = this.computeLocationMatch(
-        oppDept,
-        preferredDepartments,
-      );
+      locationMatch = this.computeLocationMatch(oppDept, preferredDepartments);
       weightedSum += this.weights.locationMatch * locationMatch;
       totalAvailableWeight += this.weights.locationMatch;
 
@@ -205,11 +225,14 @@ export class MatchingService {
         unavailableFactors.push('La oportunidad no declara departamento');
       }
       if (!profileHasDept) {
-        unavailableFactors.push('El perfil no declara departamentos de interés');
+        unavailableFactors.push(
+          'El perfil no declara departamentos de interés',
+        );
       }
     }
 
-    const rawScore = totalAvailableWeight > 0 ? weightedSum / totalAvailableWeight : 0;
+    const rawScore =
+      totalAvailableWeight > 0 ? weightedSum / totalAvailableWeight : 0;
     const combinedScore = Math.min(1, Math.max(0, Number(rawScore.toFixed(4))));
 
     const explanation: Explanation = {
@@ -242,7 +265,11 @@ export class MatchingService {
     semanticSimilarity: number | null,
     recommendationId?: RecommendationId,
   ): Promise<Recommendation> {
-    const breakdown = await this.computeBreakdown(opportunity, profile, semanticSimilarity);
+    const breakdown = await this.computeBreakdown(
+      opportunity,
+      profile,
+      semanticSimilarity,
+    );
 
     return {
       id: recommendationId ?? asRecommendationId(randomUUID()),
@@ -263,7 +290,10 @@ export class MatchingService {
     if (effHigh <= effLow) {
       return 0;
     }
-    return Math.min(1, Math.max(0, (cosineValue - effLow) / (effHigh - effLow)));
+    return Math.min(
+      1,
+      Math.max(0, (cosineValue - effLow) / (effHigh - effLow)),
+    );
   }
 
   static normalizeCosine(
@@ -344,7 +374,8 @@ export class MatchingService {
     }
 
     const canonicalOpp = canonicalizeDepartment(opportunityDepartment);
-    const normOppDept = canonicalOpp ?? opportunityDepartment.trim().toLowerCase();
+    const normOppDept =
+      canonicalOpp ?? opportunityDepartment.trim().toLowerCase();
 
     const hasMatch = preferredDepartments.some((dept) => {
       const canonicalPref = canonicalizeDepartment(dept);

@@ -14,7 +14,9 @@ export interface GetProfileAlertsInput {
 export class GetProfileAlertsUseCase {
   constructor(private readonly alertRepository: AlertRepositoryPort) {}
 
-  async execute(input: GetProfileAlertsInput): Promise<Result<PaginatedAlertInbox, never>> {
+  async execute(
+    input: GetProfileAlertsInput,
+  ): Promise<Result<PaginatedAlertInbox, never>> {
     const result = await this.alertRepository.findByProfile(
       input.profileId,
       input.page,

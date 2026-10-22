@@ -1,8 +1,17 @@
-import { buildAlertEmail, formatCopAmount, formatBogotaDate } from './build-alert-email';
+import {
+  buildAlertEmail,
+  formatCopAmount,
+  formatBogotaDate,
+} from './build-alert-email';
 import { Alert } from '../entities/alert.entity';
 import { Opportunity } from '../../../opportunity/domain/entities/opportunity.entity';
 import { Profile } from '../../../profile/domain/entities/profile.entity';
-import { asAlertId, asOpportunityId, asProfileId, asUserId } from '../../../shared/domain/typed-id';
+import {
+  asAlertId,
+  asOpportunityId,
+  asProfileId,
+  asUserId,
+} from '../../../shared/domain/typed-id';
 
 describe('buildAlertEmail', () => {
   const baseOpportunity: Opportunity = {
@@ -35,7 +44,8 @@ describe('buildAlertEmail', () => {
       sourceName: 'SECOP',
       externalId: '1234567',
       humanReference: 'CO1.REQ.1234567',
-      originalUrl: 'https://community.secop.gov.co/Public/Tendering/OpportunityDetail/1234567',
+      originalUrl:
+        'https://community.secop.gov.co/Public/Tendering/OpportunityDetail/1234567',
     },
     analysis: null,
     changeHistory: [
@@ -94,15 +104,23 @@ describe('buildAlertEmail', () => {
     expect(email.text).toContain('Hola Constructora del Sur SAS');
     expect(email.text).toContain('Gobernación del Valle del Cauca');
     expect(email.text).toContain('$ 150.000.000 COP');
-    expect(email.text).toContain('https://community.secop.gov.co/Public/Tendering/OpportunityDetail/1234567');
+    expect(email.text).toContain(
+      'https://community.secop.gov.co/Public/Tendering/OpportunityDetail/1234567',
+    );
     expect(email.text).toContain('Campo modificado: Fecha de cierre');
     expect(email.text).toContain('Valor anterior: 2026-10-20T22:00:00.000Z');
     expect(email.text).toContain('Nuevo valor: 2026-10-25T22:00:00.000Z');
-    expect(email.text).toContain('Para desactivar o configurar las alertas de este perfil');
+    expect(email.text).toContain(
+      'Para desactivar o configurar las alertas de este perfil',
+    );
 
-    expect(email.html).toContain('Construcción de Puente Vehicular sobre Río Cauca');
+    expect(email.html).toContain(
+      'Construcción de Puente Vehicular sobre Río Cauca',
+    );
     expect(email.html).toContain('Gobernación del Valle del Cauca');
-    expect(email.html).toContain('https://community.secop.gov.co/Public/Tendering/OpportunityDetail/1234567');
+    expect(email.html).toContain(
+      'https://community.secop.gov.co/Public/Tendering/OpportunityDetail/1234567',
+    );
     expect(email.html).toContain('Ver proceso original en SECOP');
   });
 
@@ -147,8 +165,12 @@ describe('buildAlertEmail', () => {
     expect(email.subject).toBe(
       '[Pliegos] Plazo próximo a vencer: Construcción de Puente Vehicular sobre Río Cauca',
     );
-    expect(email.text).toContain('El plazo para participar en esta oportunidad está próximo a vencer');
-    expect(email.html).toContain('⚠️ El plazo para participar en esta oportunidad está próximo a vencer');
+    expect(email.text).toContain(
+      'El plazo para participar en esta oportunidad está próximo a vencer',
+    );
+    expect(email.html).toContain(
+      '⚠️ El plazo para participar en esta oportunidad está próximo a vencer',
+    );
   });
 
   it('handles unknown amount and profile without name gracefully', () => {

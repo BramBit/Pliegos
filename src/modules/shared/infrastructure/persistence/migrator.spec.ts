@@ -38,7 +38,9 @@ describe('runMigrations (integration, real Postgres)', () => {
     expect(second.applied).toEqual([]);
     expect(second.skipped).toEqual(first.applied);
 
-    const { rows } = await pool.query('SELECT version FROM schema_migrations ORDER BY version');
+    const { rows } = await pool.query(
+      'SELECT version FROM schema_migrations ORDER BY version',
+    );
     expect(rows.map((row) => row.version)).toEqual(first.applied);
   });
 
@@ -71,7 +73,9 @@ describe('runMigrations (integration, real Postgres)', () => {
 
     const table = await pool.query(`SELECT to_regclass('t_ok') AS name`);
     expect(table.rows[0].name).toBeNull();
-    const recorded = await pool.query(`SELECT 1 FROM schema_migrations WHERE version = '900_bad.sql'`);
+    const recorded = await pool.query(
+      `SELECT 1 FROM schema_migrations WHERE version = '900_bad.sql'`,
+    );
     expect(recorded.rowCount).toBe(0);
   });
 
@@ -84,7 +88,10 @@ describe('runMigrations (integration, real Postgres)', () => {
     try {
       const onlyFirst = path.join(os.tmpdir(), `mig_first_${Date.now()}`);
       fs.mkdirSync(onlyFirst);
-      fs.copyFileSync(path.join(MIGRATIONS_DIR, '001_init.sql'), path.join(onlyFirst, '001_init.sql'));
+      fs.copyFileSync(
+        path.join(MIGRATIONS_DIR, '001_init.sql'),
+        path.join(onlyFirst, '001_init.sql'),
+      );
       await runMigrations(dirtyPool, onlyFirst);
 
       await dirtyPool.query(`

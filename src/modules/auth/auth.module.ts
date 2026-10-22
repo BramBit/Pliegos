@@ -2,7 +2,10 @@ import { Module, Global } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtModule } from '@nestjs/jwt';
 import { Pool } from 'pg';
-import { DATABASE_POOL, DatabaseModule } from '../shared/infrastructure/persistence/database.module';
+import {
+  DATABASE_POOL,
+  DatabaseModule,
+} from '../shared/infrastructure/persistence/database.module';
 import { USER_REPOSITORY_PORT } from './domain/ports/user.repository.port';
 import { PostgresUserRepository } from './infrastructure/adapters/persistence/postgres-user.repository';
 import { LoginThrottlerService } from './infrastructure/security/login-throttler.service';

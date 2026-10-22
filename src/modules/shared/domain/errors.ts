@@ -1,4 +1,9 @@
-import { AlertId, OpportunityId, ProfileId, RecommendationId } from './typed-id';
+import {
+  AlertId,
+  OpportunityId,
+  ProfileId,
+  RecommendationId,
+} from './typed-id';
 
 export interface SourceUnavailableError {
   readonly type: 'SourceUnavailableError';
@@ -31,7 +36,9 @@ export interface ValidationError {
   readonly message?: string;
 }
 
-export const createSourceUnavailableError = (sourceName: string): SourceUnavailableError => ({
+export const createSourceUnavailableError = (
+  sourceName: string,
+): SourceUnavailableError => ({
   type: 'SourceUnavailableError',
   sourceName,
 });
@@ -43,7 +50,9 @@ export const createOpportunityNotFoundError = (
   opportunityId,
 });
 
-export const createProfileNotFoundError = (profileId: ProfileId): ProfileNotFoundError => ({
+export const createProfileNotFoundError = (
+  profileId: ProfileId,
+): ProfileNotFoundError => ({
   type: 'ProfileNotFoundError',
   profileId,
 });
@@ -55,12 +64,17 @@ export const createRecommendationNotFoundError = (
   recommendationId,
 });
 
-export const createAlertNotFoundError = (alertId: AlertId): AlertNotFoundError => ({
+export const createAlertNotFoundError = (
+  alertId: AlertId,
+): AlertNotFoundError => ({
   type: 'AlertNotFoundError',
   alertId,
 });
 
-export const createValidationError = (fields: string[], message?: string): ValidationError => ({
+export const createValidationError = (
+  fields: string[],
+  message?: string,
+): ValidationError => ({
   type: 'ValidationError',
   fields,
   message,

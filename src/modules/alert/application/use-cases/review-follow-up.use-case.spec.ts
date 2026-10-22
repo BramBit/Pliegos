@@ -1,4 +1,7 @@
-import { ReviewFollowUpUseCase, MAX_ALERT_ATTEMPTS } from './review-follow-up.use-case';
+import {
+  ReviewFollowUpUseCase,
+  MAX_ALERT_ATTEMPTS,
+} from './review-follow-up.use-case';
 import { AlertRepositoryPort } from '../../domain/ports/alert.repository.port';
 import {
   NotificationPort,
@@ -43,7 +46,9 @@ class FakeAlertRepository implements AlertRepositoryPort {
   }
 
   async findUndelivered(limit?: number): Promise<Alert[]> {
-    const list = Array.from(this.alerts.values()).filter((a) => a.deliveredAt === null);
+    const list = Array.from(this.alerts.values()).filter(
+      (a) => a.deliveredAt === null,
+    );
     return limit ? list.slice(0, limit) : list;
   }
 
@@ -93,7 +98,10 @@ class FakeNotificationPort implements NotificationPort {
   public failNext: boolean = false;
   public failError: Error = new Error('SMTP connection error');
 
-  async send(to: NotificationRecipient, content: NotificationContent): Promise<void> {
+  async send(
+    to: NotificationRecipient,
+    content: NotificationContent,
+  ): Promise<void> {
     if (this.failNext) {
       throw this.failError;
     }
@@ -238,7 +246,9 @@ describe('ReviewFollowUpUseCase', () => {
       email: 'contacto@alfa.com',
       name: 'Constructora Alfa',
     });
-    expect(notificationPort.sentMessages[0].content.subject).toContain('Plazo próximo a vencer');
+    expect(notificationPort.sentMessages[0].content.subject).toContain(
+      'Plazo próximo a vencer',
+    );
 
     const updated = alertRepo.alerts.get(alert.id);
     expect(updated?.deliveredAt).toBeInstanceOf(Date);

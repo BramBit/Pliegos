@@ -7,7 +7,13 @@ import {
   WatchedOpportunityItem,
   WatcherProfile,
 } from '../../../domain/ports/watch.repository.port';
-import { ProfileId, OpportunityId, UserId, asOpportunityId, asProfileId } from '../../../../shared/domain/typed-id';
+import {
+  ProfileId,
+  OpportunityId,
+  UserId,
+  asOpportunityId,
+  asProfileId,
+} from '../../../../shared/domain/typed-id';
 import { Opportunity } from '../../../../opportunity/domain/entities/opportunity.entity';
 import {
   OpportunityStatus,
@@ -63,7 +69,9 @@ export class PostgresWatchRepository implements WatchRepositoryPort {
       : `INSERT INTO watches (profile_id, opportunity_id, created_at)
          VALUES ($1, $2, CURRENT_TIMESTAMP)
          ON CONFLICT (profile_id, opportunity_id) DO NOTHING;`;
-    const params = userId ? [profileId, opportunityId, userId] : [profileId, opportunityId];
+    const params = userId
+      ? [profileId, opportunityId, userId]
+      : [profileId, opportunityId];
     await this.pool.query(query, params);
   }
 
@@ -81,7 +89,9 @@ export class PostgresWatchRepository implements WatchRepositoryPort {
            AND w.opportunity_id = $3;`
       : `DELETE FROM watches
          WHERE profile_id = $1 AND opportunity_id = $2;`;
-    const params = userId ? [profileId, userId, opportunityId] : [profileId, opportunityId];
+    const params = userId
+      ? [profileId, userId, opportunityId]
+      : [profileId, opportunityId];
     const res = await this.pool.query(query, params);
     return (res.rowCount ?? 0) > 0;
   }
@@ -97,7 +107,9 @@ export class PostgresWatchRepository implements WatchRepositoryPort {
          WHERE w.profile_id = $1 AND p.owner_id = $2 AND w.opportunity_id = $3;`
       : `SELECT 1 FROM watches
          WHERE profile_id = $1 AND opportunity_id = $2;`;
-    const params = userId ? [profileId, userId, opportunityId] : [profileId, opportunityId];
+    const params = userId
+      ? [profileId, userId, opportunityId]
+      : [profileId, opportunityId];
     const res = await this.pool.query(query, params);
     return res.rows.length > 0;
   }
@@ -162,7 +174,10 @@ export class PostgresWatchRepository implements WatchRepositoryPort {
     };
   }
 
-  async getProfileSummary(profileId: ProfileId, userId?: UserId): Promise<ProfileSummary | null> {
+  async getProfileSummary(
+    profileId: ProfileId,
+    userId?: UserId,
+  ): Promise<ProfileSummary | null> {
     const query = `
       SELECT
         (EXISTS(SELECT 1 FROM profiles WHERE id = $1 AND ($2::text IS NULL OR owner_id = $2))) AS profile_exists,
@@ -233,7 +248,9 @@ export class PostgresWatchRepository implements WatchRepositoryPort {
 
   private mapRowToOpportunity(row: WatchedRow): Opportunity {
     const analysisRaw =
-      typeof row.analysis === 'string' ? JSON.parse(row.analysis) : row.analysis;
+      typeof row.analysis === 'string'
+        ? JSON.parse(row.analysis)
+        : row.analysis;
     const changeHistoryRaw =
       typeof row.change_history === 'string'
         ? JSON.parse(row.change_history)
@@ -279,7 +296,9 @@ export class PostgresWatchRepository implements WatchRepositoryPort {
             summary: analysisRaw.summary ?? null,
             summaryStatus: (analysisRaw.summaryStatus ??
               (analysisRaw.summary ? 'ready' : 'unavailable')) as SummaryStatus,
-            requirements: Array.isArray(analysisRaw.requirements) ? analysisRaw.requirements : [],
+            requirements: Array.isArray(analysisRaw.requirements)
+              ? analysisRaw.requirements
+              : [],
             embeddingGeneratedAt: analysisRaw.embeddingGeneratedAt
               ? new Date(analysisRaw.embeddingGeneratedAt)
               : null,

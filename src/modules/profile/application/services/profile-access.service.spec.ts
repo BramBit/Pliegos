@@ -38,7 +38,10 @@ describe('ProfileAccessService', () => {
   it('returns the profile when the requesting user is the owner', async () => {
     mockRepo.findById.mockResolvedValue(profileA);
 
-    const result = await service.assertOwner(profileA.id, { sub: 'user-a-id', role: 'user' });
+    const result = await service.assertOwner(profileA.id, {
+      sub: 'user-a-id',
+      role: 'user',
+    });
     expect(result).toBe(profileA);
   });
 
@@ -46,11 +49,17 @@ describe('ProfileAccessService', () => {
     mockRepo.findById.mockResolvedValue(null);
 
     await expect(
-      service.assertOwner(asProfileId('non-existent'), { sub: 'user-a-id', role: 'user' }),
+      service.assertOwner(asProfileId('non-existent'), {
+        sub: 'user-a-id',
+        role: 'user',
+      }),
     ).rejects.toThrow(DomainErrorException);
 
     try {
-      await service.assertOwner(asProfileId('non-existent'), { sub: 'user-a-id', role: 'user' });
+      await service.assertOwner(asProfileId('non-existent'), {
+        sub: 'user-a-id',
+        role: 'user',
+      });
     } catch (err: any) {
       expect(err).toBeInstanceOf(DomainErrorException);
       expect(err.domainError.type).toBe('ProfileNotFoundError');
@@ -68,7 +77,10 @@ describe('ProfileAccessService', () => {
 
     // Verify error detail matches
     try {
-      await service.assertOwner(profileA.id, { sub: 'user-b-id', role: 'user' });
+      await service.assertOwner(profileA.id, {
+        sub: 'user-b-id',
+        role: 'user',
+      });
     } catch (err: any) {
       expect(err).toBeInstanceOf(DomainErrorException);
       expect(err.domainError.type).toBe('ProfileNotFoundError');

@@ -6,8 +6,12 @@ describe('StructuredLoggerService', () => {
   let stderrSpy: jest.SpyInstance;
 
   beforeEach(() => {
-    stdoutSpy = jest.spyOn(process.stdout, 'write').mockImplementation(() => true);
-    stderrSpy = jest.spyOn(process.stderr, 'write').mockImplementation(() => true);
+    stdoutSpy = jest
+      .spyOn(process.stdout, 'write')
+      .mockImplementation(() => true);
+    stderrSpy = jest
+      .spyOn(process.stderr, 'write')
+      .mockImplementation(() => true);
   });
 
   afterEach(() => {
@@ -22,7 +26,10 @@ describe('StructuredLoggerService', () => {
     });
 
     requestIdStorage.run('req-test-123', () => {
-      logger.log('User test@example.com logged in with password="superSecret"', 'AuthService');
+      logger.log(
+        'User test@example.com logged in with password="superSecret"',
+        'AuthService',
+      );
     });
 
     expect(stdoutSpy).toHaveBeenCalledTimes(1);

@@ -113,7 +113,9 @@ describe('GetOpportunityByIdUseCase', () => {
     expect(readyResult.ok).toBe(true);
     if (readyResult.ok) {
       expect(readyResult.value.summaryStatus).toBe('ready');
-      expect(readyResult.value.opportunity.analysis?.summary).toBe('Resumen analitico listo.');
+      expect(readyResult.value.opportunity.analysis?.summary).toBe(
+        'Resumen analitico listo.',
+      );
     }
     expect(mockQueue.enqueueAnalysis).not.toHaveBeenCalled();
 

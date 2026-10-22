@@ -50,9 +50,17 @@ describe('PostgresProfileRepository (Real Test Database)', () => {
     expect(retrieved?.ownerId).toBe(profile.ownerId);
     expect(retrieved?.sector).toBe(profile.sector);
     expect(retrieved?.capabilities).toEqual(profile.capabilities);
-    expect(retrieved?.preferences.categoryCodes).toEqual(profile.preferences.categoryCodes);
-    expect(retrieved?.preferences.amountRange).toEqual({ min: 50_000_000, max: 300_000_000 });
-    expect(retrieved?.preferences.departments).toEqual(['Antioquia', 'Bogota D.C.']);
+    expect(retrieved?.preferences.categoryCodes).toEqual(
+      profile.preferences.categoryCodes,
+    );
+    expect(retrieved?.preferences.amountRange).toEqual({
+      min: 50_000_000,
+      max: 300_000_000,
+    });
+    expect(retrieved?.preferences.departments).toEqual([
+      'Antioquia',
+      'Bogota D.C.',
+    ]);
   });
 
   it('updates profile preferences and capabilities on upsert', async () => {
@@ -102,7 +110,12 @@ describe('PostgresProfileRepository (Real Test Database)', () => {
       deadlineAlertDays: 3,
       sector: 'Sector 1',
       capabilities: [],
-      preferences: { categoryCodes: [], keywords: [], amountRange: null, departments: [] },
+      preferences: {
+        categoryCodes: [],
+        keywords: [],
+        amountRange: null,
+        departments: [],
+      },
     };
     const p2: Profile = {
       id: asProfileId('prof-owner-2'),
@@ -113,7 +126,12 @@ describe('PostgresProfileRepository (Real Test Database)', () => {
       deadlineAlertDays: 5,
       sector: 'Sector 2',
       capabilities: [],
-      preferences: { categoryCodes: [], keywords: [], amountRange: null, departments: [] },
+      preferences: {
+        categoryCodes: [],
+        keywords: [],
+        amountRange: null,
+        departments: [],
+      },
     };
     await repo.save(p1);
     await repo.save(p2);
@@ -135,13 +153,19 @@ describe('PostgresProfileRepository (Real Test Database)', () => {
       deadlineAlertDays: 3,
       sector: 'Sector Cascade',
       capabilities: [],
-      preferences: { categoryCodes: [], keywords: [], amountRange: null, departments: [] },
+      preferences: {
+        categoryCodes: [],
+        keywords: [],
+        amountRange: null,
+        departments: [],
+      },
     };
     await repo.save(profile);
 
     // Insert an opportunity and a recommendation referencing this profile
     const oppId = 'opp-cascade-ref';
-    await pool.query(`
+    await pool.query(
+      `
       INSERT INTO opportunities (
         id, title, description, contracting_entity_name, contracting_entity_tax_id,
         city, department, amount, amount_known, currency, contract_type,
@@ -153,16 +177,21 @@ describe('PostgresProfileRepository (Real Test Database)', () => {
         'COP', 'Servicios', 'Licitacion', true, '43230000', NOW(), NOW(), NOW() + interval '1 day',
         true, 'Published', 'SECOP', 'EXT-CASC-1', 'REF-1', 'http://url'
       ) ON CONFLICT (id) DO NOTHING;
-    `, [oppId]);
+    `,
+      [oppId],
+    );
 
     const recId = 'rec-cascade-ref';
-    await pool.query(`
+    await pool.query(
+      `
       INSERT INTO recommendations (
         id, profile_id, opportunity_id, score, explanation, created_at, updated_at
       ) VALUES (
         $1, $2, $3, 0.85, '{"summary":"test","matchedFactors":[]}'::jsonb, NOW(), NOW()
       );
-    `, [recId, profileId, oppId]);
+    `,
+      [recId, profileId, oppId],
+    );
 
     // Verify recommendation exists
     const beforeCount = await pool.query(

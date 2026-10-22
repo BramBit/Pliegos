@@ -27,7 +27,9 @@ export class GracefulShutdownService implements BeforeApplicationShutdown {
     if (this.isShuttingDown) return;
     this.isShuttingDown = true;
 
-    this.logger.log(`Received ${signal || 'SIGTERM'}, shutting down gracefully...`);
+    this.logger.log(
+      `Received ${signal || 'SIGTERM'}, shutting down gracefully...`,
+    );
 
     // 1. Close PostgreSQL pool
     this.logger.log('Closing PostgreSQL pool...');
@@ -95,7 +97,8 @@ export class GracefulShutdownService implements BeforeApplicationShutdown {
           }
         } else if (
           instance instanceof Worker ||
-          (instance.constructor?.name === 'Worker' && typeof instance.close === 'function')
+          (instance.constructor?.name === 'Worker' &&
+            typeof instance.close === 'function')
         ) {
           workers.add(instance as Worker);
         }

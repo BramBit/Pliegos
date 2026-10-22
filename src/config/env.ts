@@ -6,8 +6,13 @@ import { z } from 'zod';
 const nonEmpty = z.string().min(1);
 const postgresUrl = z
   .string()
-  .regex(/^postgres(ql)?:\/\/.+/, 'must be a postgres:// or postgresql:// connection string');
-const httpUrl = z.string().regex(/^https?:\/\/.+/, 'must be an http:// or https:// URL');
+  .regex(
+    /^postgres(ql)?:\/\/.+/,
+    'must be a postgres:// or postgresql:// connection string',
+  );
+const httpUrl = z
+  .string()
+  .regex(/^https?:\/\/.+/, 'must be an http:// or https:// URL');
 const port = z.coerce.number().int().min(1).max(65535);
 const positiveInt = z.coerce.number().int().positive();
 
@@ -16,7 +21,9 @@ export const INSECURE_JWT_SECRETS = [
 ];
 
 const envSchema = z.object({
-  NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
+  NODE_ENV: z
+    .enum(['development', 'test', 'production'])
+    .default('development'),
   ROLE: z.enum(['api', 'worker', 'all']).default('all'),
   PORT: port.default(3000),
   LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
@@ -85,9 +92,12 @@ export const envProvider: Provider = {
 })
 export class EnvModule {}
 
-export const SYNC_OPPORTUNITIES_CRON = process.env.SYNC_OPPORTUNITIES_CRON || '0 0-23/4 * * *';
-export const REVIEW_FOLLOW_UP_CRON = process.env.REVIEW_FOLLOW_UP_CRON || '0 08 * * *';
-export const SCAN_DEADLINES_CRON = process.env.SCAN_DEADLINES_CRON || '30 07 * * *';
+export const SYNC_OPPORTUNITIES_CRON =
+  process.env.SYNC_OPPORTUNITIES_CRON || '0 0-23/4 * * *';
+export const REVIEW_FOLLOW_UP_CRON =
+  process.env.REVIEW_FOLLOW_UP_CRON || '0 08 * * *';
+export const SCAN_DEADLINES_CRON =
+  process.env.SCAN_DEADLINES_CRON || '30 07 * * *';
 
 export function isWorkerRole(source: NodeJS.ProcessEnv = process.env): boolean {
   return (source.ROLE || 'all') !== 'api';
@@ -106,7 +116,9 @@ export function requireTestDatabaseUrl(): string {
   }
   const url = process.env.TEST_DATABASE_URL;
   if (!url) {
-    throw new Error('TEST_DATABASE_URL is not set. Define it in .env (see .env.example).');
+    throw new Error(
+      'TEST_DATABASE_URL is not set. Define it in .env (see .env.example).',
+    );
   }
   return url;
 }
@@ -116,7 +128,10 @@ export interface CorsConfig {
   readonly credentials: false;
 }
 
-export function configureCors(env: { NODE_ENV: string; CORS_ORIGINS?: string }): CorsConfig {
+export function configureCors(env: {
+  NODE_ENV: string;
+  CORS_ORIGINS?: string;
+}): CorsConfig {
   const origins = (env.CORS_ORIGINS ?? '')
     .split(',')
     .map((o) => o.trim())
@@ -137,7 +152,9 @@ export function configureCors(env: { NODE_ENV: string; CORS_ORIGINS?: string }):
 
 export class EnvValidationError extends Error {
   constructor(public readonly problems: string[]) {
-    super(`Invalid environment configuration:\n${problems.map((p) => `  - ${p}`).join('\n')}`);
+    super(
+      `Invalid environment configuration:\n${problems.map((p) => `  - ${p}`).join('\n')}`,
+    );
     this.name = 'EnvValidationError';
   }
 }
@@ -159,7 +176,9 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
 
   if (cleaned.NODE_ENV === 'production' && cleaned.JWT_SECRET) {
     if (INSECURE_JWT_SECRETS.includes(cleaned.JWT_SECRET)) {
-      problems.push('JWT_SECRET: cannot use insecure template placeholder in production');
+      problems.push(
+        'JWT_SECRET: cannot use insecure template placeholder in production',
+      );
     }
   }
 
@@ -167,7 +186,10 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
   if (!result.success) {
     for (const issue of result.error.issues) {
       const name = issue.path.join('.') || '(root)';
-      if (issue.path.length === 1 && cleaned[String(issue.path[0])] === undefined) {
+      if (
+        issue.path.length === 1 &&
+        cleaned[String(issue.path[0])] === undefined
+      ) {
         problems.push(`${name}: is required (not set or empty)`);
       } else {
         problems.push(`${name}: ${issue.message}`);

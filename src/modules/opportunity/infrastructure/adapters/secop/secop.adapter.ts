@@ -11,7 +11,10 @@ import {
 } from '../../../domain/entities/opportunity.entity';
 import { OpportunityStatus } from '../../../domain/value-objects/opportunity.value-objects';
 import { createMoney } from '../../../domain/value-objects/money.vo';
-import { asOpportunityId, OpportunityId } from '../../../../shared/domain/typed-id';
+import {
+  asOpportunityId,
+  OpportunityId,
+} from '../../../../shared/domain/typed-id';
 import { Result } from '../../../../shared/domain/result';
 import { ValidationError } from '../../../../shared/domain/errors';
 import {
@@ -62,7 +65,8 @@ export interface SecopAdapterOptions {
 
 export type FetchOptions = SourceFetchOptions;
 
-export const DEFAULT_SECOP_ENDPOINT = 'https://www.datos.gov.co/resource/p6dx-8zbt.json';
+export const DEFAULT_SECOP_ENDPOINT =
+  'https://www.datos.gov.co/resource/p6dx-8zbt.json';
 
 @Injectable()
 export class SecopAdapter implements OpportunitySourcePort {
@@ -80,7 +84,8 @@ export class SecopAdapter implements OpportunitySourcePort {
     this.appToken = options?.appToken;
     this.maxRetries = options?.maxRetries ?? 4;
     this.retryBaseDelayMs = options?.retryBaseDelayMs ?? 1000;
-    this.sleepFn = options?.sleepFn ?? ((ms) => new Promise((r) => setTimeout(r, ms)));
+    this.sleepFn =
+      options?.sleepFn ?? ((ms) => new Promise((r) => setTimeout(r, ms)));
     this.endpointUrl = options?.endpointUrl ?? DEFAULT_SECOP_ENDPOINT;
     this.fetchFn = options?.fetchFn ?? globalThis.fetch.bind(globalThis);
     this.logger = options?.logger ?? new Logger(SecopAdapter.name);
@@ -90,7 +95,10 @@ export class SecopAdapter implements OpportunitySourcePort {
    * Fetches latest mapped opportunities from the SECOP II dataset, paginating through Socrata
    * until `maxRecords` is reached (default: all pages).
    */
-  async fetchLatest(since?: Date, options?: FetchOptions): Promise<SourceOpportunity[]> {
+  async fetchLatest(
+    since?: Date,
+    options?: FetchOptions,
+  ): Promise<SourceOpportunity[]> {
     const all: SourceOpportunity[] = [];
     for await (const page of this.fetchPages(since, options)) {
       all.push(...page);
@@ -102,7 +110,10 @@ export class SecopAdapter implements OpportunitySourcePort {
    * Streams normalized SourceOpportunity pages from SECOP II using Socrata `$limit`/`$offset`.
    * Records without a valid `fecha_de_publicacion_del` are skipped and counted via `options.onSkipped`.
    */
-  async *fetchPages(since?: Date, options?: FetchOptions): AsyncGenerator<SourceOpportunity[]> {
+  async *fetchPages(
+    since?: Date,
+    options?: FetchOptions,
+  ): AsyncGenerator<SourceOpportunity[]> {
     const pageSize = options?.pageSize ?? this.pageSize;
     const maxRecords = options?.maxRecords ?? Number.POSITIVE_INFINITY;
     let offset = 0;
@@ -121,7 +132,8 @@ export class SecopAdapter implements OpportunitySourcePort {
         }
         if (mapped.status === 'Unknown') {
           const rawLabel =
-            (raw.estado_del_procedimiento ?? raw.estado_resumen ?? '').trim() || '(empty)';
+            (raw.estado_del_procedimiento ?? raw.estado_resumen ?? '').trim() ||
+            '(empty)';
           options?.onUnknownStatus?.(rawLabel);
         }
         mappedPage.push(mapped);
@@ -144,9 +156,12 @@ export class SecopAdapter implements OpportunitySourcePort {
     const clauses: string[] = [];
 
     if (options?.mode === 'openCompetitive') {
-      const refNow = options.now && !isNaN(options.now.getTime()) ? options.now : new Date();
+      const refNow =
+        options.now && !isNaN(options.now.getTime()) ? options.now : new Date();
       const soqlNow = refNow.toISOString().replace(/Z$/, '');
-      clauses.push(`estado_del_procedimiento in ('Publicado','Abierto','Evaluación')`);
+      clauses.push(
+        `estado_del_procedimiento in ('Publicado','Abierto','Evaluación')`,
+      );
       clauses.push(`fecha_de_recepcion_de > '${soqlNow}'`);
     } else if (since && !isNaN(since.getTime())) {
       // Socrata's floating_timestamp SoQL type requires ISO format without timezone 'Z'
@@ -157,7 +172,10 @@ export class SecopAdapter implements OpportunitySourcePort {
     if (clauses.length > 0) {
       url.searchParams.set('$where', clauses.join(' AND '));
     }
-    url.searchParams.set('$order', 'fecha_de_ultima_publicaci ASC, id_del_proceso ASC');
+    url.searchParams.set(
+      '$order',
+      'fecha_de_ultima_publicaci ASC, id_del_proceso ASC',
+    );
     url.searchParams.set('$limit', String(limit));
     url.searchParams.set('$offset', String(offset));
 
@@ -170,7 +188,10 @@ export class SecopAdapter implements OpportunitySourcePort {
     for (let attempt = 0; attempt <= this.maxRetries; attempt++) {
       let retryAfterMs: number | undefined;
       try {
-        const response = await this.fetchFn(url.toString(), { method: 'GET', headers });
+        const response = await this.fetchFn(url.toString(), {
+          method: 'GET',
+          headers,
+        });
 
         if (response.ok) {
           return (await response.json()) as RawSecopProcess[];
@@ -183,11 +204,15 @@ export class SecopAdapter implements OpportunitySourcePort {
         if (!retriable) throw lastError;
 
         const retryAfter = Number(response.headers?.get?.('Retry-After'));
-        if (Number.isFinite(retryAfter) && retryAfter > 0) retryAfterMs = retryAfter * 1000;
+        if (Number.isFinite(retryAfter) && retryAfter > 0)
+          retryAfterMs = retryAfter * 1000;
       } catch (error) {
         lastError = error instanceof Error ? error : new Error(String(error));
         // Non-retriable HTTP errors were thrown above with an "HTTP 4xx" message
-        if (/HTTP 4\d\d/.test(lastError.message) && !/HTTP 429/.test(lastError.message)) {
+        if (
+          /HTTP 4\d\d/.test(lastError.message) &&
+          !/HTTP 429/.test(lastError.message)
+        ) {
           throw lastError;
         }
       }
@@ -206,7 +231,9 @@ export class SecopAdapter implements OpportunitySourcePort {
 
   async fetchRawByIds(ids: string[]): Promise<RawSecopProcess[]> {
     if (ids.length === 0) return [];
-    const formattedIds = ids.map((id) => `'${id.replace(/'/g, "''")}'`).join(',');
+    const formattedIds = ids
+      .map((id) => `'${id.replace(/'/g, "''")}'`)
+      .join(',');
     const url = new URL(this.endpointUrl);
     url.searchParams.set('$where', `id_del_proceso in (${formattedIds})`);
     url.searchParams.set('$limit', String(ids.length));
@@ -216,7 +243,10 @@ export class SecopAdapter implements OpportunitySourcePort {
       headers['X-App-Token'] = this.appToken;
     }
 
-    const response = await this.fetchFn(url.toString(), { method: 'GET', headers });
+    const response = await this.fetchFn(url.toString(), {
+      method: 'GET',
+      headers,
+    });
     if (!response.ok) {
       throw new Error(`Failed to fetch from SECOP: HTTP ${response.status}`);
     }
@@ -227,8 +257,14 @@ export class SecopAdapter implements OpportunitySourcePort {
    * Maps a RawSecopProcess to a normalized SourceOpportunity.
    * Returns null if `fecha_de_publicacion_del` is absent or invalid (never invents `new Date()`).
    */
-  mapToSourceOpportunity(raw: RawSecopProcess, now: Date = new Date()): SourceOpportunity | null {
-    if (!raw.fecha_de_publicacion_del || raw.fecha_de_publicacion_del.trim() === '') {
+  mapToSourceOpportunity(
+    raw: RawSecopProcess,
+    now: Date = new Date(),
+  ): SourceOpportunity | null {
+    if (
+      !raw.fecha_de_publicacion_del ||
+      raw.fecha_de_publicacion_del.trim() === ''
+    ) {
       this.logger.warn(
         `Skipping SECOP record "${raw.id_del_proceso ?? ''}": missing fecha_de_publicacion_del.`,
       );
@@ -244,7 +280,10 @@ export class SecopAdapter implements OpportunitySourcePort {
     }
 
     let lastPublishedAt = publishedAt;
-    if (raw.fecha_de_ultima_publicaci && raw.fecha_de_ultima_publicaci.trim() !== '') {
+    if (
+      raw.fecha_de_ultima_publicaci &&
+      raw.fecha_de_ultima_publicaci.trim() !== ''
+    ) {
       const parsedLast = new Date(raw.fecha_de_ultima_publicaci);
       if (!isNaN(parsedLast.getTime())) {
         lastPublishedAt = parsedLast;
@@ -260,18 +299,31 @@ export class SecopAdapter implements OpportunitySourcePort {
     }
 
     const parsedAmount = parseAmount(raw.precio_base);
-    const amount = parsedAmount !== null && parsedAmount >= 0 ? parsedAmount : null;
+    const amount =
+      parsedAmount !== null && parsedAmount >= 0 ? parsedAmount : null;
 
     let originalUrl = '';
-    if (raw.urlproceso && typeof raw.urlproceso === 'object' && typeof raw.urlproceso.url === 'string') {
+    if (
+      raw.urlproceso &&
+      typeof raw.urlproceso === 'object' &&
+      typeof raw.urlproceso.url === 'string'
+    ) {
       originalUrl = raw.urlproceso.url;
     }
 
-    const status = this.mapStatus(raw.estado_del_procedimiento, raw.estado_resumen);
-    const isOpenForSubmission = SecopAdapter.computeIsOpenForSubmission(status, closingDate, now);
+    const status = this.mapStatus(
+      raw.estado_del_procedimiento,
+      raw.estado_resumen,
+    );
+    const isOpenForSubmission = SecopAdapter.computeIsOpenForSubmission(
+      status,
+      closingDate,
+      now,
+    );
 
     const externalId = (raw.id_del_proceso ?? '').trim();
-    const humanReference = nullIfPlaceholder(raw.referencia_del_proceso) ?? externalId;
+    const humanReference =
+      nullIfPlaceholder(raw.referencia_del_proceso) ?? externalId;
 
     const rawDept = nullIfPlaceholder(raw.departamento_entidad);
     const canonicalDept = rawDept ? canonicalizeDepartment(rawDept) : null;
@@ -289,7 +341,8 @@ export class SecopAdapter implements OpportunitySourcePort {
       departmentRaw: rawDept,
       amount,
       contractType: nullIfPlaceholder(raw.tipo_de_contrato) ?? 'Otros',
-      procurementModality: nullIfPlaceholder(raw.modalidad_de_contratacion) ?? 'Otros',
+      procurementModality:
+        nullIfPlaceholder(raw.modalidad_de_contratacion) ?? 'Otros',
       isCompetitive: isCompetitive(raw.modalidad_de_contratacion),
       categoryCode: normalizeUnspsc(raw.codigo_principal_de_categoria),
       publishedAt,
@@ -297,7 +350,9 @@ export class SecopAdapter implements OpportunitySourcePort {
       closingDate,
       isOpenForSubmission,
       status,
-      sourceStatus: raw.estado_del_procedimiento ? raw.estado_del_procedimiento.trim() : null,
+      sourceStatus: raw.estado_del_procedimiento
+        ? raw.estado_del_procedimiento.trim()
+        : null,
       originalUrl,
     };
   }
@@ -319,25 +374,41 @@ export class SecopAdapter implements OpportunitySourcePort {
     let closingDate: Date | null = null;
     if (sourceOpp) {
       closingDate = sourceOpp.closingDate;
-    } else if (raw.fecha_de_recepcion_de && raw.fecha_de_recepcion_de.trim() !== '') {
+    } else if (
+      raw.fecha_de_recepcion_de &&
+      raw.fecha_de_recepcion_de.trim() !== ''
+    ) {
       const parsed = new Date(raw.fecha_de_recepcion_de);
       closingDate = !isNaN(parsed.getTime()) ? parsed : null;
     }
 
-    const parsedAmount = sourceOpp ? sourceOpp.amount : parseAmount(raw.precio_base);
-    const validAmount = parsedAmount !== null && parsedAmount >= 0 ? parsedAmount : null;
+    const parsedAmount = sourceOpp
+      ? sourceOpp.amount
+      : parseAmount(raw.precio_base);
+    const validAmount =
+      parsedAmount !== null && parsedAmount >= 0 ? parsedAmount : null;
     const moneyResult = createMoney(validAmount ?? 0);
-    const amount = moneyResult.ok ? moneyResult.value : { amount: 0, currency: 'COP' as const };
+    const amount = moneyResult.ok
+      ? moneyResult.value
+      : { amount: 0, currency: 'COP' as const };
 
     let originalUrl = '';
-    if (raw.urlproceso && typeof raw.urlproceso === 'object' && typeof raw.urlproceso.url === 'string') {
+    if (
+      raw.urlproceso &&
+      typeof raw.urlproceso === 'object' &&
+      typeof raw.urlproceso.url === 'string'
+    ) {
       originalUrl = raw.urlproceso.url;
     }
 
     const status = sourceOpp
       ? sourceOpp.status
       : this.mapStatus(raw.estado_del_procedimiento, raw.estado_resumen);
-    const isOpenForSubmission = SecopAdapter.computeIsOpenForSubmission(status, closingDate, now);
+    const isOpenForSubmission = SecopAdapter.computeIsOpenForSubmission(
+      status,
+      closingDate,
+      now,
+    );
     const externalId = (raw.id_del_proceso ?? '').trim();
     const rawDept = nullIfPlaceholder(raw.departamento_entidad);
     const canonicalDept = rawDept ? canonicalizeDepartment(rawDept) : null;
@@ -351,16 +422,21 @@ export class SecopAdapter implements OpportunitySourcePort {
         taxId: nullIfPlaceholder(raw.nit_entidad) ?? '',
       },
       location: {
-        city: sourceOpp ? sourceOpp.city : nullIfPlaceholder(raw.ciudad_entidad),
+        city: sourceOpp
+          ? sourceOpp.city
+          : nullIfPlaceholder(raw.ciudad_entidad),
         department: sourceOpp
           ? sourceOpp.department
           : (canonicalDept ?? rawDept),
-        departmentRaw: sourceOpp ? (sourceOpp.departmentRaw ?? rawDept) : rawDept,
+        departmentRaw: sourceOpp
+          ? (sourceOpp.departmentRaw ?? rawDept)
+          : rawDept,
       },
       amount,
       amountKnown: validAmount !== null,
       contractType: nullIfPlaceholder(raw.tipo_de_contrato) ?? 'Otros',
-      procurementModality: nullIfPlaceholder(raw.modalidad_de_contratacion) ?? 'Otros',
+      procurementModality:
+        nullIfPlaceholder(raw.modalidad_de_contratacion) ?? 'Otros',
       isCompetitive: isCompetitive(raw.modalidad_de_contratacion),
       categoryCode: normalizeUnspsc(raw.codigo_principal_de_categoria),
       publishedAt,
@@ -376,7 +452,8 @@ export class SecopAdapter implements OpportunitySourcePort {
       source: {
         sourceName: 'SECOP',
         externalId,
-        humanReference: nullIfPlaceholder(raw.referencia_del_proceso) ?? externalId,
+        humanReference:
+          nullIfPlaceholder(raw.referencia_del_proceso) ?? externalId,
         originalUrl,
       },
     });
@@ -406,12 +483,18 @@ export class SecopAdapter implements OpportunitySourcePort {
     const r = (rawResumen ?? '').trim().toLowerCase();
 
     if (!s && !r) {
-      this.logger.warn('Empty SECOP status encountered; falling back to OpportunityStatus.Unknown.');
+      this.logger.warn(
+        'Empty SECOP status encountered; falling back to OpportunityStatus.Unknown.',
+      );
       return 'Unknown';
     }
 
     // 1. Evaluate primary procedure status (estado_del_procedimiento)
-    if (s.includes('borrador') || s.includes('en aprobaci') || s.includes('suspendid')) {
+    if (
+      s.includes('borrador') ||
+      s.includes('en aprobaci') ||
+      s.includes('suspendid')
+    ) {
       return 'Draft';
     }
     if (s.includes('seleccionad') || s.includes('adjudicad')) return 'Awarded';
@@ -428,7 +511,11 @@ export class SecopAdapter implements OpportunitySourcePort {
     if (s.includes('cancelad') || s.includes('desiert')) return 'Cancelled';
 
     // 2. Evaluate summary status fallback (estado_resumen)
-    if (r.includes('borrador') || r.includes('en aprobaci') || r.includes('suspendid')) {
+    if (
+      r.includes('borrador') ||
+      r.includes('en aprobaci') ||
+      r.includes('suspendid')
+    ) {
       return 'Draft';
     }
     if (r.includes('seleccionad') || r.includes('adjudicad')) return 'Awarded';

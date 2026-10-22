@@ -26,7 +26,9 @@ export class WatchOpportunityUseCase {
       return err(createProfileNotFoundError(input.profileId));
     }
 
-    const opportunity = await this.opportunityRepository.findById(input.opportunityId);
+    const opportunity = await this.opportunityRepository.findById(
+      input.opportunityId,
+    );
     if (!opportunity) {
       return err(createOpportunityNotFoundError(input.opportunityId));
     }

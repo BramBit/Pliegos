@@ -1,16 +1,24 @@
-import { isCompetitive, normalizeUnspsc, nullIfPlaceholder, parseAmount } from './normalizers';
+import {
+  isCompetitive,
+  normalizeUnspsc,
+  nullIfPlaceholder,
+  parseAmount,
+} from './normalizers';
 
 describe('nullIfPlaceholder', () => {
   it.each([undefined, null, '', '   '])('returns null for %p', (input) => {
     expect(nullIfPlaceholder(input)).toBeNull();
   });
 
-  it.each(['No Definido', 'No definido', 'No Aplica', 'No aplica', 'NO DEFINIDO'])(
-    'returns null for the placeholder %p',
-    (input) => {
-      expect(nullIfPlaceholder(input)).toBeNull();
-    },
-  );
+  it.each([
+    'No Definido',
+    'No definido',
+    'No Aplica',
+    'No aplica',
+    'NO DEFINIDO',
+  ])('returns null for the placeholder %p', (input) => {
+    expect(nullIfPlaceholder(input)).toBeNull();
+  });
 
   it('ignores surrounding whitespace on placeholders', () => {
     expect(nullIfPlaceholder('  No Aplica  ')).toBeNull();
@@ -22,7 +30,9 @@ describe('nullIfPlaceholder', () => {
   });
 
   it('does not treat text that merely contains a placeholder as one', () => {
-    expect(nullIfPlaceholder('No Definido en pliegos')).toBe('No Definido en pliegos');
+    expect(nullIfPlaceholder('No Definido en pliegos')).toBe(
+      'No Definido en pliegos',
+    );
   });
 });
 
@@ -40,13 +50,19 @@ describe('normalizeUnspsc', () => {
     expect(normalizeUnspsc(input)).toBeNull();
   });
 
-  it.each(['UNSPECIFIED', 'unspecified', '  UNSPECIFIED  '])('returns null for %p', (input) => {
-    expect(normalizeUnspsc(input)).toBeNull();
-  });
+  it.each(['UNSPECIFIED', 'unspecified', '  UNSPECIFIED  '])(
+    'returns null for %p',
+    (input) => {
+      expect(normalizeUnspsc(input)).toBeNull();
+    },
+  );
 
-  it.each(['00000000', 'V1.00000000', '0'])('returns null for the all-zero code %p', (input) => {
-    expect(normalizeUnspsc(input)).toBeNull();
-  });
+  it.each(['00000000', 'V1.00000000', '0'])(
+    'returns null for the all-zero code %p',
+    (input) => {
+      expect(normalizeUnspsc(input)).toBeNull();
+    },
+  );
 
   it('keeps codes that only contain some zeros', () => {
     expect(normalizeUnspsc('V1.80101600')).toBe('80101600');
@@ -73,7 +89,9 @@ describe('isCompetitive', () => {
   });
 
   it('is true for the special regime with offers', () => {
-    expect(isCompetitive('Contratación régimen especial (con ofertas)')).toBe(true);
+    expect(isCompetitive('Contratación régimen especial (con ofertas)')).toBe(
+      true,
+    );
   });
 
   it.each([
@@ -111,9 +129,12 @@ describe('parseAmount', () => {
     expect(parseAmount('  42  ')).toBe(42);
   });
 
-  it.each([undefined, null, '', '   '])('returns null for the absent value %p', (input) => {
-    expect(parseAmount(input)).toBeNull();
-  });
+  it.each([undefined, null, '', '   '])(
+    'returns null for the absent value %p',
+    (input) => {
+      expect(parseAmount(input)).toBeNull();
+    },
+  );
 
   it.each(['abc', '12abc', 'No Definido', 'NaN', 'Infinity'])(
     'returns null for the non-numeric value %p',

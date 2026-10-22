@@ -13,7 +13,10 @@ import { AnalysisQueuePort } from '../../domain/ports/analysis-queue.port';
 import { Opportunity } from '../../domain/entities/opportunity.entity';
 import { OpportunityFilters } from '../../domain/value-objects/opportunity-filters';
 import { OpportunityId, asProfileId } from '../../../shared/domain/typed-id';
-import { WatchRepositoryPort, WatcherProfile } from '../../../recommendation/domain/ports/watch.repository.port';
+import {
+  WatchRepositoryPort,
+  WatcherProfile,
+} from '../../../recommendation/domain/ports/watch.repository.port';
 import { AlertRepositoryPort } from '../../../alert/domain/ports/alert.repository.port';
 import { Alert } from '../../../alert/domain/entities/alert.entity';
 
@@ -90,7 +93,10 @@ class FakeOpportunityRepository implements OpportunityRepositoryPort {
     }
   }
 
-  async saveAnalysis(id: OpportunityId, analysis: Opportunity['analysis']): Promise<void> {
+  async saveAnalysis(
+    id: OpportunityId,
+    analysis: Opportunity['analysis'],
+  ): Promise<void> {
     for (const [extId, opp] of this.opportunities.entries()) {
       if (opp.id === id) {
         this.opportunities.set(extId, { ...opp, analysis });
@@ -149,7 +155,10 @@ class FakeOpportunityRepository implements OpportunityRepositoryPort {
 
 class FakeAnalysisQueue implements AnalysisQueuePort {
   public queuedOpportunityIds: OpportunityId[] = [];
-  public queuedJobs: Array<{ opportunityId: OpportunityId; summarize?: boolean }> = [];
+  public queuedJobs: Array<{
+    opportunityId: OpportunityId;
+    summarize?: boolean;
+  }> = [];
 
   async enqueueAnalysis(
     opportunityId: OpportunityId,
@@ -204,7 +213,8 @@ describe('SyncOpportunitiesUseCase', () => {
     externalId: 'CO1.REQ.2577563',
     humanReference: 'EDP-545-2022',
     title: 'Adquisición de infraestructura de servidores',
-    description: 'Compra de servidores de cómputo de alto rendimiento para centros de datos',
+    description:
+      'Compra de servidores de cómputo de alto rendimiento para centros de datos',
     entityName: 'Secretaría de Educación',
     entityTaxId: '899999061-9',
     city: 'Bogotá',
@@ -268,7 +278,9 @@ describe('SyncOpportunitiesUseCase', () => {
     await expect(useCase.execute({})).rejects.toThrow(
       'Postgres connection terminated unexpectedly',
     );
-    expect(fakeLogger.errors.some((e) => e.includes('Database error'))).toBe(true);
+    expect(fakeLogger.errors.some((e) => e.includes('Database error'))).toBe(
+      true,
+    );
   });
 
   it('ingests new opportunities in one batch per page, updates watermark, and logs one summary line', async () => {
@@ -287,7 +299,9 @@ describe('SyncOpportunitiesUseCase', () => {
     }
 
     // Without watermark, since = now - 14 days
-    expect(fakeSource.calls[0].since).toEqual(new Date('2026-10-02T12:00:00.000Z'));
+    expect(fakeSource.calls[0].since).toEqual(
+      new Date('2026-10-02T12:00:00.000Z'),
+    );
     // Second pass runs with mode: 'openCompetitive'
     expect(fakeSource.calls[1].options?.mode).toBe('openCompetitive');
 
@@ -321,7 +335,9 @@ describe('SyncOpportunitiesUseCase', () => {
     }
 
     // Watermark was 2026-10-10T00:00:00.000Z -> since on second run is watermark - 1 day (2026-10-09T00:00:00.000Z)
-    expect(fakeSource.calls[2].since).toEqual(new Date('2026-10-09T00:00:00.000Z'));
+    expect(fakeSource.calls[2].since).toEqual(
+      new Date('2026-10-09T00:00:00.000Z'),
+    );
     // No new analysis job queued
     expect(fakeQueue.queuedOpportunityIds).toHaveLength(1);
   });
@@ -487,7 +503,9 @@ describe('SyncOpportunitiesUseCase', () => {
     if (result.ok) {
       expect(result.value.created).toBe(2);
     }
-    expect(await fakeRepo.findByExternalId('CO1.REQ.OPEN-COMP-1')).not.toBeNull();
+    expect(
+      await fakeRepo.findByExternalId('CO1.REQ.OPEN-COMP-1'),
+    ).not.toBeNull();
   });
 
   it('counts records skipped by the source adapter', async () => {
@@ -554,7 +572,9 @@ describe('SyncOpportunitiesUseCase', () => {
 
     // Only watcher1 receives alerts; 2 material changes -> 2 alerts
     expect(fakeAlertRepo.createdAlerts).toHaveLength(2);
-    expect(fakeAlertRepo.createdAlerts.every((a) => a.profileId === 'prof-1')).toBe(true);
+    expect(
+      fakeAlertRepo.createdAlerts.every((a) => a.profileId === 'prof-1'),
+    ).toBe(true);
     expect(fakeAlertRepo.createdAlerts.map((a) => a.trigger).sort()).toEqual([
       'Amendment',
       'StatusChange',

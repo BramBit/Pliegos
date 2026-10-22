@@ -66,7 +66,9 @@ describe('BullMQ Analysis Queue & Job Processing', () => {
         }),
       );
       expect(fakeLogger.log).toHaveBeenCalledWith(
-        expect.stringContaining('Enqueued analysis job for Opportunity opp-enqueue-1'),
+        expect.stringContaining(
+          'Enqueued analysis job for Opportunity opp-enqueue-1',
+        ),
       );
     });
   });
@@ -136,7 +138,9 @@ describe('BullMQ Analysis Queue & Job Processing', () => {
       };
 
       mockTextGenerator = {
-        summarize: jest.fn().mockResolvedValue('Resumen sintetizado por IA de las obras viales.'),
+        summarize: jest
+          .fn()
+          .mockResolvedValue('Resumen sintetizado por IA de las obras viales.'),
       };
 
       embedder = new HashEmbedder('nomic-embed-text');
@@ -178,7 +182,10 @@ describe('BullMQ Analysis Queue & Job Processing', () => {
       );
       expect(mockSearchIndex.indexOpportunity).toHaveBeenCalledTimes(1);
 
-      const expectedHash = computeAnalysisContentHash(sampleOpportunity, 'nomic-embed-text');
+      const expectedHash = computeAnalysisContentHash(
+        sampleOpportunity,
+        'nomic-embed-text',
+      );
       expect(mockOppRepo.saveAnalysis).toHaveBeenCalledWith(
         sampleOpportunity.id,
         expect.objectContaining({
@@ -222,7 +229,9 @@ describe('BullMQ Analysis Queue & Job Processing', () => {
       };
 
       // Case 1: LLM throws an error
-      mockTextGenerator.summarize.mockRejectedValueOnce(new Error('Ollama chat timeout'));
+      mockTextGenerator.summarize.mockRejectedValueOnce(
+        new Error('Ollama chat timeout'),
+      );
       await processor.process({
         id: 'job-fallback-error',
         data: { opportunityId: sampleOpportunity.id, summarize: true },
@@ -234,7 +243,11 @@ describe('BullMQ Analysis Queue & Job Processing', () => {
       expect(storedOpportunity?.analysis?.requirements).toEqual([]);
 
       // Case 2: LLM returns > 600 chars
-      storedOpportunity = { ...sampleOpportunity, description: longDescription, analysis: null };
+      storedOpportunity = {
+        ...sampleOpportunity,
+        description: longDescription,
+        analysis: null,
+      };
       mockTextGenerator.summarize.mockResolvedValueOnce('X'.repeat(601));
       await processor.process({
         id: 'job-fallback-long',
@@ -245,7 +258,11 @@ describe('BullMQ Analysis Queue & Job Processing', () => {
       expect(storedOpportunity?.analysis?.summaryStatus).toBe('fallback');
 
       // Case 3: LLM returns empty string
-      storedOpportunity = { ...sampleOpportunity, description: longDescription, analysis: null };
+      storedOpportunity = {
+        ...sampleOpportunity,
+        description: longDescription,
+        analysis: null,
+      };
       mockTextGenerator.summarize.mockResolvedValueOnce('   ');
       await processor.process({
         id: 'job-fallback-empty',
@@ -332,7 +349,9 @@ describe('BullMQ Analysis Queue & Job Processing', () => {
       expect(mockSearchIndex.indexOpportunity).not.toHaveBeenCalled();
       expect(mockOppRepo.saveAnalysis).not.toHaveBeenCalled();
       expect(fakeLogger.warnings).toContainEqual(
-        expect.stringContaining('Opportunity opp-not-found not found in repository. Skipping analysis.'),
+        expect.stringContaining(
+          'Opportunity opp-not-found not found in repository. Skipping analysis.',
+        ),
       );
     });
   });
@@ -427,7 +446,10 @@ describe('BullMQ Analysis Queue & Job Processing', () => {
             embedder,
           );
           try {
-            await secondJobProcessor.process({ id: 'job-2', data: { opportunityId: oppId } });
+            await secondJobProcessor.process({
+              id: 'job-2',
+              data: { opportunityId: oppId },
+            });
           } catch (err) {
             concurrentLockAttemptError = err;
           }
@@ -445,10 +467,15 @@ describe('BullMQ Analysis Queue & Job Processing', () => {
       );
 
       // First run: executes while closing_date is updated concurrently
-      await jobProcessor.process({ id: 'job-1', data: { opportunityId: oppId } });
+      await jobProcessor.process({
+        id: 'job-1',
+        data: { opportunityId: oppId },
+      });
 
       // Concurrent lock attempt while job-1 was running threw OpportunityLockBusyError
-      expect(concurrentLockAttemptError).toBeInstanceOf(OpportunityLockBusyError);
+      expect(concurrentLockAttemptError).toBeInstanceOf(
+        OpportunityLockBusyError,
+      );
 
       // Verify closing_date update was NOT overwritten by the job!
       const afterFirstRun = await repo.findById(oppId);
@@ -472,7 +499,10 @@ describe('BullMQ Analysis Queue & Job Processing', () => {
       textGenerator.summarize.mockClear();
       embedder.calls = 0;
 
-      await jobProcessor.process({ id: 'job-3', data: { opportunityId: oppId } });
+      await jobProcessor.process({
+        id: 'job-3',
+        data: { opportunityId: oppId },
+      });
       expect(textGenerator.summarize).not.toHaveBeenCalled();
       expect(embedder.calls).toBe(0);
     });

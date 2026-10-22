@@ -1,6 +1,10 @@
 import { Recommendation, Feedback } from '../entities/recommendation.entity';
 import { Opportunity } from '../../../opportunity/domain/entities/opportunity.entity';
-import { ProfileId, RecommendationId, UserId } from '../../../shared/domain/typed-id';
+import {
+  ProfileId,
+  RecommendationId,
+  UserId,
+} from '../../../shared/domain/typed-id';
 import { RetrievalLevel } from '../../../opportunity/domain/ports/search-index.port';
 
 export interface ProfileEmbeddingRecord {
@@ -68,7 +72,10 @@ export interface PagedRecommendationFeed {
 export interface RecommendationRepositoryPort {
   save(recommendation: Recommendation): Promise<void>;
   findByProfile(profileId: ProfileId): Promise<Recommendation[]>;
-  findById(id: RecommendationId, userId?: UserId): Promise<Recommendation | null>;
+  findById(
+    id: RecommendationId,
+    userId?: UserId,
+  ): Promise<Recommendation | null>;
   upsertMany?(
     profileId: ProfileId,
     recommendations: Recommendation[],
@@ -86,12 +93,19 @@ export interface RecommendationRepositoryPort {
     decision: 'Participate' | 'Discard',
     userId?: UserId,
   ): Promise<Recommendation | null>;
-  clearFeedbackWithWatch?(id: RecommendationId, userId?: UserId): Promise<Recommendation | null>;
-  getProfileEmbedding?(profileId: ProfileId): Promise<ProfileEmbeddingRecord | null>;
+  clearFeedbackWithWatch?(
+    id: RecommendationId,
+    userId?: UserId,
+  ): Promise<Recommendation | null>;
+  getProfileEmbedding?(
+    profileId: ProfileId,
+  ): Promise<ProfileEmbeddingRecord | null>;
   saveProfileEmbedding?(record: ProfileEmbeddingRecord): Promise<void>;
   recordRun?(run: RecommendationRun): Promise<void>;
   getLatestRun?(profileId: ProfileId): Promise<RecommendationRun | null>;
   findAllProfileIds?(): Promise<ProfileId[]>;
 }
 
-export const RECOMMENDATION_REPOSITORY_PORT = Symbol('RECOMMENDATION_REPOSITORY_PORT');
+export const RECOMMENDATION_REPOSITORY_PORT = Symbol(
+  'RECOMMENDATION_REPOSITORY_PORT',
+);

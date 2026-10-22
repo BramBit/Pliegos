@@ -51,7 +51,9 @@ describe('SmtpEmailAdapter', () => {
       html: '<p>Contenido en HTML</p>',
     });
     expect(fakeLogger.log).toHaveBeenCalledWith(
-      expect.stringContaining('[SmtpEmailAdapter] Email sent to "Constructora Bolivar" <contacto@constructora.com>'),
+      expect.stringContaining(
+        '[SmtpEmailAdapter] Email sent to "Constructora Bolivar" <contacto@constructora.com>',
+      ),
     );
   });
 
@@ -79,7 +81,9 @@ describe('SmtpEmailAdapter', () => {
   });
 
   it('logs error and re-throws when transporter fails', async () => {
-    mockTransporter.sendMail.mockRejectedValueOnce(new Error('Connection refused'));
+    mockTransporter.sendMail.mockRejectedValueOnce(
+      new Error('Connection refused'),
+    );
 
     const adapter = new SmtpEmailAdapter({
       config: baseConfig,
@@ -95,7 +99,9 @@ describe('SmtpEmailAdapter', () => {
     ).rejects.toThrow('Connection refused');
 
     expect(fakeLogger.error).toHaveBeenCalledWith(
-      expect.stringContaining('[SmtpEmailAdapter] Failed to send email to fail@correo.com: Connection refused'),
+      expect.stringContaining(
+        '[SmtpEmailAdapter] Failed to send email to fail@correo.com: Connection refused',
+      ),
     );
   });
 

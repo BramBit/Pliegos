@@ -17,7 +17,8 @@ export interface GetRecommendationsReadResult {
   readonly degraded: boolean;
 }
 
-export type PersistedRecommendationsWithMeta = Recommendation[] & GetRecommendationsReadResult;
+export type PersistedRecommendationsWithMeta = Recommendation[] &
+  GetRecommendationsReadResult;
 
 export interface IGetRecommendationsUseCase {
   execute(input: {
@@ -46,12 +47,15 @@ export class GetRecommendationsUseCase implements IGetRecommendationsUseCase {
       return err(createProfileNotFoundError(input.profileId));
     }
 
-    const persisted = await this.recommendationRepository.findByProfile(input.profileId);
+    const persisted = await this.recommendationRepository.findByProfile(
+      input.profileId,
+    );
     const sorted = [...persisted].sort((a, b) => b.score - a.score);
     const sliced = sorted.slice(0, input.limit ?? DEFAULT_RECOMMENDATION_LIMIT);
 
     const latestRun =
-      (await this.recommendationRepository.getLatestRun?.(input.profileId)) ?? null;
+      (await this.recommendationRepository.getLatestRun?.(input.profileId)) ??
+      null;
 
     const result = Object.assign([...sliced], {
       items: sliced,

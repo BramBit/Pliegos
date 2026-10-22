@@ -169,7 +169,10 @@ export class PostgresRecommendationRepository implements RecommendationRepositor
     const params: unknown[] = [profileId];
     const where: string[] = ['profile_id = $1'];
 
-    if (typeof options.minScore === 'number' && Number.isFinite(options.minScore)) {
+    if (
+      typeof options.minScore === 'number' &&
+      Number.isFinite(options.minScore)
+    ) {
       params.push(options.minScore);
       where.push(`score >= $${params.length}`);
     }
@@ -186,8 +189,12 @@ export class PostgresRecommendationRepository implements RecommendationRepositor
       LIMIT $${limitIdx} OFFSET $${offsetIdx};
     `;
 
-    const res: QueryResult<RecommendationRow> = await this.pool.query(sql, params);
-    const total = res.rows.length > 0 ? Number(res.rows[0].total_count ?? 0) : 0;
+    const res: QueryResult<RecommendationRow> = await this.pool.query(
+      sql,
+      params,
+    );
+    const total =
+      res.rows.length > 0 ? Number(res.rows[0].total_count ?? 0) : 0;
 
     return {
       items: res.rows.map((row) => this.mapRowToEntity(row)),
@@ -197,14 +204,20 @@ export class PostgresRecommendationRepository implements RecommendationRepositor
     };
   }
 
-  async findById(id: RecommendationId, userId?: UserId): Promise<Recommendation | null> {
+  async findById(
+    id: RecommendationId,
+    userId?: UserId,
+  ): Promise<Recommendation | null> {
     const sql = userId
       ? `SELECT r.* FROM recommendations r
          JOIN profiles p ON p.id = r.profile_id
          WHERE r.id = $1 AND p.owner_id = $2;`
       : 'SELECT * FROM recommendations WHERE id = $1;';
     const params = userId ? [id, userId] : [id];
-    const res: QueryResult<RecommendationRow> = await this.pool.query(sql, params);
+    const res: QueryResult<RecommendationRow> = await this.pool.query(
+      sql,
+      params,
+    );
 
     if (res.rows.length === 0) return null;
     return this.mapRowToEntity(res.rows[0]);
@@ -267,19 +280,29 @@ export class PostgresRecommendationRepository implements RecommendationRepositor
         (SELECT COALESCE(json_agg(pr), '[]'::json) FROM paged_recs pr) AS items;
     `;
 
-    const res = await this.pool.query(query, [profileId, state, minScore, pageSize, offset]);
+    const res = await this.pool.query(query, [
+      profileId,
+      state,
+      minScore,
+      pageSize,
+      offset,
+    ]);
     const row = res.rows[0];
     const profileExists = Boolean(row?.profile_exists);
     const total = Number(row?.total_count ?? 0);
     const latestRunRaw = row?.latest_run;
-    const lastRefreshedAt = latestRunRaw?.finished_at ? new Date(latestRunRaw.finished_at) : null;
+    const lastRefreshedAt = latestRunRaw?.finished_at
+      ? new Date(latestRunRaw.finished_at)
+      : null;
     const degraded = Boolean(latestRunRaw?.degraded ?? false);
 
     const itemsRaw: any[] = row?.items ?? [];
     const items: RecommendationFeedItem[] = itemsRaw.map((r: any) => {
       const opportunity = this.mapOpportunityRow(r.opp_json);
       const explanation =
-        typeof r.explanation === 'string' ? JSON.parse(r.explanation) : r.explanation;
+        typeof r.explanation === 'string'
+          ? JSON.parse(r.explanation)
+          : r.explanation;
       const feedback =
         typeof r.feedback === 'string' ? JSON.parse(r.feedback) : r.feedback;
 
@@ -436,7 +459,9 @@ export class PostgresRecommendationRepository implements RecommendationRepositor
 
   private mapOpportunityRow(row: any): Opportunity {
     const analysisRaw =
-      typeof row.analysis === 'string' ? JSON.parse(row.analysis) : row.analysis;
+      typeof row.analysis === 'string'
+        ? JSON.parse(row.analysis)
+        : row.analysis;
     const changeHistoryRaw =
       typeof row.change_history === 'string'
         ? JSON.parse(row.change_history)
@@ -482,7 +507,9 @@ export class PostgresRecommendationRepository implements RecommendationRepositor
             summary: analysisRaw.summary ?? null,
             summaryStatus: (analysisRaw.summaryStatus ??
               (analysisRaw.summary ? 'ready' : 'unavailable')) as SummaryStatus,
-            requirements: Array.isArray(analysisRaw.requirements) ? analysisRaw.requirements : [],
+            requirements: Array.isArray(analysisRaw.requirements)
+              ? analysisRaw.requirements
+              : [],
             embeddingGeneratedAt: analysisRaw.embeddingGeneratedAt
               ? new Date(analysisRaw.embeddingGeneratedAt)
               : null,
@@ -500,7 +527,9 @@ export class PostgresRecommendationRepository implements RecommendationRepositor
     };
   }
 
-  async getProfileEmbedding(profileId: ProfileId): Promise<ProfileEmbeddingRecord | null> {
+  async getProfileEmbedding(
+    profileId: ProfileId,
+  ): Promise<ProfileEmbeddingRecord | null> {
     const res: QueryResult<ProfileEmbeddingRow> = await this.pool.query(
       `SELECT profile_id, text_hash, embedding_model, embedding::text AS embedding
        FROM profile_embeddings

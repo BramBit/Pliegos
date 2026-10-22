@@ -21,7 +21,10 @@ export class PostgresPipelineRunRepository implements PipelineRunRepositoryPort 
     return res.rows[0].id;
   }
 
-  async completeRun(id: string, stats?: Record<string, unknown>): Promise<void> {
+  async completeRun(
+    id: string,
+    stats?: Record<string, unknown>,
+  ): Promise<void> {
     await this.pool.query(
       `UPDATE pipeline_runs
        SET finished_at = NOW(),
@@ -32,7 +35,11 @@ export class PostgresPipelineRunRepository implements PipelineRunRepositoryPort 
     );
   }
 
-  async failRun(id: string, error: string, stats?: Record<string, unknown>): Promise<void> {
+  async failRun(
+    id: string,
+    error: string,
+    stats?: Record<string, unknown>,
+  ): Promise<void> {
     await this.pool.query(
       `UPDATE pipeline_runs
        SET finished_at = NOW(),

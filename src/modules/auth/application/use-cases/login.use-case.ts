@@ -56,7 +56,10 @@ export class LoginUseCase {
       throw new UnauthorizedException('Invalid email or password');
     }
 
-    const isPasswordValid = await verifyPassword(input.password, user.passwordHash);
+    const isPasswordValid = await verifyPassword(
+      input.password,
+      user.passwordHash,
+    );
     if (!isPasswordValid) {
       this.loginThrottler.recordFailure(cleanIp, cleanEmail);
       throw new UnauthorizedException('Invalid email or password');

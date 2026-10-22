@@ -29,14 +29,21 @@ export class StructuredLoggerService implements LoggerService {
   constructor(options?: { nodeEnv?: string; logLevel?: LogLevel }) {
     this.isProduction = (options?.nodeEnv ?? 'development') === 'production';
     const envLevel = (options?.logLevel ?? 'info').toLowerCase() as LogLevel;
-    this.configuredLevel = LOG_LEVEL_SEVERITY[envLevel] !== undefined ? envLevel : 'info';
+    this.configuredLevel =
+      LOG_LEVEL_SEVERITY[envLevel] !== undefined ? envLevel : 'info';
   }
 
   private shouldLog(level: LogLevel): boolean {
-    return LOG_LEVEL_SEVERITY[level] >= LOG_LEVEL_SEVERITY[this.configuredLevel];
+    return (
+      LOG_LEVEL_SEVERITY[level] >= LOG_LEVEL_SEVERITY[this.configuredLevel]
+    );
   }
 
-  private formatMessage(level: LogLevel, message: any, ...optionalParams: any[]): void {
+  private formatMessage(
+    level: LogLevel,
+    message: any,
+    ...optionalParams: any[]
+  ): void {
     if (!this.shouldLog(level)) return;
 
     let context: string | undefined;
@@ -47,7 +54,11 @@ export class StructuredLoggerService implements LoggerService {
       const lastParam = optionalParams[optionalParams.length - 1];
       if (typeof lastParam === 'string' && optionalParams.length === 1) {
         context = lastParam;
-      } else if (level === 'error' && typeof optionalParams[0] === 'string' && optionalParams.length >= 2) {
+      } else if (
+        level === 'error' &&
+        typeof optionalParams[0] === 'string' &&
+        optionalParams.length >= 2
+      ) {
         stack = optionalParams[0];
         context = optionalParams[1];
       } else {
@@ -57,7 +68,8 @@ export class StructuredLoggerService implements LoggerService {
 
     const currentRequestId = getRequestId();
 
-    const rawMessage = typeof message === 'string' ? message : JSON.stringify(message);
+    const rawMessage =
+      typeof message === 'string' ? message : JSON.stringify(message);
     const cleanedMessage = redactString(rawMessage);
     const cleanedData = data ? redact(data) : undefined;
     const cleanedStack = stack ? redactString(stack) : undefined;

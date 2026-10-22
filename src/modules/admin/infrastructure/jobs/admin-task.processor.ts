@@ -1,4 +1,10 @@
-import { Inject, Injectable, Logger, LoggerService, Optional } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  Logger,
+  LoggerService,
+  Optional,
+} from '@nestjs/common';
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
 import { ADMIN_TASKS_QUEUE_NAME } from '../../domain/ports/admin-queue.port';
@@ -42,11 +48,15 @@ export class AdminTaskProcessor extends WorkerHost {
     switch (job.name) {
       case 'admin-sync': {
         if (!this.syncOpportunitiesUseCase) {
-          throw new Error('SyncOpportunitiesUseCase not available in AdminTaskProcessor');
+          throw new Error(
+            'SyncOpportunitiesUseCase not available in AdminTaskProcessor',
+          );
         }
-        const sinceDate = job.data?.since ? new Date(job.data.since) : undefined;
+        const sinceDate = job.data?.since
+          ? new Date(job.data.since)
+          : undefined;
         const maxRecords =
-          job.data?.maxRecords ?? (this.env?.SECOP_SYNC_MAX_RECORDS ?? 5000);
+          job.data?.maxRecords ?? this.env?.SECOP_SYNC_MAX_RECORDS ?? 5000;
         const result = await this.syncOpportunitiesUseCase.execute({
           since: sinceDate,
           maxRecords,
@@ -69,7 +79,9 @@ export class AdminTaskProcessor extends WorkerHost {
 
       case 'admin-alerts-run': {
         if (!this.reviewFollowUpUseCase) {
-          throw new Error('ReviewFollowUpUseCase not available in AdminTaskProcessor');
+          throw new Error(
+            'ReviewFollowUpUseCase not available in AdminTaskProcessor',
+          );
         }
         const result = await this.reviewFollowUpUseCase.execute();
         if (!result.ok) {

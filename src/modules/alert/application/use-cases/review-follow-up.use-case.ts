@@ -1,7 +1,10 @@
 import { Result, ok } from '../../../shared/domain/result';
 import { OpportunityId, ProfileId } from '../../../shared/domain/typed-id';
 import { AlertRepositoryPort } from '../../domain/ports/alert.repository.port';
-import { NotificationPort, NotificationRecipient } from '../../domain/ports/notification.port';
+import {
+  NotificationPort,
+  NotificationRecipient,
+} from '../../domain/ports/notification.port';
 import { ProfileRepositoryPort } from '../../../profile/domain/ports/profile.repository.port';
 import { OpportunityRepositoryPort } from '../../../opportunity/domain/ports/opportunity.repository.port';
 import { markAlertDelivered } from '../../domain/entities/alert.entity';
@@ -30,8 +33,11 @@ export class ReviewFollowUpUseCase implements IReviewFollowUpUseCase {
     private readonly opportunityRepository: OpportunityRepositoryPort,
   ) {}
 
-  async execute(batchSize: number = DEFAULT_BATCH_SIZE): Promise<Result<ReviewFollowUpResult, never>> {
-    const undeliveredAlerts = await this.alertRepository.findUndelivered(batchSize);
+  async execute(
+    batchSize: number = DEFAULT_BATCH_SIZE,
+  ): Promise<Result<ReviewFollowUpResult, never>> {
+    const undeliveredAlerts =
+      await this.alertRepository.findUndelivered(batchSize);
 
     let alertsSent = 0;
     let alertsFailed = 0;
@@ -49,7 +55,9 @@ export class ReviewFollowUpUseCase implements IReviewFollowUpUseCase {
       return p;
     };
 
-    const getOpportunity = async (id: OpportunityId): Promise<Opportunity | null> => {
+    const getOpportunity = async (
+      id: OpportunityId,
+    ): Promise<Opportunity | null> => {
       if (opportunityCache.has(id)) {
         return opportunityCache.get(id)!;
       }
@@ -65,14 +73,21 @@ export class ReviewFollowUpUseCase implements IReviewFollowUpUseCase {
       }
 
       const profile = await getProfile(alert.profileId);
-      if (!profile || profile.alertsEnabled === false || !profile.contactEmail?.trim()) {
+      if (
+        !profile ||
+        profile.alertsEnabled === false ||
+        !profile.contactEmail?.trim()
+      ) {
         alertsSkipped++;
         continue;
       }
 
       const opportunity = await getOpportunity(alert.opportunityId);
       if (!opportunity) {
-        await this.alertRepository.markFailed(alert.id, 'Opportunity not found');
+        await this.alertRepository.markFailed(
+          alert.id,
+          'Opportunity not found',
+        );
         alertsFailed++;
         continue;
       }

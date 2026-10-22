@@ -37,8 +37,14 @@ import {
   OPPORTUNITY_REPOSITORY_PORT,
   OpportunityRepositoryPort,
 } from '../opportunity/domain/ports/opportunity.repository.port';
-import { SEARCH_INDEX_PORT, SearchIndexPort } from '../opportunity/domain/ports/search-index.port';
-import { ANALYSIS_QUEUE_PORT, AnalysisQueuePort } from '../opportunity/domain/ports/analysis-queue.port';
+import {
+  SEARCH_INDEX_PORT,
+  SearchIndexPort,
+} from '../opportunity/domain/ports/search-index.port';
+import {
+  ANALYSIS_QUEUE_PORT,
+  AnalysisQueuePort,
+} from '../opportunity/domain/ports/analysis-queue.port';
 import { REFRESH_RECOMMENDATIONS_QUEUE_NAME } from './infrastructure/adapters/queue/bullmq-recommendation-refresh-queue.adapter';
 import { RefreshRecommendationsJob } from './infrastructure/jobs/refresh-recommendations.job';
 
@@ -134,7 +140,11 @@ import { RefreshRecommendationsJob } from './infrastructure/jobs/refresh-recomme
         profileRepo: ProfileRepositoryPort,
         oppRepo: OpportunityRepositoryPort,
       ) => new WatchOpportunityUseCase(watchRepo, profileRepo, oppRepo),
-      inject: [WATCH_REPOSITORY_PORT, PROFILE_REPOSITORY_PORT, OPPORTUNITY_REPOSITORY_PORT],
+      inject: [
+        WATCH_REPOSITORY_PORT,
+        PROFILE_REPOSITORY_PORT,
+        OPPORTUNITY_REPOSITORY_PORT,
+      ],
     },
     {
       provide: UnwatchOpportunityUseCase,

@@ -130,7 +130,10 @@ async function main() {
 
     // Concurrency 1: process batches sequentially
     for (let batchIdx = 0; batchIdx < totalBatches; batchIdx++) {
-      const batch = workItems.slice(batchIdx * BATCH_SIZE, (batchIdx + 1) * BATCH_SIZE);
+      const batch = workItems.slice(
+        batchIdx * BATCH_SIZE,
+        (batchIdx + 1) * BATCH_SIZE,
+      );
       const batchStart = Date.now();
 
       const vectors = await embedder.embed(batch.map((item) => item.indexText));
@@ -168,9 +171,14 @@ async function main() {
       },
     });
     try {
-      const refreshAdapter = new BullMQRecommendationRefreshQueueAdapter(queue, pool);
+      const refreshAdapter = new BullMQRecommendationRefreshQueueAdapter(
+        queue,
+        pool,
+      );
       const enqueuedCount = await refreshAdapter.enqueueRefreshForAllProfiles();
-      console.log(`[reindex] Enqueued refresh recommendations for ${enqueuedCount} profiles`);
+      console.log(
+        `[reindex] Enqueued refresh recommendations for ${enqueuedCount} profiles`,
+      );
     } finally {
       await queue.close();
     }

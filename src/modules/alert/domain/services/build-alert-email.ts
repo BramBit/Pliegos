@@ -32,7 +32,10 @@ export function formatBogotaDate(date: Date | null): string {
   }).format(date);
 }
 
-function findMatchingChange(alert: Alert, opportunity: Opportunity): Change | undefined {
+function findMatchingChange(
+  alert: Alert,
+  opportunity: Opportunity,
+): Change | undefined {
   if (!alert.changeKey) {
     return undefined;
   }
@@ -44,7 +47,9 @@ function findMatchingChange(alert: Alert, opportunity: Opportunity): Change | un
           : new Date(c.detectedAt).toISOString();
       return `${c.field}:${iso}` === alert.changeKey;
     }) ??
-    opportunity.changeHistory.find((c) => alert.changeKey.startsWith(`${c.field}:`))
+    opportunity.changeHistory.find((c) =>
+      alert.changeKey.startsWith(`${c.field}:`),
+    )
   );
 }
 
@@ -98,7 +103,9 @@ function buildChangeDetails(
     return { detailText, detailHtml };
   }
 
-  const fallback = alert.changeKey ? `Cambio detectado: ${alert.changeKey}` : 'Se detectó una actualización relevante en el proceso.';
+  const fallback = alert.changeKey
+    ? `Cambio detectado: ${alert.changeKey}`
+    : 'Se detectó una actualización relevante en el proceso.';
   return {
     detailText: fallback,
     detailHtml: `<p style="margin: 0; color: #374151;">${fallback}</p>`,
@@ -127,7 +134,10 @@ export function buildAlertEmail(
 
   const subject = `[Pliegos] ${subjectPrefix}: ${opportunity.title}`;
   const recipientName = profile.name?.trim() || 'Contratista';
-  const amountStr = formatCopAmount(opportunity.amount.amount, opportunity.amountKnown);
+  const amountStr = formatCopAmount(
+    opportunity.amount.amount,
+    opportunity.amountKnown,
+  );
   const closingDateStr = formatBogotaDate(opportunity.closingDate);
   const secopUrl = opportunity.source.originalUrl;
 

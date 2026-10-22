@@ -93,7 +93,10 @@ describe('HTTP Contract: RequestIdMiddleware, GlobalExceptionFilter & Response D
       });
     });
 
-    function runFilter(exception: unknown, requestIdHeader?: string): {
+    function runFilter(
+      exception: unknown,
+      requestIdHeader?: string,
+    ): {
       statusCode: number;
       body: ErrorEnvelope;
       responseHeaders: Record<string, string>;
@@ -129,11 +132,18 @@ describe('HTTP Contract: RequestIdMiddleware, GlobalExceptionFilter & Response D
       } as unknown as ArgumentsHost;
 
       filter.catch(exception, host);
-      return { statusCode: capturedStatus, body: capturedBody, responseHeaders };
+      return {
+        statusCode: capturedStatus,
+        body: capturedBody,
+        responseHeaders,
+      };
     }
 
     it('maps ValidationError to 400 with details and requestId in log', () => {
-      const domainErr = createValidationError(['amountRange'], 'min cannot exceed max');
+      const domainErr = createValidationError(
+        ['amountRange'],
+        'min cannot exceed max',
+      );
       const { statusCode, body, responseHeaders } = runFilter(
         new DomainErrorException(domainErr),
         'req-val-400',
@@ -152,7 +162,12 @@ describe('HTTP Contract: RequestIdMiddleware, GlobalExceptionFilter & Response D
     });
 
     it('logs 4xx exceptions at WARN level and 5xx exceptions at ERROR level', () => {
-      runFilter(new DomainErrorException(createProfileNotFoundError(asProfileId('prof-warn'))), 'req-warn');
+      runFilter(
+        new DomainErrorException(
+          createProfileNotFoundError(asProfileId('prof-warn')),
+        ),
+        'req-warn',
+      );
       expect(warnLogs).toHaveLength(1);
       expect(warnLogs[0]).toContain('404 ProfileNotFoundError');
       expect(errorLogs).toHaveLength(0);
@@ -164,7 +179,9 @@ describe('HTTP Contract: RequestIdMiddleware, GlobalExceptionFilter & Response D
 
     it('maps ProfileNotFoundError, OpportunityNotFoundError, and RecommendationNotFoundError to 404', () => {
       const profRes = runFilter(
-        new DomainErrorException(createProfileNotFoundError(asProfileId('prof-404'))),
+        new DomainErrorException(
+          createProfileNotFoundError(asProfileId('prof-404')),
+        ),
         'req-404-a',
       );
       expect(profRes.statusCode).toBe(HttpStatus.NOT_FOUND);
@@ -172,14 +189,18 @@ describe('HTTP Contract: RequestIdMiddleware, GlobalExceptionFilter & Response D
       expect(profRes.body.requestId).toBe('req-404-a');
 
       const oppRes = runFilter(
-        new DomainErrorException(createOpportunityNotFoundError(asOpportunityId('opp-404'))),
+        new DomainErrorException(
+          createOpportunityNotFoundError(asOpportunityId('opp-404')),
+        ),
         'req-404-b',
       );
       expect(oppRes.statusCode).toBe(HttpStatus.NOT_FOUND);
       expect(oppRes.body.error).toBe('OpportunityNotFoundError');
 
       const recRes = runFilter(
-        new DomainErrorException(createRecommendationNotFoundError(asRecommendationId('rec-404'))),
+        new DomainErrorException(
+          createRecommendationNotFoundError(asRecommendationId('rec-404')),
+        ),
         'req-404-c',
       );
       expect(recRes.statusCode).toBe(HttpStatus.NOT_FOUND);
@@ -202,7 +223,9 @@ describe('HTTP Contract: RequestIdMiddleware, GlobalExceptionFilter & Response D
     });
 
     it('maps unexpected Error to 500 with a generic message and never leaks stack traces', () => {
-      const secretError = new Error('SELECT * FROM users failed: password_hash column error');
+      const secretError = new Error(
+        'SELECT * FROM users failed: password_hash column error',
+      );
       const { statusCode, body } = runFilter(secretError, 'req-500');
 
       expect(statusCode).toBe(HttpStatus.INTERNAL_SERVER_ERROR);
@@ -229,7 +252,9 @@ describe('HTTP Contract: RequestIdMiddleware, GlobalExceptionFilter & Response D
       expect(statusCode).toBe(400);
       expect(body.error).toBe('ValidationError');
       expect(body.message).toBe('Validation failed');
-      expect(body.details).toEqual([{ path: 'since', message: 'Invalid datetime' }]);
+      expect(body.details).toEqual([
+        { path: 'since', message: 'Invalid datetime' },
+      ]);
       expect(body.requestId).toBe('req-zod-400');
     });
   });
@@ -289,7 +314,9 @@ describe('HTTP Contract: RequestIdMiddleware, GlobalExceptionFilter & Response D
       const detailDto = toOpportunityDetailDto(sampleOpp, undefined, now);
       expect(detailDto.summary).toBe('Resumen de consultoría en inocuidad.');
       expect(detailDto.sourceUrl).toBe('https://community.secop.gov.co/dto1');
-      expect(detailDto.changeHistory[0].detectedAt).toBe('2026-10-12T10:00:00.000Z');
+      expect(detailDto.changeHistory[0].detectedAt).toBe(
+        '2026-10-12T10:00:00.000Z',
+      );
       expect(detailDto.changeHistory[0].material).toBe(true);
     });
 

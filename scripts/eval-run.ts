@@ -3,7 +3,11 @@ import * as path from 'node:path';
 import { Pool } from 'pg';
 import { loadEnv } from '../src/config/env';
 import { Profile } from '../src/modules/profile/domain/entities/profile.entity';
-import { asProfileId, asUserId, OpportunityId } from '../src/modules/shared/domain/typed-id';
+import {
+  asProfileId,
+  asUserId,
+  OpportunityId,
+} from '../src/modules/shared/domain/typed-id';
 import { PostgresOpportunityRepository } from '../src/modules/opportunity/infrastructure/adapters/persistence/postgres-opportunity.repository';
 import { OllamaAdapter } from '../src/modules/recommendation/infrastructure/adapters/ollama/ollama.adapter';
 import {
@@ -59,7 +63,9 @@ async function main() {
   const labelsPath = path.join(rootDir, 'eval', 'labels.json');
   const thresholdsPath = path.join(rootDir, 'eval', 'thresholds.json');
 
-  const rawProfiles = JSON.parse(fs.readFileSync(profilesPath, 'utf8')) as Array<{
+  const rawProfiles = JSON.parse(
+    fs.readFileSync(profilesPath, 'utf8'),
+  ) as Array<{
     id: string;
     ownerId: string;
     sector: string;
@@ -105,13 +111,19 @@ async function main() {
       const profileLabels = allLabels[profile.id] ?? {};
       const labeledIds = Object.keys(profileLabels);
 
-      console.log(`\n================================================================================`);
+      console.log(
+        `\n================================================================================`,
+      );
       console.log(`PROFILE: ${profile.id} — ${profile.sector}`);
       console.log(`Labeled candidates: ${labeledIds.length}`);
-      console.log(`================================================================================`);
+      console.log(
+        `================================================================================`,
+      );
 
       if (labeledIds.length === 0) {
-        console.log('No labeled candidates found in eval/labels.json for this profile.');
+        console.log(
+          'No labeled candidates found in eval/labels.json for this profile.',
+        );
         if (thresholds.precisionAt10 > 0 || thresholds.ndcgAt10 > 0) {
           thresholdFailed = true;
         }
@@ -143,7 +155,11 @@ async function main() {
         const rawCos = cosById.get(opp.id);
         const semantic =
           rawCos !== undefined ? MatchingService.normalizeCosine(rawCos) : null;
-        const breakdown = await matching.computeBreakdown(opp, profile, semantic);
+        const breakdown = await matching.computeBreakdown(
+          opp,
+          profile,
+          semantic,
+        );
         scored.push({
           opp,
           label: profileLabels[opp.id] ?? 0,
@@ -184,13 +200,19 @@ async function main() {
 
       const meanRankLabel2 =
         label2Ranks.length > 0
-          ? (label2Ranks.reduce((acc, r) => acc + r, 0) / label2Ranks.length).toFixed(2)
+          ? (
+              label2Ranks.reduce((acc, r) => acc + r, 0) / label2Ranks.length
+            ).toFixed(2)
           : 'N/A';
 
       console.log('\nMetrics:');
       console.log(`  precision@5:        ${p5.toFixed(4)}`);
-      console.log(`  precision@10:       ${p10.toFixed(4)} (threshold: ${thresholds.precisionAt10})`);
-      console.log(`  nDCG@10:            ${ndcg10.toFixed(4)} (threshold: ${thresholds.ndcgAt10})`);
+      console.log(
+        `  precision@10:       ${p10.toFixed(4)} (threshold: ${thresholds.precisionAt10})`,
+      );
+      console.log(
+        `  nDCG@10:            ${ndcg10.toFixed(4)} (threshold: ${thresholds.ndcgAt10})`,
+      );
       console.log(`  mean rank (label=2): ${meanRankLabel2}`);
 
       const missedLabel2 = scored

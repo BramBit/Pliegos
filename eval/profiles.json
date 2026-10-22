@@ -4,9 +4,18 @@
     "ownerId": "golden",
     "sector": "Tecnologías de la Información y Desarrollo de Software",
     "capabilities": [
-      { "name": "Desarrollo de software a la medida y plataformas web", "yearsOfExperience": 7 },
-      { "name": "Ciberseguridad y auditoría de sistemas", "yearsOfExperience": 5 },
-      { "name": "Infraestructura tecnológica y soporte de TI", "yearsOfExperience": 6 }
+      {
+        "name": "Desarrollo de software a la medida y plataformas web",
+        "yearsOfExperience": 7
+      },
+      {
+        "name": "Ciberseguridad y auditoría de sistemas",
+        "yearsOfExperience": 5
+      },
+      {
+        "name": "Infraestructura tecnológica y soporte de TI",
+        "yearsOfExperience": 6
+      }
     ],
     "preferences": {
       "categoryCodes": ["V1.81111500", "V1.80111600", "V1.43230000"],
@@ -27,7 +36,10 @@
     "sector": "Infraestructura, Construcción y Obras Civiles",
     "capabilities": [
       { "name": "Interventoría técnica de obras", "yearsOfExperience": 10 },
-      { "name": "Construcción y mantenimiento de vías", "yearsOfExperience": 8 },
+      {
+        "name": "Construcción y mantenimiento de vías",
+        "yearsOfExperience": 8
+      },
       { "name": "Estudios de suelos y topografía", "yearsOfExperience": 6 }
     ],
     "preferences": {
@@ -48,12 +60,26 @@
     "ownerId": "golden",
     "sector": "Consultoría en Calidad, Inocuidad e Ingeniería de Alimentos",
     "capabilities": [
-      { "name": "Auditoría de inocuidad alimentaria, BPM y HACCP", "yearsOfExperience": 8 },
-      { "name": "Control de calidad microbiológica y fisicoquímica de alimentos", "yearsOfExperience": 6 },
-      { "name": "Interventoría y supervisión de programas de alimentación escolar (PAE)", "yearsOfExperience": 5 }
+      {
+        "name": "Auditoría de inocuidad alimentaria, BPM y HACCP",
+        "yearsOfExperience": 8
+      },
+      {
+        "name": "Control de calidad microbiológica y fisicoquímica de alimentos",
+        "yearsOfExperience": 6
+      },
+      {
+        "name": "Interventoría y supervisión de programas de alimentación escolar (PAE)",
+        "yearsOfExperience": 5
+      }
     ],
     "preferences": {
-      "categoryCodes": ["V1.80101500", "V1.81141500", "V1.93131600", "V1.50000000"],
+      "categoryCodes": [
+        "V1.80101500",
+        "V1.81141500",
+        "V1.93131600",
+        "V1.50000000"
+      ],
       "keywords": [
         "inocuidad alimentaria",
         "calidad de alimentos",

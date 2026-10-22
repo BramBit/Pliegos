@@ -12,7 +12,9 @@ async function main() {
   const [emailArg, passwordArg] = process.argv.slice(2);
 
   if (!emailArg || !passwordArg) {
-    console.error('Usage: node dist/scripts/create-admin.js <email> <password>');
+    console.error(
+      'Usage: node dist/scripts/create-admin.js <email> <password>',
+    );
     process.exit(1);
   }
 
@@ -43,9 +45,14 @@ async function main() {
     );
 
     const user = result.rows[0];
-    console.log(`Admin user ready: id=${user.id} email=${user.email} role=${user.role}`);
+    console.log(
+      `Admin user ready: id=${user.id} email=${user.email} role=${user.role}`,
+    );
   } catch (err) {
-    console.error('Failed to create admin user:', err instanceof Error ? err.message : String(err));
+    console.error(
+      'Failed to create admin user:',
+      err instanceof Error ? err.message : String(err),
+    );
     process.exitCode = 1;
   } finally {
     await pool.end();

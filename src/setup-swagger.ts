@@ -25,11 +25,20 @@ export function setupSwaggerAndScalar(app: INestApplication) {
       'Pliegos — Inteligencia de contratación pública. Descubre, analiza, prioriza con explicaciones y monitorea oportunidades de contratación estatal en Colombia (SECOP).',
     )
     .setVersion('1.0.0')
-    .addTag('Opportunities', 'Ingesta desde SECOP II, normalización y búsqueda híbrida')
+    .addTag(
+      'Opportunities',
+      'Ingesta desde SECOP II, normalización y búsqueda híbrida',
+    )
     .addTag('Profiles', 'Perfiles de contratistas, capacidades y preferencias')
-    .addTag('Recommendations', 'Motor de priorización con explicaciones y registro de feedback')
+    .addTag(
+      'Recommendations',
+      'Motor de priorización con explicaciones y registro de feedback',
+    )
     .addTag('Alerts', 'Monitoreo de adendas, fechas límite y notificaciones')
-    .addTag('Admin', 'Rutas operativas y administrativas exclusivas para rol admin')
+    .addTag(
+      'Admin',
+      'Rutas operativas y administrativas exclusivas para rol admin',
+    )
     .addBearerAuth()
     .build();
 

@@ -10,10 +10,21 @@ export class LoginThrottlerService {
 
   isBlocked(ip: string, email: string): boolean {
     const now = Date.now();
-    const emailAttempts = this.cleanAndGetAttempts(this.attemptsByEmail, email.toLowerCase().trim(), now);
-    const ipAttempts = this.cleanAndGetAttempts(this.attemptsByIp, ip.trim(), now);
+    const emailAttempts = this.cleanAndGetAttempts(
+      this.attemptsByEmail,
+      email.toLowerCase().trim(),
+      now,
+    );
+    const ipAttempts = this.cleanAndGetAttempts(
+      this.attemptsByIp,
+      ip.trim(),
+      now,
+    );
 
-    return emailAttempts.length >= MAX_FAILED_ATTEMPTS || ipAttempts.length >= MAX_FAILED_ATTEMPTS;
+    return (
+      emailAttempts.length >= MAX_FAILED_ATTEMPTS ||
+      ipAttempts.length >= MAX_FAILED_ATTEMPTS
+    );
   }
 
   recordFailure(ip: string, email: string): void {
@@ -21,11 +32,19 @@ export class LoginThrottlerService {
     const cleanEmail = email.toLowerCase().trim();
     const cleanIp = ip.trim();
 
-    const emailAttempts = this.cleanAndGetAttempts(this.attemptsByEmail, cleanEmail, now);
+    const emailAttempts = this.cleanAndGetAttempts(
+      this.attemptsByEmail,
+      cleanEmail,
+      now,
+    );
     emailAttempts.push(now);
     this.attemptsByEmail.set(cleanEmail, emailAttempts);
 
-    const ipAttempts = this.cleanAndGetAttempts(this.attemptsByIp, cleanIp, now);
+    const ipAttempts = this.cleanAndGetAttempts(
+      this.attemptsByIp,
+      cleanIp,
+      now,
+    );
     ipAttempts.push(now);
     this.attemptsByIp.set(cleanIp, ipAttempts);
   }

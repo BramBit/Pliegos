@@ -8,7 +8,10 @@ import {
 } from '../../domain/ports/search-index.port';
 import { Opportunity } from '../../domain/entities/opportunity.entity';
 import { OpportunityFilters } from '../../domain/value-objects/opportunity-filters';
-import { OpportunityId, asOpportunityId } from '../../../shared/domain/typed-id';
+import {
+  OpportunityId,
+  asOpportunityId,
+} from '../../../shared/domain/typed-id';
 import { createMoney } from '../../domain/value-objects/money.vo';
 import { HashEmbedder } from '../../../shared/testing/hash-embedder';
 
@@ -25,7 +28,10 @@ class FakeRepo implements OpportunityRepositoryPort {
     }
   }
 
-  async saveAnalysis(id: OpportunityId, analysis: Opportunity['analysis']): Promise<void> {
+  async saveAnalysis(
+    id: OpportunityId,
+    analysis: Opportunity['analysis'],
+  ): Promise<void> {
     const existing = this.data.get(id);
     if (existing) {
       this.data.set(id, { ...existing, analysis });
@@ -50,7 +56,9 @@ class FakeRepo implements OpportunityRepositoryPort {
       result = result.filter((o) => o.categoryCode === filters.categoryCode);
     }
     if (filters.department) {
-      result = result.filter((o) => o.location.department === filters.department);
+      result = result.filter(
+        (o) => o.location.department === filters.department,
+      );
     }
     return result;
   }
@@ -61,7 +69,9 @@ class FakeRepo implements OpportunityRepositoryPort {
       result = result.filter((o) => o.categoryCode === filters.categoryCode);
     }
     if (filters.department) {
-      result = result.filter((o) => o.location.department === filters.department);
+      result = result.filter(
+        (o) => o.location.department === filters.department,
+      );
     }
     const page = filters.page ?? 1;
     const pageSize = filters.pageSize ?? 20;
@@ -193,7 +203,10 @@ describe('SearchOpportunitiesUseCase', () => {
   });
 
   it('performs hybrid candidate retrieval when query is provided, returning ranked opportunities', async () => {
-    searchIndex.returnIds = [asOpportunityId('opp-2'), asOpportunityId('opp-1')];
+    searchIndex.returnIds = [
+      asOpportunityId('opp-2'),
+      asOpportunityId('opp-1'),
+    ];
 
     const result = await useCase.execute({
       query: 'laptops y hardware para oficina',
@@ -242,7 +255,10 @@ describe('SearchOpportunitiesUseCase', () => {
   });
 
   it('executes paginated search with query, honors sort by amount and pagination', async () => {
-    searchIndex.returnIds = [asOpportunityId('opp-1'), asOpportunityId('opp-2')];
+    searchIndex.returnIds = [
+      asOpportunityId('opp-1'),
+      asOpportunityId('opp-2'),
+    ];
 
     const result = await useCase.executePaged({
       q: 'computadores y software',
@@ -257,4 +273,3 @@ describe('SearchOpportunitiesUseCase', () => {
     }
   });
 });
-

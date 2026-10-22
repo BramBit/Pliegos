@@ -61,17 +61,23 @@ describe('Legacy Data Repair & Resync Unknown (P7.3)', () => {
       WHERE city IN ('No Definido', 'No Aplica');
     `);
 
-    const res1 = await pool.query('SELECT * FROM opportunities WHERE id = $1', ['leg-1']);
+    const res1 = await pool.query('SELECT * FROM opportunities WHERE id = $1', [
+      'leg-1',
+    ]);
     expect(res1.rows[0].category_code).toBeNull();
     expect(res1.rows[0].department).toBeNull();
     expect(res1.rows[0].amount_known).toBe(false);
 
-    const res2 = await pool.query('SELECT * FROM opportunities WHERE id = $1', ['leg-2']);
+    const res2 = await pool.query('SELECT * FROM opportunities WHERE id = $1', [
+      'leg-2',
+    ]);
     expect(res2.rows[0].category_code).toBeNull();
     expect(res2.rows[0].city).toBeNull();
     expect(res2.rows[0].amount_known).toBe(true);
 
-    const res3 = await pool.query('SELECT * FROM opportunities WHERE id = $1', ['leg-3']);
+    const res3 = await pool.query('SELECT * FROM opportunities WHERE id = $1', [
+      'leg-3',
+    ]);
     expect(res3.rows[0].category_code).toBe('80111600');
   });
 
@@ -113,7 +119,9 @@ describe('Legacy Data Repair & Resync Unknown (P7.3)', () => {
         return {
           ok: true,
           value: {
-            id: asOpportunityId(raw.id_del_proceso === 'EXT-UNK-1' ? 'unk-1' : 'unk-2'),
+            id: asOpportunityId(
+              raw.id_del_proceso === 'EXT-UNK-1' ? 'unk-1' : 'unk-2',
+            ),
             title: raw.nombre_del_procedimiento,
             description: '',
             contractingEntity: { name: raw.entidad, taxId: '123' },
@@ -143,18 +151,28 @@ describe('Legacy Data Repair & Resync Unknown (P7.3)', () => {
       },
     };
 
-    const resyncResult = await resyncUnknownOpportunities(pool, fakeAdapter, 100);
+    const resyncResult = await resyncUnknownOpportunities(
+      pool,
+      fakeAdapter,
+      100,
+    );
 
     expect(resyncResult.totalProcessed).toBe(2);
     expect(resyncResult.updated).toBe(1);
     expect(resyncResult.stillUnknown).toBe(1);
     expect(resyncResult.histogram).toEqual({ EstadoInusualX: 1 });
 
-    const check1 = await pool.query('SELECT status, source_status FROM opportunities WHERE id = $1', ['unk-1']);
+    const check1 = await pool.query(
+      'SELECT status, source_status FROM opportunities WHERE id = $1',
+      ['unk-1'],
+    );
     expect(check1.rows[0].status).toBe('Published');
     expect(check1.rows[0].source_status).toBe('Publicado');
 
-    const check2 = await pool.query('SELECT status, source_status FROM opportunities WHERE id = $1', ['unk-2']);
+    const check2 = await pool.query(
+      'SELECT status, source_status FROM opportunities WHERE id = $1',
+      ['unk-2'],
+    );
     expect(check2.rows[0].status).toBe('Unknown');
     expect(check2.rows[0].source_status).toBe('EstadoInusualX');
   });

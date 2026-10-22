@@ -8,14 +8,23 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
+  ApiQuery,
+} from '@nestjs/swagger';
 import { GetRecommendationFeedUseCase } from '../../application/use-cases/get-recommendation-feed.use-case';
 import { WatchOpportunityUseCase } from '../../application/use-cases/watch-opportunity.use-case';
 import { UnwatchOpportunityUseCase } from '../../application/use-cases/unwatch-opportunity.use-case';
 import { GetWatchedOpportunitiesUseCase } from '../../application/use-cases/get-watched-opportunities.use-case';
 import { GetProfileSummaryUseCase } from '../../application/use-cases/get-profile-summary.use-case';
 import { asProfileId, asOpportunityId } from '../../../shared/domain/typed-id';
-import { ZodValidationPipe, uuidParamSchema } from '../../../shared/infrastructure/http/zod-validation.pipe';
+import {
+  ZodValidationPipe,
+  uuidParamSchema,
+} from '../../../shared/infrastructure/http/zod-validation.pipe';
 import { DomainErrorException } from '../../../shared/infrastructure/http/global-exception.filter';
 import {
   ErrorEnvelopeDto,
@@ -95,7 +104,8 @@ export class ProfileRecommendationsController {
   })
   @ApiResponse({
     status: HttpStatus.OK,
-    description: 'Página de recomendaciones con resumen de oportunidad y explicaciones',
+    description:
+      'Página de recomendaciones con resumen de oportunidad y explicaciones',
     type: RecommendationPageDto,
   })
   @ApiResponse({
@@ -150,7 +160,9 @@ export class ProfileRecommendationsController {
       total: feed.total,
       page: feed.page,
       pageSize: feed.pageSize,
-      lastRefreshedAt: feed.lastRefreshedAt ? feed.lastRefreshedAt.toISOString() : null,
+      lastRefreshedAt: feed.lastRefreshedAt
+        ? feed.lastRefreshedAt.toISOString()
+        : null,
       degraded: feed.degraded,
     };
   }
@@ -248,7 +260,9 @@ export class ProfileRecommendationsController {
 
     const now = new Date();
     return {
-      items: result.value.items.map((item) => toWatchedOpportunityDto(item, now)),
+      items: result.value.items.map((item) =>
+        toWatchedOpportunityDto(item, now),
+      ),
       total: result.value.total,
       page: result.value.page,
       pageSize: result.value.pageSize,
@@ -284,7 +298,8 @@ export class ProfileRecommendationsController {
   })
   async watchOpportunity(
     @Param('id', new ZodValidationPipe(uuidParamSchema)) id: string,
-    @Param('opportunityId', new ZodValidationPipe(z.string().min(1))) opportunityId: string,
+    @Param('opportunityId', new ZodValidationPipe(z.string().min(1)))
+    opportunityId: string,
     @CurrentUser() user: CurrentUserPayload,
   ): Promise<RegisterFeedbackResponseDto> {
     await this.profileAccessService.assertOwner(asProfileId(id), user);
@@ -305,7 +320,8 @@ export class ProfileRecommendationsController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Remover una oportunidad de la lista de vigilancia del perfil',
-    description: 'Elimina la oportunidad de la lista de seguimiento del contratista.',
+    description:
+      'Elimina la oportunidad de la lista de seguimiento del contratista.',
   })
   @ApiParam({
     name: 'id',
@@ -329,7 +345,8 @@ export class ProfileRecommendationsController {
   })
   async unwatchOpportunity(
     @Param('id', new ZodValidationPipe(uuidParamSchema)) id: string,
-    @Param('opportunityId', new ZodValidationPipe(z.string().min(1))) opportunityId: string,
+    @Param('opportunityId', new ZodValidationPipe(z.string().min(1)))
+    opportunityId: string,
     @CurrentUser() user: CurrentUserPayload,
   ): Promise<RegisterFeedbackResponseDto> {
     await this.profileAccessService.assertOwner(asProfileId(id), user);

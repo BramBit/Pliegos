@@ -13,21 +13,29 @@ export interface SentNotificationRecord {
 
 export interface InMemoryNotificationAdapterOptions {
   readonly logger?: LoggerService;
-  readonly onSend?: (notification: SentNotificationRecord) => Promise<void> | void;
+  readonly onSend?: (
+    notification: SentNotificationRecord,
+  ) => Promise<void> | void;
 }
 
 @Injectable()
 export class InMemoryNotificationAdapter implements NotificationPort {
   private readonly logger: LoggerService;
   private readonly sentNotifications: SentNotificationRecord[] = [];
-  private readonly onSend?: (notification: SentNotificationRecord) => Promise<void> | void;
+  private readonly onSend?: (
+    notification: SentNotificationRecord,
+  ) => Promise<void> | void;
 
   constructor(options?: InMemoryNotificationAdapterOptions) {
-    this.logger = options?.logger ?? new Logger(InMemoryNotificationAdapter.name);
+    this.logger =
+      options?.logger ?? new Logger(InMemoryNotificationAdapter.name);
     this.onSend = options?.onSend;
   }
 
-  async send(to: NotificationRecipient, content: NotificationContent): Promise<void> {
+  async send(
+    to: NotificationRecipient,
+    content: NotificationContent,
+  ): Promise<void> {
     const notification: SentNotificationRecord = {
       to,
       content,

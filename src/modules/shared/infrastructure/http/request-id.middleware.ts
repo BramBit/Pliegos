@@ -22,7 +22,8 @@ export function resolveRequestId(req: RequestWithId): string {
   if (req.requestId && req.requestId.trim() !== '') {
     return req.requestId;
   }
-  const incoming = req.headers?.[REQUEST_ID_HEADER] ?? req.headers?.['X-Request-Id'];
+  const incoming =
+    req.headers?.[REQUEST_ID_HEADER] ?? req.headers?.['X-Request-Id'];
   const raw = Array.isArray(incoming) ? incoming[0] : incoming;
   const requestId = raw && raw.trim() !== '' ? raw.trim() : randomUUID();
   req.requestId = requestId;
@@ -31,7 +32,11 @@ export function resolveRequestId(req: RequestWithId): string {
 
 @Injectable()
 export class RequestIdMiddleware implements NestMiddleware {
-  use(req: RequestWithId, res: { setHeader(name: string, value: string): void }, next: () => void) {
+  use(
+    req: RequestWithId,
+    res: { setHeader(name: string, value: string): void },
+    next: () => void,
+  ) {
     const requestId = resolveRequestId(req);
     res.setHeader('X-Request-Id', requestId);
     requestIdStorage.run(requestId, () => {

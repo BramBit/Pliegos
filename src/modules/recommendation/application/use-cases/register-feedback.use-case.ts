@@ -27,11 +27,12 @@ export class RegisterFeedbackUseCase implements IRegisterFeedbackUseCase {
     userId?: UserId;
   }): Promise<Result<void, RecommendationNotFoundError>> {
     if (this.recommendationRepository.recordFeedbackWithWatch) {
-      const updated = await this.recommendationRepository.recordFeedbackWithWatch(
-        input.recommendationId,
-        input.decision,
-        input.userId,
-      );
+      const updated =
+        await this.recommendationRepository.recordFeedbackWithWatch(
+          input.recommendationId,
+          input.decision,
+          input.userId,
+        );
       if (!updated) {
         return err(createRecommendationNotFoundError(input.recommendationId));
       }

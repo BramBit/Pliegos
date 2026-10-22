@@ -1,4 +1,12 @@
-import { ok, err, isOk, isErr, mapResult, flatMapResult, Result } from './result';
+import {
+  ok,
+  err,
+  isOk,
+  isErr,
+  mapResult,
+  flatMapResult,
+  Result,
+} from './result';
 import {
   asOpportunityId,
   asProfileId,
@@ -53,7 +61,10 @@ describe('Shared Domain Kernel', () => {
     });
 
     it('chains operations with flatMapResult', () => {
-      const divide = (numerator: number, denominator: number): Result<number, string> => {
+      const divide = (
+        numerator: number,
+        denominator: number,
+      ): Result<number, string> => {
         if (denominator === 0) return err('division by zero');
         return ok(numerator / denominator);
       };
@@ -115,7 +126,10 @@ describe('Shared Domain Kernel', () => {
     });
 
     it('creates ValidationError', () => {
-      const error = createValidationError(['amount', 'currency'], 'Invalid amount');
+      const error = createValidationError(
+        ['amount', 'currency'],
+        'Invalid amount',
+      );
       expect(error).toEqual({
         type: 'ValidationError',
         fields: ['amount', 'currency'],

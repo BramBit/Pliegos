@@ -18,7 +18,12 @@ import { RegisterFeedbackUseCase } from '../src/modules/recommendation/applicati
 import { ReviewFollowUpUseCase } from '../src/modules/alert/application/use-cases/review-follow-up.use-case';
 import { MatchingService } from '../src/modules/recommendation/domain/services/matching.service';
 
-import { asUserId, asProfileId, asOpportunityId, asAlertId } from '../src/modules/shared/domain/typed-id';
+import {
+  asUserId,
+  asProfileId,
+  asOpportunityId,
+  asAlertId,
+} from '../src/modules/shared/domain/typed-id';
 import { withOpportunityAnalysis } from '../src/modules/opportunity/domain/entities/opportunity.entity';
 
 const DATABASE_URL =
@@ -27,17 +32,29 @@ const DATABASE_URL =
   'postgres://postgres:postgres@localhost:5433/pliegos_test';
 
 async function main() {
-  console.log('╔═══════════════════════════════════════════════════════════════════╗');
-  console.log('║       Pliegos — Flujo Completo End-to-End (Fase 1 MVP)           ║');
-  console.log('║  Sync → Analyze → Recommend (Explicado) → Feedback → Alert       ║');
-  console.log('╚═══════════════════════════════════════════════════════════════════╝\n');
+  console.log(
+    '╔═══════════════════════════════════════════════════════════════════╗',
+  );
+  console.log(
+    '║       Pliegos — Flujo Completo End-to-End (Fase 1 MVP)           ║',
+  );
+  console.log(
+    '║  Sync → Analyze → Recommend (Explicado) → Feedback → Alert       ║',
+  );
+  console.log(
+    '╚═══════════════════════════════════════════════════════════════════╝\n',
+  );
 
   const pool = new Pool({ connectionString: DATABASE_URL });
 
   try {
-    console.log('0. [INFRA] Conectando a PostgreSQL e inicializando esquema...');
+    console.log(
+      '0. [INFRA] Conectando a PostgreSQL e inicializando esquema...',
+    );
     await runMigrations(pool, path.resolve(__dirname, '../../migrations'));
-    console.log('   ✓ Extension pgvector y tablas de base de datos verificadas.\n');
+    console.log(
+      '   ✓ Extension pgvector y tablas de base de datos verificadas.\n',
+    );
 
     // Inicializar Adaptadores
     const secopAdapter = new SecopAdapter();
@@ -46,7 +63,10 @@ async function main() {
       embedModel: 'nomic-embed-text',
       chatModel: 'llama3.1',
     });
-    const pgvectorAdapter = new PgVectorAdapter({ pool, embedder: ollamaAdapter });
+    const pgvectorAdapter = new PgVectorAdapter({
+      pool,
+      embedder: ollamaAdapter,
+    });
     const emailAdapter = new EmailAdapter();
 
     const opportunityRepo = new PostgresOpportunityRepository(pool);
@@ -57,31 +77,46 @@ async function main() {
     // ─────────────────────────────────────────────────────────────
     // PASO 1: SYNC OPPORTUNITIES
     // ─────────────────────────────────────────────────────────────
-    console.log('─────────────────────────────────────────────────────────────────');
+    console.log(
+      '─────────────────────────────────────────────────────────────────',
+    );
     console.log('PASO 1: Sincronizacion de Procesos desde SECOP II (Sync)');
-    console.log('─────────────────────────────────────────────────────────────────');
-    const syncUseCase = new SyncOpportunitiesUseCase(secopAdapter, opportunityRepo);
+    console.log(
+      '─────────────────────────────────────────────────────────────────',
+    );
+    const syncUseCase = new SyncOpportunitiesUseCase(
+      secopAdapter,
+      opportunityRepo,
+    );
     const syncResult = await syncUseCase.execute({});
 
     if (!syncResult.ok) {
       throw new Error(`Sync fallo: ${syncResult.error.sourceName}`);
     }
     console.log(`✓ Sincronizacion completada:`);
-    console.log(`  - Nuevas oportunidades creadas: ${syncResult.value.created}`);
+    console.log(
+      `  - Nuevas oportunidades creadas: ${syncResult.value.created}`,
+    );
     console.log(`  - Oportunidades actualizadas: ${syncResult.value.updated}`);
 
     const allOpportunities = await opportunityRepo.findByFilters({});
-    console.log(`  - Total oportunidades almacenadas en Postgres: ${allOpportunities.length}\n`);
+    console.log(
+      `  - Total oportunidades almacenadas en Postgres: ${allOpportunities.length}\n`,
+    );
 
     if (allOpportunities.length === 0) {
-      throw new Error('No se encontraron oportunidades en la base de datos tras la sincronizacion.');
+      throw new Error(
+        'No se encontraron oportunidades en la base de datos tras la sincronizacion.',
+      );
     }
 
     const sampleOpp = allOpportunities[0];
     console.log(`  Detalle de oportunidad de muestra:`);
     console.log(`  * ID: ${sampleOpp.id}`);
     console.log(`  * Titulo: "${sampleOpp.title}"`);
-    console.log(`  * Entidad: ${sampleOpp.contractingEntity.name} (NIT: ${sampleOpp.contractingEntity.taxId})`);
+    console.log(
+      `  * Entidad: ${sampleOpp.contractingEntity.name} (NIT: ${sampleOpp.contractingEntity.taxId})`,
+    );
     console.log(`  * Monto: $${sampleOpp.amount.amount.toLocaleString()} COP`);
     console.log(`  * UNSPSC: ${sampleOpp.categoryCode}`);
     console.log(`  * Modalidad: ${sampleOpp.procurementModality}\n`);
@@ -89,35 +124,56 @@ async function main() {
     // ─────────────────────────────────────────────────────────────
     // PASO 2: ANALYZE & INDEX OPPORTUNITIES
     // ─────────────────────────────────────────────────────────────
-    console.log('─────────────────────────────────────────────────────────────────');
-    console.log('PASO 2: Analisis con IA e Indexacion Vectorial (Analyze & Embed)');
-    console.log('─────────────────────────────────────────────────────────────────');
-    console.log('Generando resumen en espanol con llama3.1 y embedding de 768 dims con nomic-embed-text...');
+    console.log(
+      '─────────────────────────────────────────────────────────────────',
+    );
+    console.log(
+      'PASO 2: Analisis con IA e Indexacion Vectorial (Analyze & Embed)',
+    );
+    console.log(
+      '─────────────────────────────────────────────────────────────────',
+    );
+    console.log(
+      'Generando resumen en espanol con llama3.1 y embedding de 768 dims con nomic-embed-text...',
+    );
 
     const summary = await ollamaAdapter.summarize(
       `${sampleOpp.title}. Entidad: ${sampleOpp.contractingEntity.name}. Monto: ${sampleOpp.amount.amount} COP. Modalidad: ${sampleOpp.procurementModality}.`,
     );
 
     const analyzedOpp = withOpportunityAnalysis(sampleOpp, {
-      summary: summary || 'Analisis tecnico y administrativo del proceso contractual.',
+      summary:
+        summary || 'Analisis tecnico y administrativo del proceso contractual.',
       requirements: [
-        { text: 'Capacidad residual financiera acorde al monto', type: 'financial' },
-        { text: 'Experiencia acreditada en contratos similares', type: 'technical' },
+        {
+          text: 'Capacidad residual financiera acorde al monto',
+          type: 'financial',
+        },
+        {
+          text: 'Experiencia acreditada en contratos similares',
+          type: 'technical',
+        },
       ],
       embeddingGeneratedAt: new Date(),
     });
 
     await opportunityRepo.save(analyzedOpp);
     await pgvectorAdapter.indexOpportunity(analyzedOpp);
-    console.log('✓ Oportunidad analizada y almacenada en Postgres con embedding vectorial pgvector(768).');
+    console.log(
+      '✓ Oportunidad analizada y almacenada en Postgres con embedding vectorial pgvector(768).',
+    );
     console.log(`  Resumen analitico: "${analyzedOpp.analysis?.summary}"\n`);
 
     // ─────────────────────────────────────────────────────────────
     // PASO 3: CONFIGURE USER PROFILE
     // ─────────────────────────────────────────────────────────────
-    console.log('─────────────────────────────────────────────────────────────────');
+    console.log(
+      '─────────────────────────────────────────────────────────────────',
+    );
     console.log('PASO 3: Configuracion de Perfil de Contratista (Profile)');
-    console.log('─────────────────────────────────────────────────────────────────');
+    console.log(
+      '─────────────────────────────────────────────────────────────────',
+    );
     const profileUseCase = new ConfigureProfileUseCase(profileRepo);
     const profileResult = await profileUseCase.execute({
       profileId: null,
@@ -125,8 +181,14 @@ async function main() {
         ownerId: asUserId('user-brayan-01'),
         sector: 'Tecnologia, Consultoria y Servicios Profesionales',
         capabilities: [
-          { name: 'Desarrollo e integracion de sistemas', yearsOfExperience: 6 },
-          { name: 'Gestion y consultoria administrativa', yearsOfExperience: 4 },
+          {
+            name: 'Desarrollo e integracion de sistemas',
+            yearsOfExperience: 6,
+          },
+          {
+            name: 'Gestion y consultoria administrativa',
+            yearsOfExperience: 4,
+          },
         ],
         preferences: {
           categoryCodes: [
@@ -134,9 +196,16 @@ async function main() {
             'V1.80111600',
             'V1.43230000',
           ],
-          keywords: [sampleOpp.title.split(' ')[0], 'servicios', 'gestion', 'tecnologia'],
+          keywords: [
+            sampleOpp.title.split(' ')[0],
+            'servicios',
+            'gestion',
+            'tecnologia',
+          ],
           amountRange: { min: 5_000_000, max: 200_000_000 },
-          departments: sampleOpp.location.department ? [sampleOpp.location.department] : [],
+          departments: sampleOpp.location.department
+            ? [sampleOpp.location.department]
+            : [],
         },
       },
     });
@@ -147,15 +216,23 @@ async function main() {
     const profile = profileResult.value;
     console.log(`✓ Perfil de contratista creado con ID: ${profile.id}`);
     console.log(`  - Sector: ${profile.sector}`);
-    console.log(`  - Categorias de interes: ${profile.preferences.categoryCodes.join(', ')}`);
-    console.log(`  - Rango presupuestal: $${profile.preferences.amountRange?.min.toLocaleString()} - $${profile.preferences.amountRange?.max.toLocaleString()} COP\n`);
+    console.log(
+      `  - Categorias de interes: ${profile.preferences.categoryCodes.join(', ')}`,
+    );
+    console.log(
+      `  - Rango presupuestal: $${profile.preferences.amountRange?.min.toLocaleString()} - $${profile.preferences.amountRange?.max.toLocaleString()} COP\n`,
+    );
 
     // ─────────────────────────────────────────────────────────────
     // PASO 4: GET RECOMMENDATIONS (MATCHING SERVICE)
     // ─────────────────────────────────────────────────────────────
-    console.log('─────────────────────────────────────────────────────────────────');
+    console.log(
+      '─────────────────────────────────────────────────────────────────',
+    );
     console.log('PASO 4: Motor de Recomendacion Explicada (MatchingService)');
-    console.log('─────────────────────────────────────────────────────────────────');
+    console.log(
+      '─────────────────────────────────────────────────────────────────',
+    );
     const matchingService = new MatchingService();
     const refreshRecommendationsUseCase = new RefreshRecommendationsUseCase(
       profileRepo,
@@ -170,35 +247,49 @@ async function main() {
       recommendationRepo,
     );
 
-    console.log('Calculando score ponderado (0.35 semantica + 0.35 categoria + 0.20 monto + 0.10 ubicacion)...');
+    console.log(
+      'Calculando score ponderado (0.35 semantica + 0.35 categoria + 0.20 monto + 0.10 ubicacion)...',
+    );
     await refreshRecommendationsUseCase.execute({ profileId: profile.id });
-    const recsResult = await getRecommendationsUseCase.execute({ profileId: profile.id });
+    const recsResult = await getRecommendationsUseCase.execute({
+      profileId: profile.id,
+    });
 
     if (!recsResult.ok) {
       throw new Error('Fallo la generacion de recomendaciones');
     }
 
     const recommendations = recsResult.value.items;
-    console.log(`✓ Se generaron ${recommendations.length} recomendaciones rankeadas.\n`);
+    console.log(
+      `✓ Se generaron ${recommendations.length} recomendaciones rankeadas.\n`,
+    );
 
     const topRec = recommendations[0];
     console.log(`🏆 Mejor Oportunidad Recomendada:`);
     console.log(`   - Recommendation ID: ${topRec.id}`);
     console.log(`   - Opportunity ID: ${topRec.opportunityId}`);
-    console.log(`   - Score final: ${(topRec.score * 100).toFixed(1)}% (${topRec.score.toFixed(4)})`);
+    console.log(
+      `   - Score final: ${(topRec.score * 100).toFixed(1)}% (${topRec.score.toFixed(4)})`,
+    );
     console.log(`   - Explicacion: "${topRec.explanation.summary}"`);
     console.log(`   - Factores coincidentes (>0.6):`);
     for (const factor of topRec.explanation.matchedFactors) {
-      console.log(`     * [${factor.factor}] ${(factor.score * 100).toFixed(0)}% -> ${factor.description}`);
+      console.log(
+        `     * [${factor.factor}] ${(factor.score * 100).toFixed(0)}% -> ${factor.description}`,
+      );
     }
     console.log('');
 
     // ─────────────────────────────────────────────────────────────
     // PASO 5: REGISTER FEEDBACK
     // ─────────────────────────────────────────────────────────────
-    console.log('─────────────────────────────────────────────────────────────────');
+    console.log(
+      '─────────────────────────────────────────────────────────────────',
+    );
     console.log('PASO 5: Decision del Usuario y Feedback (RegisterFeedback)');
-    console.log('─────────────────────────────────────────────────────────────────');
+    console.log(
+      '─────────────────────────────────────────────────────────────────',
+    );
     const feedbackUseCase = new RegisterFeedbackUseCase(recommendationRepo);
     const feedbackResult = await feedbackUseCase.execute({
       recommendationId: topRec.id,
@@ -212,14 +303,22 @@ async function main() {
     const updatedRec = await recommendationRepo.findById(topRec.id);
     console.log(`✓ Feedback registrado con exito.`);
     console.log(`  - Decision del usuario: ${updatedRec?.feedback?.decision}`);
-    console.log(`  - Fecha de decision: ${updatedRec?.feedback?.recordedAt?.toISOString()}\n`);
+    console.log(
+      `  - Fecha de decision: ${updatedRec?.feedback?.recordedAt?.toISOString()}\n`,
+    );
 
     // ─────────────────────────────────────────────────────────────
     // PASO 6: REVIEW FOLLOW-UP & ALERTS
     // ─────────────────────────────────────────────────────────────
-    console.log('─────────────────────────────────────────────────────────────────');
-    console.log('PASO 6: Seguimiento de Alertas y Notificaciones (ReviewFollowUp)');
-    console.log('─────────────────────────────────────────────────────────────────');
+    console.log(
+      '─────────────────────────────────────────────────────────────────',
+    );
+    console.log(
+      'PASO 6: Seguimiento de Alertas y Notificaciones (ReviewFollowUp)',
+    );
+    console.log(
+      '─────────────────────────────────────────────────────────────────',
+    );
     // Generar alerta de seguimiento para la oportunidad
     const alertId = asAlertId('alert-e2e-001');
     await alertRepo.save({
@@ -233,7 +332,9 @@ async function main() {
       readAt: null,
       deliveredAt: null,
     });
-    console.log(`✓ Alerta creada por proximo cierre de plazo para ${profile.id}.`);
+    console.log(
+      `✓ Alerta creada por proximo cierre de plazo para ${profile.id}.`,
+    );
 
     const reviewFollowUpUseCase = new ReviewFollowUpUseCase(
       alertRepo,
@@ -248,15 +349,27 @@ async function main() {
     console.log(`  - Alertas enviadas: ${alertsSent}`);
 
     const sentEmails = emailAdapter.getSentNotifications();
-    console.log(`  - Notificaciones por correo despachadas: ${sentEmails.length}`);
+    console.log(
+      `  - Notificaciones por correo despachadas: ${sentEmails.length}`,
+    );
     for (const email of sentEmails) {
-      console.log(`    ✉ [EMAIL to ${email.to.email}]: "${email.content.subject}"`);
+      console.log(
+        `    ✉ [EMAIL to ${email.to.email}]: "${email.content.subject}"`,
+      );
     }
 
-    console.log('\n╔═══════════════════════════════════════════════════════════════════╗');
-    console.log('║  ✓ FLUJO END-TO-END COMPLETADO EXITOSAMENTE SIN ERRORES          ║');
-    console.log('║  Pliegos opera con PostgreSQL nativo, pgvector y Ollama local    ║');
-    console.log('╚═══════════════════════════════════════════════════════════════════╝');
+    console.log(
+      '\n╔═══════════════════════════════════════════════════════════════════╗',
+    );
+    console.log(
+      '║  ✓ FLUJO END-TO-END COMPLETADO EXITOSAMENTE SIN ERRORES          ║',
+    );
+    console.log(
+      '║  Pliegos opera con PostgreSQL nativo, pgvector y Ollama local    ║',
+    );
+    console.log(
+      '╚═══════════════════════════════════════════════════════════════════╝',
+    );
   } finally {
     await pool.end();
   }

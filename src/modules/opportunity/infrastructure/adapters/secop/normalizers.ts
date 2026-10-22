@@ -18,7 +18,9 @@ function fold(value: string): string {
  * Returns null for undefined, null, blank text and SECOP placeholders
  * ('No Definido', 'No Aplica', any casing). Otherwise returns the trimmed value.
  */
-export function nullIfPlaceholder(value: string | null | undefined): string | null {
+export function nullIfPlaceholder(
+  value: string | null | undefined,
+): string | null {
   if (value === undefined || value === null) return null;
   const trimmed = value.trim();
   return PLACEHOLDERS.has(trimmed.toLowerCase()) ? null : trimmed;
@@ -28,7 +30,9 @@ export function nullIfPlaceholder(value: string | null | undefined): string | nu
  * Normalizes a UNSPSC category code: strips the 'V1.' prefix. Returns null for
  * absent values, 'UNSPECIFIED' and all-zero codes such as '00000000'.
  */
-export function normalizeUnspsc(value: string | null | undefined): string | null {
+export function normalizeUnspsc(
+  value: string | null | undefined,
+): string | null {
   if (value === undefined || value === null) return null;
   const trimmed = value.trim();
   if (trimmed === '') return null;
@@ -58,7 +62,9 @@ export function isCompetitive(modality: string | null | undefined): boolean {
  * Parses a raw amount (number or numeric string). Returns null when the value
  * is absent, empty or not a finite number.
  */
-export function parseAmount(value: string | number | null | undefined): number | null {
+export function parseAmount(
+  value: string | number | null | undefined,
+): number | null {
   if (value === undefined || value === null) return null;
   if (typeof value === 'number') return Number.isFinite(value) ? value : null;
 

@@ -4,7 +4,8 @@
  */
 
 const EMAIL_REGEX = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
-const JWT_REGEX = /\beyJ[a-zA-Z0-9_-]{10,}\.[a-zA-Z0-9_-]{10,}\.[a-zA-Z0-9_-]{10,}\b/g;
+const JWT_REGEX =
+  /\beyJ[a-zA-Z0-9_-]{10,}\.[a-zA-Z0-9_-]{10,}\.[a-zA-Z0-9_-]{10,}\b/g;
 const BEARER_REGEX = /Bearer\s+[a-zA-Z0-9._~+/-]+=*/gi;
 const DB_URL_PASSWORD_REGEX = /(postgres(?:ql)?:\/\/[^:]+:)([^@]+)(@)/gi;
 const KEY_VALUE_PASSWORD_REGEX =
@@ -68,7 +69,9 @@ export function redact(value: unknown): unknown {
     };
     for (const [k, v] of Object.entries(value)) {
       if (k !== 'name' && k !== 'message' && k !== 'stack') {
-        errorObj[k] = SENSITIVE_KEY_NAMES.has(k.toLowerCase()) ? '[REDACTED]' : redact(v);
+        errorObj[k] = SENSITIVE_KEY_NAMES.has(k.toLowerCase())
+          ? '[REDACTED]'
+          : redact(v);
       }
     }
     return errorObj;

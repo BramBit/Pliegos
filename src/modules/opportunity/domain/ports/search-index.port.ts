@@ -42,7 +42,10 @@ export interface CandidateRetrievalResult {
 
 export interface SearchIndexPort {
   indexOpportunity(opportunity: Opportunity): Promise<void>;
-  semanticSearch(queryVector: number[], filters: OpportunityFilters): Promise<OpportunityId[]>;
+  semanticSearch(
+    queryVector: number[],
+    filters: OpportunityFilters,
+  ): Promise<OpportunityId[]>;
   similarities(
     profileVector: number[],
     opportunityIds: OpportunityId[],
@@ -115,10 +118,12 @@ export function reciprocalRankFusion<Id extends string = string>(
     }
   }
 
-  const ranked: RrfScoredItem<Id>[] = Array.from(scores.entries()).map(([id, fusedScore]) => ({
-    id,
-    fusedScore,
-  }));
+  const ranked: RrfScoredItem<Id>[] = Array.from(scores.entries()).map(
+    ([id, fusedScore]) => ({
+      id,
+      fusedScore,
+    }),
+  );
 
   ranked.sort((a, b) => b.fusedScore - a.fusedScore);
 
@@ -129,8 +134,13 @@ export function reciprocalRankFusion<Id extends string = string>(
  * Builds an OR tsquery expression ('a | b | c') from up to 20 sanitized keyword terms
  * (letters and digits only) for profile full-text retrieval.
  */
-export function buildProfileOrTsQuery(textOrTerms: string | readonly string[], maxTerms = 20): string {
-  const rawSource = Array.isArray(textOrTerms) ? textOrTerms.join(' ') : String(textOrTerms ?? '');
+export function buildProfileOrTsQuery(
+  textOrTerms: string | readonly string[],
+  maxTerms = 20,
+): string {
+  const rawSource = Array.isArray(textOrTerms)
+    ? textOrTerms.join(' ')
+    : String(textOrTerms ?? '');
   const matches = rawSource.match(/[\p{L}\p{N}]+/gu) ?? [];
 
   const uniqueTerms: string[] = [];

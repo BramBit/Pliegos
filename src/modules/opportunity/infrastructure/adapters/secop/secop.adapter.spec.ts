@@ -1,7 +1,11 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { LoggerService } from '@nestjs/common';
-import { SecopAdapter, DEFAULT_SECOP_ENDPOINT, RawSecopProcess } from './secop.adapter';
+import {
+  SecopAdapter,
+  DEFAULT_SECOP_ENDPOINT,
+  RawSecopProcess,
+} from './secop.adapter';
 import { asOpportunityId } from '../../../../shared/domain/typed-id';
 
 describe('SecopAdapter', () => {
@@ -9,7 +13,11 @@ describe('SecopAdapter', () => {
   let fakeLogger: LoggerService & { warnings: string[] };
 
   beforeAll(() => {
-    const fixturePath = path.join(__dirname, 'fixtures', 'secop-sample.fixture.json');
+    const fixturePath = path.join(
+      __dirname,
+      'fixtures',
+      'secop-sample.fixture.json',
+    );
     const rawData = fs.readFileSync(fixturePath, 'utf8');
     sampleFixture = JSON.parse(rawData) as RawSecopProcess[];
   });
@@ -30,14 +38,16 @@ describe('SecopAdapter', () => {
   describe('fetchLatest / fetchPages (network / endpoint abstraction)', () => {
     it('calls default endpoint and returns mapped SourceOpportunity items', async () => {
       let calledUrl = '';
-      const mockFetch: typeof fetch = jest.fn(async (url: string | URL | Request) => {
-        calledUrl = url.toString();
-        return {
-          ok: true,
-          status: 200,
-          json: async () => sampleFixture,
-        } as Response;
-      });
+      const mockFetch: typeof fetch = jest.fn(
+        async (url: string | URL | Request) => {
+          calledUrl = url.toString();
+          return {
+            ok: true,
+            status: 200,
+            json: async () => sampleFixture,
+          } as Response;
+        },
+      );
 
       const adapter = new SecopAdapter({
         fetchFn: mockFetch,
@@ -47,8 +57,12 @@ describe('SecopAdapter', () => {
       const result = await adapter.fetchLatest();
 
       const parsedUrl = new URL(calledUrl);
-      expect(parsedUrl.origin + parsedUrl.pathname).toBe(DEFAULT_SECOP_ENDPOINT);
-      expect(parsedUrl.searchParams.get('$order')).toBe('fecha_de_ultima_publicaci ASC, id_del_proceso ASC');
+      expect(parsedUrl.origin + parsedUrl.pathname).toBe(
+        DEFAULT_SECOP_ENDPOINT,
+      );
+      expect(parsedUrl.searchParams.get('$order')).toBe(
+        'fecha_de_ultima_publicaci ASC, id_del_proceso ASC',
+      );
       expect(parsedUrl.searchParams.get('$where')).toBeNull();
       expect(result).toHaveLength(sampleFixture.length);
       expect(result[0].externalId).toBe('CO1.REQ.7128715');
@@ -56,14 +70,16 @@ describe('SecopAdapter', () => {
 
     it('adds SoQL $where clause on fecha_de_ultima_publicaci when since Date is provided', async () => {
       let calledUrl = '';
-      const mockFetch: typeof fetch = jest.fn(async (url: string | URL | Request) => {
-        calledUrl = url.toString();
-        return {
-          ok: true,
-          status: 200,
-          json: async () => sampleFixture,
-        } as Response;
-      });
+      const mockFetch: typeof fetch = jest.fn(
+        async (url: string | URL | Request) => {
+          calledUrl = url.toString();
+          return {
+            ok: true,
+            status: 200,
+            json: async () => sampleFixture,
+          } as Response;
+        },
+      );
 
       const adapter = new SecopAdapter({
         fetchFn: mockFetch,
@@ -75,20 +91,26 @@ describe('SecopAdapter', () => {
 
       const parsedUrl = new URL(calledUrl);
       const expectedSoqlDate = since.toISOString().replace(/Z$/, '');
-      expect(parsedUrl.searchParams.get('$where')).toBe(`fecha_de_ultima_publicaci >= '${expectedSoqlDate}'`);
-      expect(parsedUrl.searchParams.get('$order')).toBe('fecha_de_ultima_publicaci ASC, id_del_proceso ASC');
+      expect(parsedUrl.searchParams.get('$where')).toBe(
+        `fecha_de_ultima_publicaci >= '${expectedSoqlDate}'`,
+      );
+      expect(parsedUrl.searchParams.get('$order')).toBe(
+        'fecha_de_ultima_publicaci ASC, id_del_proceso ASC',
+      );
     });
 
     it('uses openCompetitive $where clause when mode is openCompetitive', async () => {
       let calledUrl = '';
-      const mockFetch: typeof fetch = jest.fn(async (url: string | URL | Request) => {
-        calledUrl = url.toString();
-        return {
-          ok: true,
-          status: 200,
-          json: async () => [],
-        } as Response;
-      });
+      const mockFetch: typeof fetch = jest.fn(
+        async (url: string | URL | Request) => {
+          calledUrl = url.toString();
+          return {
+            ok: true,
+            status: 200,
+            json: async () => [],
+          } as Response;
+        },
+      );
 
       const adapter = new SecopAdapter({
         fetchFn: mockFetch,
@@ -102,7 +124,9 @@ describe('SecopAdapter', () => {
       expect(parsedUrl.searchParams.get('$where')).toBe(
         `estado_del_procedimiento in ('Publicado','Abierto','Evaluación') AND fecha_de_recepcion_de > '2026-10-17T12:00:00.000'`,
       );
-      expect(parsedUrl.searchParams.get('$order')).toBe('fecha_de_ultima_publicaci ASC, id_del_proceso ASC');
+      expect(parsedUrl.searchParams.get('$order')).toBe(
+        'fecha_de_ultima_publicaci ASC, id_del_proceso ASC',
+      );
     });
 
     it('skips records without fecha_de_publicacion_del and invokes onSkipped', async () => {
@@ -112,13 +136,24 @@ describe('SecopAdapter', () => {
           status: 200,
           json: async () => [
             sampleFixture[0],
-            { ...sampleFixture[1], id_del_proceso: 'NO-DATE-1', fecha_de_publicacion_del: undefined },
-            { ...sampleFixture[2], id_del_proceso: 'NO-DATE-2', fecha_de_publicacion_del: '' },
+            {
+              ...sampleFixture[1],
+              id_del_proceso: 'NO-DATE-1',
+              fecha_de_publicacion_del: undefined,
+            },
+            {
+              ...sampleFixture[2],
+              id_del_proceso: 'NO-DATE-2',
+              fecha_de_publicacion_del: '',
+            },
           ],
         } as Response;
       });
 
-      const adapter = new SecopAdapter({ fetchFn: mockFetch, logger: fakeLogger });
+      const adapter = new SecopAdapter({
+        fetchFn: mockFetch,
+        logger: fakeLogger,
+      });
       let skipped = 0;
       const result = await adapter.fetchLatest(undefined, {
         onSkipped: () => {
@@ -154,36 +189,61 @@ describe('SecopAdapter', () => {
 
   describe('pagination and resilience', () => {
     const makePage = (n: number, start = 0) =>
-      Array.from({ length: n }, (_, i) => ({ ...sampleFixture[0], id_del_proceso: `P${start + i}` }));
+      Array.from({ length: n }, (_, i) => ({
+        ...sampleFixture[0],
+        id_del_proceso: `P${start + i}`,
+      }));
 
     it('paginates with $limit/$offset until a short page is returned', async () => {
       const urls: URL[] = [];
       const pages = [makePage(3, 0), makePage(3, 3), makePage(1, 6)];
-      const mockFetch: typeof fetch = jest.fn(async (url: string | URL | Request) => {
-        urls.push(new URL(url.toString()));
-        return { ok: true, status: 200, json: async () => pages[urls.length - 1] } as Response;
+      const mockFetch: typeof fetch = jest.fn(
+        async (url: string | URL | Request) => {
+          urls.push(new URL(url.toString()));
+          return {
+            ok: true,
+            status: 200,
+            json: async () => pages[urls.length - 1],
+          } as Response;
+        },
+      );
+      const adapter = new SecopAdapter({
+        fetchFn: mockFetch,
+        logger: fakeLogger,
+        pageSize: 3,
       });
-      const adapter = new SecopAdapter({ fetchFn: mockFetch, logger: fakeLogger, pageSize: 3 });
 
       const result = await adapter.fetchLatest();
 
       expect(result).toHaveLength(7);
-      expect(urls.map((u) => u.searchParams.get('$offset'))).toEqual(['0', '3', '6']);
-      expect(urls.every((u) => u.searchParams.get('$limit') === '3')).toBe(true);
+      expect(urls.map((u) => u.searchParams.get('$offset'))).toEqual([
+        '0',
+        '3',
+        '6',
+      ]);
+      expect(urls.every((u) => u.searchParams.get('$limit') === '3')).toBe(
+        true,
+      );
     });
 
     it('stops at maxRecords and trims the last page limit', async () => {
       const urls: URL[] = [];
-      const mockFetch: typeof fetch = jest.fn(async (url: string | URL | Request) => {
-        const u = new URL(url.toString());
-        urls.push(u);
-        return {
-          ok: true,
-          status: 200,
-          json: async () => makePage(Number(u.searchParams.get('$limit'))),
-        } as Response;
+      const mockFetch: typeof fetch = jest.fn(
+        async (url: string | URL | Request) => {
+          const u = new URL(url.toString());
+          urls.push(u);
+          return {
+            ok: true,
+            status: 200,
+            json: async () => makePage(Number(u.searchParams.get('$limit'))),
+          } as Response;
+        },
+      );
+      const adapter = new SecopAdapter({
+        fetchFn: mockFetch,
+        logger: fakeLogger,
+        pageSize: 3,
       });
-      const adapter = new SecopAdapter({ fetchFn: mockFetch, logger: fakeLogger, pageSize: 3 });
 
       const result = await adapter.fetchLatest(undefined, { maxRecords: 5 });
 
@@ -196,9 +256,23 @@ describe('SecopAdapter', () => {
       let calls = 0;
       const mockFetch: typeof fetch = jest.fn(async () => {
         calls++;
-        if (calls === 1) return { ok: false, status: 429, statusText: 'Too Many Requests' } as Response;
-        if (calls === 2) return { ok: false, status: 503, statusText: 'Unavailable' } as Response;
-        return { ok: true, status: 200, json: async () => makePage(1) } as Response;
+        if (calls === 1)
+          return {
+            ok: false,
+            status: 429,
+            statusText: 'Too Many Requests',
+          } as Response;
+        if (calls === 2)
+          return {
+            ok: false,
+            status: 503,
+            statusText: 'Unavailable',
+          } as Response;
+        return {
+          ok: true,
+          status: 200,
+          json: async () => makePage(1),
+        } as Response;
       });
       const adapter = new SecopAdapter({
         fetchFn: mockFetch,
@@ -217,7 +291,11 @@ describe('SecopAdapter', () => {
 
     it('does not retry non-retriable HTTP 4xx errors', async () => {
       const mockFetch: typeof fetch = jest.fn(async () => {
-        return { ok: false, status: 400, statusText: 'Bad Request' } as Response;
+        return {
+          ok: false,
+          status: 400,
+          statusText: 'Bad Request',
+        } as Response;
       });
       const adapter = new SecopAdapter({
         fetchFn: mockFetch,
@@ -231,11 +309,17 @@ describe('SecopAdapter', () => {
 
     it('sends the Socrata app token header when configured', async () => {
       let headers: Record<string, string> = {};
-      const mockFetch: typeof fetch = jest.fn(async (_url: string | URL | Request, init?: RequestInit) => {
-        headers = init?.headers as Record<string, string>;
-        return { ok: true, status: 200, json: async () => [] } as Response;
+      const mockFetch: typeof fetch = jest.fn(
+        async (_url: string | URL | Request, init?: RequestInit) => {
+          headers = init?.headers as Record<string, string>;
+          return { ok: true, status: 200, json: async () => [] } as Response;
+        },
+      );
+      const adapter = new SecopAdapter({
+        fetchFn: mockFetch,
+        logger: fakeLogger,
+        appToken: 'tok',
       });
-      const adapter = new SecopAdapter({ fetchFn: mockFetch, logger: fakeLogger, appToken: 'tok' });
 
       await adapter.fetchLatest();
 
@@ -253,7 +337,11 @@ describe('SecopAdapter', () => {
     it('maps competitive process, carries description, normalizes placeholder city to null, strips V1. from UNSPSC, and derives isOpenForSubmission', () => {
       const raw = sampleFixture[0]; // CO1.REQ.7128715
       const now = new Date('2024-11-10T00:00:00.000'); // before closingDate 2024-11-12
-      const result = adapter.mapToOpportunity(raw, asOpportunityId('opp-test-1'), now);
+      const result = adapter.mapToOpportunity(
+        raw,
+        asOpportunityId('opp-test-1'),
+        now,
+      );
 
       expect(result.ok).toBe(true);
       if (!result.ok) return;
@@ -280,7 +368,9 @@ describe('SecopAdapter', () => {
       });
       expect(opp.amountKnown).toBe(true);
       expect(opp.contractType).toBe('Otro');
-      expect(opp.procurementModality).toBe('Contratación régimen especial (con ofertas)');
+      expect(opp.procurementModality).toBe(
+        'Contratación régimen especial (con ofertas)',
+      );
       expect(opp.isCompetitive).toBe(true);
       expect(opp.categoryCode).toBe('40151500');
       expect(opp.publishedAt).toEqual(new Date('2024-11-06T00:00:00.000'));
@@ -293,7 +383,8 @@ describe('SecopAdapter', () => {
         sourceName: 'SECOP',
         externalId: 'CO1.REQ.7128715',
         humanReference: 'RE-CGBM-049-2024',
-        originalUrl: 'https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=CO1.NTC.7008964',
+        originalUrl:
+          'https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=CO1.NTC.7008964',
       });
 
       // After closingDate has passed, isOpenForSubmission becomes false
@@ -350,7 +441,9 @@ describe('SecopAdapter', () => {
       if (!result.ok) return;
 
       const opp = result.value;
-      expect(opp.title).toBe('(HIDRO-147) PRESTAR EL SERVICIO DE TRANSPORTE INTEGRAL');
+      expect(opp.title).toBe(
+        '(HIDRO-147) PRESTAR EL SERVICIO DE TRANSPORTE INTEGRAL',
+      );
       expect(opp.closingDate).toEqual(new Date('2026-04-30T00:00:00.000'));
       expect(opp.status).toBe('Awarded');
       expect(opp.isCompetitive).toBe(true);
@@ -461,7 +554,9 @@ describe('SecopAdapter', () => {
     });
 
     it('logs warning and returns Unknown for unmapped string', () => {
-      expect(adapter.mapStatus('EstadoMisterioso', 'ResumenDesconocido')).toBe('Unknown');
+      expect(adapter.mapStatus('EstadoMisterioso', 'ResumenDesconocido')).toBe(
+        'Unknown',
+      );
       expect(fakeLogger.warn).toHaveBeenCalledWith(
         'Unmapped SECOP status: "EstadoMisterioso" (resumen: "ResumenDesconocido"). Falling back to OpportunityStatus.Unknown.',
       );

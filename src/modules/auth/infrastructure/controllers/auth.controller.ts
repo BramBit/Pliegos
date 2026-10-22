@@ -66,7 +66,8 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Obtener información del usuario autenticado',
-    description: 'Retorna el identificador, correo y rol del usuario actualmente autenticado.',
+    description:
+      'Retorna el identificador, correo y rol del usuario actualmente autenticado.',
   })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -78,7 +79,9 @@ export class AuthController {
     description: 'Token inválido o usuario no encontrado',
     type: ErrorEnvelopeDto,
   })
-  async me(@CurrentUser() user: CurrentUserPayload): Promise<CurrentUserResponseDto> {
+  async me(
+    @CurrentUser() user: CurrentUserPayload,
+  ): Promise<CurrentUserResponseDto> {
     if (!this.userRepository) {
       return { id: user.sub, email: '', role: user.role };
     }
@@ -148,8 +151,14 @@ export class AuthController {
     @Req() req: RequestLike,
   ): Promise<AuthTokensResponseDto> {
     const rawForwarded = req.headers?.['x-forwarded-for'];
-    const forwardedIp = Array.isArray(rawForwarded) ? rawForwarded[0] : rawForwarded;
-    const ip = (forwardedIp?.split(',')[0]?.trim()) || req.ip || req.socket?.remoteAddress || '127.0.0.1';
+    const forwardedIp = Array.isArray(rawForwarded)
+      ? rawForwarded[0]
+      : rawForwarded;
+    const ip =
+      forwardedIp?.split(',')[0]?.trim() ||
+      req.ip ||
+      req.socket?.remoteAddress ||
+      '127.0.0.1';
     return this.loginUseCase.execute({
       email: body.email,
       password: body.password,

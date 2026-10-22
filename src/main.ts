@@ -38,7 +38,9 @@ async function bootstrap() {
   const port = env.PORT;
   await app.listen(port);
   logger.log(`Pliegos API running on http://localhost:${port}`);
-  logger.log(`Scalar API Reference available at http://localhost:${port}/reference`);
+  logger.log(
+    `Scalar API Reference available at http://localhost:${port}/reference`,
+  );
   logger.log(`OpenAPI JSON available at http://localhost:${port}/api-json`);
 }
 

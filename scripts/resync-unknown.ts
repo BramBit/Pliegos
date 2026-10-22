@@ -2,10 +2,16 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { Pool } from 'pg';
-import { SecopAdapter, RawSecopProcess } from '../src/modules/opportunity/infrastructure/adapters/secop/secop.adapter';
+import {
+  SecopAdapter,
+  RawSecopProcess,
+} from '../src/modules/opportunity/infrastructure/adapters/secop/secop.adapter';
 import { PostgresOpportunityRepository } from '../src/modules/opportunity/infrastructure/adapters/persistence/postgres-opportunity.repository';
 import { Opportunity } from '../src/modules/opportunity/domain/entities/opportunity.entity';
-import { asOpportunityId, OpportunityId } from '../src/modules/shared/domain/typed-id';
+import {
+  asOpportunityId,
+  OpportunityId,
+} from '../src/modules/shared/domain/typed-id';
 
 export interface ResyncUnknownResult {
   totalProcessed: number;
@@ -83,7 +89,9 @@ async function main() {
   });
 
   try {
-    console.log('Starting resync of Unknown status opportunities from SECOP...');
+    console.log(
+      'Starting resync of Unknown status opportunities from SECOP...',
+    );
     const result = await resyncUnknownOpportunities(pool, adapter, 100);
 
     console.log(`\nResync complete:`);
@@ -92,7 +100,9 @@ async function main() {
     console.log(`  Still Unknown: ${result.stillUnknown}`);
 
     console.log(`\nHistogram of source_status for still-Unknown rows:`);
-    const entries = Object.entries(result.histogram).sort((a, b) => b[1] - a[1]);
+    const entries = Object.entries(result.histogram).sort(
+      (a, b) => b[1] - a[1],
+    );
     if (entries.length === 0) {
       console.log('  (none - all resolved)');
     } else {
@@ -105,7 +115,10 @@ async function main() {
   }
 }
 
-if (require.main === module || (process.argv[1] && process.argv[1].includes('resync-unknown'))) {
+if (
+  require.main === module ||
+  (process.argv[1] && process.argv[1].includes('resync-unknown'))
+) {
   main().catch((err) => {
     console.error('Resync failed:', err);
     process.exit(1);

@@ -25,7 +25,9 @@ import {
 } from '../recommendation/infrastructure/adapters/queue/bullmq-recommendation-refresh-queue.adapter';
 
 @Module({
-  imports: [BullModule.registerQueue({ name: REFRESH_RECOMMENDATIONS_QUEUE_NAME })],
+  imports: [
+    BullModule.registerQueue({ name: REFRESH_RECOMMENDATIONS_QUEUE_NAME }),
+  ],
   controllers: [ProfileController],
   providers: [
     {
@@ -37,7 +39,10 @@ import {
       provide: RECOMMENDATION_REFRESH_QUEUE_PORT,
       useFactory: (queue: Queue, pool: Pool) =>
         new BullMQRecommendationRefreshQueueAdapter(queue, pool),
-      inject: [getQueueToken(REFRESH_RECOMMENDATIONS_QUEUE_NAME), DATABASE_POOL],
+      inject: [
+        getQueueToken(REFRESH_RECOMMENDATIONS_QUEUE_NAME),
+        DATABASE_POOL,
+      ],
     },
     {
       provide: ConfigureProfileUseCase,
@@ -49,26 +54,34 @@ import {
         const maxProfiles = config.get<number>('MAX_PROFILES_PER_USER') ?? 5;
         return new ConfigureProfileUseCase(repo, refreshQueue, maxProfiles);
       },
-      inject: [PROFILE_REPOSITORY_PORT, RECOMMENDATION_REFRESH_QUEUE_PORT, ConfigService],
+      inject: [
+        PROFILE_REPOSITORY_PORT,
+        RECOMMENDATION_REFRESH_QUEUE_PORT,
+        ConfigService,
+      ],
     },
     {
       provide: GetProfileByIdUseCase,
-      useFactory: (repo: ProfileRepositoryPort) => new GetProfileByIdUseCase(repo),
+      useFactory: (repo: ProfileRepositoryPort) =>
+        new GetProfileByIdUseCase(repo),
       inject: [PROFILE_REPOSITORY_PORT],
     },
     {
       provide: GetProfilesByOwnerUseCase,
-      useFactory: (repo: ProfileRepositoryPort) => new GetProfilesByOwnerUseCase(repo),
+      useFactory: (repo: ProfileRepositoryPort) =>
+        new GetProfilesByOwnerUseCase(repo),
       inject: [PROFILE_REPOSITORY_PORT],
     },
     {
       provide: DeleteProfileUseCase,
-      useFactory: (repo: ProfileRepositoryPort) => new DeleteProfileUseCase(repo),
+      useFactory: (repo: ProfileRepositoryPort) =>
+        new DeleteProfileUseCase(repo),
       inject: [PROFILE_REPOSITORY_PORT],
     },
     {
       provide: ProfileAccessService,
-      useFactory: (repo: ProfileRepositoryPort) => new ProfileAccessService(repo),
+      useFactory: (repo: ProfileRepositoryPort) =>
+        new ProfileAccessService(repo),
       inject: [PROFILE_REPOSITORY_PORT],
     },
   ],

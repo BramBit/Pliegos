@@ -60,9 +60,8 @@ export class RefreshRecommendationsUseCase {
     const textHash = computeProfileQueryHash(profileText);
 
     let profileVector: number[];
-    const cachedEmbedding = await this.recommendationRepository.getProfileEmbedding?.(
-      profile.id,
-    );
+    const cachedEmbedding =
+      await this.recommendationRepository.getProfileEmbedding?.(profile.id);
 
     if (
       cachedEmbedding &&
@@ -97,8 +96,12 @@ export class RefreshRecommendationsUseCase {
       REFRESH_CANDIDATE_POOL_SIZE,
     );
 
-    const existing = await this.recommendationRepository.findByProfile(profile.id);
-    const existingByOpportunity = new Map(existing.map((r) => [r.opportunityId, r]));
+    const existing = await this.recommendationRepository.findByProfile(
+      profile.id,
+    );
+    const existingByOpportunity = new Map(
+      existing.map((r) => [r.opportunityId, r]),
+    );
     const minScore = this.minRecommendationScore ?? getMinRecommendationScore();
 
     const qualifying: Recommendation[] = [];
@@ -110,7 +113,9 @@ export class RefreshRecommendationsUseCase {
 
       const previous = existingByOpportunity.get(opportunity.id);
       const semanticSimilarity =
-        item.cosine !== null ? MatchingService.normalizeCosine(item.cosine) : null;
+        item.cosine !== null
+          ? MatchingService.normalizeCosine(item.cosine)
+          : null;
       const scored = await this.matchingService.score(
         opportunity,
         profile,
@@ -122,7 +127,9 @@ export class RefreshRecommendationsUseCase {
         continue;
       }
 
-      const rec: Recommendation = previous ? { ...scored, feedback: previous.feedback } : scored;
+      const rec: Recommendation = previous
+        ? { ...scored, feedback: previous.feedback }
+        : scored;
       qualifying.push(rec);
     }
 
@@ -140,7 +147,10 @@ export class RefreshRecommendationsUseCase {
 
     let persisted: Recommendation[];
     if (this.recommendationRepository.upsertMany) {
-      persisted = await this.recommendationRepository.upsertMany(profile.id, top50);
+      persisted = await this.recommendationRepository.upsertMany(
+        profile.id,
+        top50,
+      );
     } else {
       for (const rec of top50) {
         await this.recommendationRepository.save(rec);

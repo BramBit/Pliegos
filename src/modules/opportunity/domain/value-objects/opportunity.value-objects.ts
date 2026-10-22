@@ -15,9 +15,9 @@ export interface ContractingEntity {
 
 export interface SourceReference {
   readonly sourceName: 'SECOP';
-  readonly externalId: string;         // id_del_proceso
-  readonly humanReference: string;     // referencia_del_proceso
-  readonly originalUrl: string;        // unwrapped from urlproceso.url
+  readonly externalId: string; // id_del_proceso
+  readonly humanReference: string; // referencia_del_proceso
+  readonly originalUrl: string; // unwrapped from urlproceso.url
 }
 
 export type OpportunityStatus =
@@ -27,7 +27,7 @@ export type OpportunityStatus =
   | 'Closed'
   | 'Awarded'
   | 'Cancelled'
-  | 'Unknown';                         // fallback for unmapped SECOP statuses
+  | 'Unknown'; // fallback for unmapped SECOP statuses
 
 export interface Requirement {
   readonly text: string;
@@ -35,9 +35,10 @@ export interface Requirement {
 }
 
 export interface MatchedFactor {
-  readonly factor: 'semanticSimilarity' | 'categoryMatch' | 'amountFit' | 'locationMatch';
-  readonly score: number;              // 0..1
-  readonly description: string;        // human-readable, e.g. "Coincide con tu categoría de interés"
+  readonly factor:
+    'semanticSimilarity' | 'categoryMatch' | 'amountFit' | 'locationMatch';
+  readonly score: number; // 0..1
+  readonly description: string; // human-readable, e.g. "Coincide con tu categoría de interés"
 }
 
 export interface Explanation {
@@ -67,6 +68,6 @@ export interface Analysis {
   readonly summary: string;
   readonly summaryStatus?: SummaryStatus;
   readonly requirements: Requirement[];
-  readonly embeddingGeneratedAt: Date | null;  // null until the queued analysis job runs
+  readonly embeddingGeneratedAt: Date | null; // null until the queued analysis job runs
   readonly contentHash?: string;
 }

@@ -8,7 +8,10 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { asAlertId } from '../../../shared/domain/typed-id';
-import { ZodValidationPipe, uuidParamSchema } from '../../../shared/infrastructure/http/zod-validation.pipe';
+import {
+  ZodValidationPipe,
+  uuidParamSchema,
+} from '../../../shared/infrastructure/http/zod-validation.pipe';
 import { DomainErrorException } from '../../../shared/infrastructure/http/global-exception.filter';
 import { createAlertNotFoundError } from '../../../shared/domain/errors';
 import {

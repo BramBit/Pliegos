@@ -34,7 +34,8 @@ export const CANONICAL_COLOMBIAN_DEPARTMENTS = [
   'Vichada',
 ] as const;
 
-export type CanonicalDepartment = (typeof CANONICAL_COLOMBIAN_DEPARTMENTS)[number];
+export type CanonicalDepartment =
+  (typeof CANONICAL_COLOMBIAN_DEPARTMENTS)[number];
 
 const normalizeForMatching = (str: string): string =>
   str
@@ -73,7 +74,9 @@ CANONICAL_MAP.set(
 CANONICAL_MAP.set('san andres y providencia', 'San Andrés y Providencia');
 CANONICAL_MAP.set('norte santander', 'Norte de Santander');
 
-export function canonicalizeDepartment(input: string): CanonicalDepartment | null {
+export function canonicalizeDepartment(
+  input: string,
+): CanonicalDepartment | null {
   if (!input || typeof input !== 'string') return null;
   const key = normalizeForMatching(input);
   return CANONICAL_MAP.get(key) ?? null;

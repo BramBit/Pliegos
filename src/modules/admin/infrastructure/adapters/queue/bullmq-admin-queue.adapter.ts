@@ -32,22 +32,30 @@ export class BullMQAdminQueueAdapter implements AdminQueuePort {
 
   async enqueueAlertsRun(): Promise<{ jobId: string }> {
     const jobId = randomUUID();
-    await this.queue.add('admin-alerts-run', {}, {
-      jobId,
-      removeOnComplete: 100,
-      removeOnFail: 500,
-    });
+    await this.queue.add(
+      'admin-alerts-run',
+      {},
+      {
+        jobId,
+        removeOnComplete: 100,
+        removeOnFail: 500,
+      },
+    );
     this.logger.log(`Enqueued admin-alerts-run job ${jobId}`);
     return { jobId };
   }
 
   async enqueueRecommendationsRefresh(): Promise<{ jobId: string }> {
     const jobId = randomUUID();
-    await this.queue.add('admin-recommendations-refresh', {}, {
-      jobId,
-      removeOnComplete: 100,
-      removeOnFail: 500,
-    });
+    await this.queue.add(
+      'admin-recommendations-refresh',
+      {},
+      {
+        jobId,
+        removeOnComplete: 100,
+        removeOnFail: 500,
+      },
+    );
     this.logger.log(`Enqueued admin-recommendations-refresh job ${jobId}`);
     return { jobId };
   }

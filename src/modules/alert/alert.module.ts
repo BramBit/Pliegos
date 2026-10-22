@@ -1,8 +1,14 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { Pool } from 'pg';
 import { DATABASE_POOL } from '../shared/infrastructure/persistence/database.module';
-import { ALERT_REPOSITORY_PORT, AlertRepositoryPort } from './domain/ports/alert.repository.port';
-import { NOTIFICATION_PORT, NotificationPort } from './domain/ports/notification.port';
+import {
+  ALERT_REPOSITORY_PORT,
+  AlertRepositoryPort,
+} from './domain/ports/alert.repository.port';
+import {
+  NOTIFICATION_PORT,
+  NotificationPort,
+} from './domain/ports/notification.port';
 import { PostgresAlertRepository } from './infrastructure/adapters/persistence/postgres-alert.repository';
 import { SmtpEmailAdapter } from './infrastructure/adapters/email/smtp-email.adapter';
 import { ReviewFollowUpUseCase } from './application/use-cases/review-follow-up.use-case';
@@ -61,7 +67,8 @@ import {
         notifPort: NotificationPort,
         profileRepo: ProfileRepositoryPort,
         oppRepo: OpportunityRepositoryPort,
-      ) => new ReviewFollowUpUseCase(alertRepo, notifPort, profileRepo, oppRepo),
+      ) =>
+        new ReviewFollowUpUseCase(alertRepo, notifPort, profileRepo, oppRepo),
       inject: [
         ALERT_REPOSITORY_PORT,
         NOTIFICATION_PORT,
@@ -71,23 +78,37 @@ import {
     },
     {
       provide: ScanDeadlinesUseCase,
-      useFactory: (pool: Pool, alertRepo: AlertRepositoryPort, clock: Clock, env: Env) =>
-        new ScanDeadlinesUseCase(pool, alertRepo, clock, undefined, env.RECOMMEND_DEADLINE_ALERTS),
+      useFactory: (
+        pool: Pool,
+        alertRepo: AlertRepositoryPort,
+        clock: Clock,
+        env: Env,
+      ) =>
+        new ScanDeadlinesUseCase(
+          pool,
+          alertRepo,
+          clock,
+          undefined,
+          env.RECOMMEND_DEADLINE_ALERTS,
+        ),
       inject: [DATABASE_POOL, ALERT_REPOSITORY_PORT, CLOCK_PORT, ENV],
     },
     {
       provide: GetProfileAlertsUseCase,
-      useFactory: (alertRepo: AlertRepositoryPort) => new GetProfileAlertsUseCase(alertRepo),
+      useFactory: (alertRepo: AlertRepositoryPort) =>
+        new GetProfileAlertsUseCase(alertRepo),
       inject: [ALERT_REPOSITORY_PORT],
     },
     {
       provide: MarkAlertReadUseCase,
-      useFactory: (alertRepo: AlertRepositoryPort) => new MarkAlertReadUseCase(alertRepo),
+      useFactory: (alertRepo: AlertRepositoryPort) =>
+        new MarkAlertReadUseCase(alertRepo),
       inject: [ALERT_REPOSITORY_PORT],
     },
     {
       provide: MarkAllAlertsReadUseCase,
-      useFactory: (alertRepo: AlertRepositoryPort) => new MarkAllAlertsReadUseCase(alertRepo),
+      useFactory: (alertRepo: AlertRepositoryPort) =>
+        new MarkAllAlertsReadUseCase(alertRepo),
       inject: [ALERT_REPOSITORY_PORT],
     },
   ],

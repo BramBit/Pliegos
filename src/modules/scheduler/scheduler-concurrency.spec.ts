@@ -1,4 +1,7 @@
-import { SchedulerAdapter, SYNC_OPPORTUNITIES_JOB_NAME } from './scheduler.adapter';
+import {
+  SchedulerAdapter,
+  SYNC_OPPORTUNITIES_JOB_NAME,
+} from './scheduler.adapter';
 import { SyncOpportunitiesUseCase } from '../opportunity/application/use-cases/sync-opportunities.use-case';
 import { ReviewFollowUpUseCase } from '../alert/application/use-cases/review-follow-up.use-case';
 import { PgAdvisoryLock } from '../shared/infrastructure/persistence/pg-advisory-lock';

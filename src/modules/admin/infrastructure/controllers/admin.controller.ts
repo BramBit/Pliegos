@@ -9,10 +9,19 @@ import {
   Inject,
   NotFoundException,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { z } from 'zod';
 import { Roles } from '../../../auth/infrastructure/security/roles.decorator';
-import { ZodValidationPipe, uuidParamSchema } from '../../../shared/infrastructure/http/zod-validation.pipe';
+import {
+  ZodValidationPipe,
+  uuidParamSchema,
+} from '../../../shared/infrastructure/http/zod-validation.pipe';
 import {
   ADMIN_QUEUE_PORT,
   AdminQueuePort,
@@ -50,7 +59,8 @@ export class AdminController {
   @Post('sync')
   @HttpCode(HttpStatus.ACCEPTED)
   @ApiOperation({
-    summary: 'Encolar sincronización operativa de oportunidades desde SECOP II (Solo Admin)',
+    summary:
+      'Encolar sincronización operativa de oportunidades desde SECOP II (Solo Admin)',
     description:
       'Encola un trabajo en segundo plano para sincronizar oportunidades e indexarlas. Responde inmediatamente con 202 Accepted y el jobId asignado.',
   })
@@ -110,7 +120,8 @@ export class AdminController {
   @Post('recommendations/refresh')
   @HttpCode(HttpStatus.ACCEPTED)
   @ApiOperation({
-    summary: 'Encolar refresco masivo de recomendaciones para todos los perfiles (Solo Admin)',
+    summary:
+      'Encolar refresco masivo de recomendaciones para todos los perfiles (Solo Admin)',
     description:
       'Encola trabajos de recomputación de recomendaciones para todos los perfiles registrados. Responde con 202 Accepted y el jobId asignado.',
   })
@@ -193,7 +204,8 @@ export class AdminController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Consultar historial de ejecuciones del pipeline (Solo Admin)',
-    description: 'Retorna las últimas 20 ejecuciones registradas de los procesos del pipeline.',
+    description:
+      'Retorna las últimas 20 ejecuciones registradas de los procesos del pipeline.',
   })
   @ApiResponse({
     status: HttpStatus.OK,

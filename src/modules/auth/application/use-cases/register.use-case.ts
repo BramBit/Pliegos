@@ -30,7 +30,9 @@ export class RegisterUseCase {
     }
 
     if (!input.password || input.password.length < 10) {
-      throw new BadRequestException('Password must be at least 10 characters long');
+      throw new BadRequestException(
+        'Password must be at least 10 characters long',
+      );
     }
 
     const passwordHash = await hashPassword(input.password);

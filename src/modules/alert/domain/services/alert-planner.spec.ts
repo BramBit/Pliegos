@@ -33,7 +33,11 @@ describe('AlertPlanner Domain Service', () => {
       material: true,
     };
 
-    const alerts = AlertPlanner.planAlerts(opportunityId, [statusChange], [watcher1]);
+    const alerts = AlertPlanner.planAlerts(
+      opportunityId,
+      [statusChange],
+      [watcher1],
+    );
 
     expect(alerts).toHaveLength(1);
     expect(alerts[0].profileId).toBe('prof-1');
@@ -72,7 +76,11 @@ describe('AlertPlanner Domain Service', () => {
     const alerts = planAlerts(opportunityId, changes, [watcher1]);
 
     expect(alerts).toHaveLength(3);
-    expect(alerts.map((a) => a.trigger)).toEqual(['Amendment', 'Amendment', 'Amendment']);
+    expect(alerts.map((a) => a.trigger)).toEqual([
+      'Amendment',
+      'Amendment',
+      'Amendment',
+    ]);
     expect(alerts.map((a) => a.changeKey)).toEqual([
       `closingDate:${now.toISOString()}`,
       `amount:${now.toISOString()}`,
@@ -133,8 +141,16 @@ describe('AlertPlanner Domain Service', () => {
       material: true,
     };
 
-    expect(AlertPlanner.planAlerts(opportunityId, [materialChange], [])).toEqual([]);
-    expect(AlertPlanner.planAlerts(opportunityId, [materialChange], [disabledWatcher])).toEqual([]);
+    expect(
+      AlertPlanner.planAlerts(opportunityId, [materialChange], []),
+    ).toEqual([]);
+    expect(
+      AlertPlanner.planAlerts(
+        opportunityId,
+        [materialChange],
+        [disabledWatcher],
+      ),
+    ).toEqual([]);
     expect(AlertPlanner.planAlerts(opportunityId, [], [watcher1])).toEqual([]);
   });
 });

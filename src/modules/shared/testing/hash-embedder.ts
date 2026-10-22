@@ -29,7 +29,9 @@ export class HashEmbedder implements EmbedderPort {
     this.embeddedBatches.push([...texts]);
 
     if (!Array.isArray(texts) || texts.length === 0) {
-      throw new Error('HashEmbedder: cannot generate embeddings for empty input array');
+      throw new Error(
+        'HashEmbedder: cannot generate embeddings for empty input array',
+      );
     }
 
     return texts.map((text) => this.embedSingle(text));
@@ -77,7 +79,7 @@ export class HashEmbedder implements EmbedderPort {
     const fullDigest = createHash('sha256').update(text, 'utf8').digest();
     for (let i = 0; i < this.dimensions; i++) {
       const byte = fullDigest[i % fullDigest.length];
-      vec[i] += ((byte / 255) - 0.5) * 0.01;
+      vec[i] += (byte / 255 - 0.5) * 0.01;
     }
 
     let norm = 0;

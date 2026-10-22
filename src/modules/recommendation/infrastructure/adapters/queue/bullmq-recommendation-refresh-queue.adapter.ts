@@ -25,9 +25,7 @@ export interface IRefreshQueueLike {
 }
 
 @Injectable()
-export class BullMQRecommendationRefreshQueueAdapter
-  implements RecommendationRefreshQueuePort
-{
+export class BullMQRecommendationRefreshQueueAdapter implements RecommendationRefreshQueuePort {
   private readonly logger: LoggerService;
 
   constructor(
@@ -35,7 +33,8 @@ export class BullMQRecommendationRefreshQueueAdapter
     private readonly pool?: Pool,
     logger?: LoggerService,
   ) {
-    this.logger = logger ?? new Logger(BullMQRecommendationRefreshQueueAdapter.name);
+    this.logger =
+      logger ?? new Logger(BullMQRecommendationRefreshQueueAdapter.name);
   }
 
   async enqueueRefresh(profileId: ProfileId): Promise<void> {

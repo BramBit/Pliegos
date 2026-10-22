@@ -11,7 +11,8 @@ export type RegisterFeedbackInput = z.infer<typeof registerFeedbackSchema>;
 
 export class RegisterFeedbackDto {
   @ApiProperty({
-    description: 'Decisión tomada por el contratista respecto a la recomendación',
+    description:
+      'Decisión tomada por el contratista respecto a la recomendación',
     enum: ['Participate', 'Discard'],
     example: 'Participate',
   })

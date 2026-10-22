@@ -54,7 +54,10 @@ export class SchedulerAdapter {
     private readonly env?: Env,
   ) {}
 
-  private async runWithLock(name: string, fn: () => Promise<void>): Promise<void> {
+  private async runWithLock(
+    name: string,
+    fn: () => Promise<void>,
+  ): Promise<void> {
     const lockKey = `cron:${name}`;
     if (!this.advisoryLock) {
       return fn();
@@ -80,7 +83,9 @@ export class SchedulerAdapter {
         try {
           runId = await this.pipelineRunRepository.startRun('sync');
         } catch (err) {
-          this.logger.warn(`Failed to record pipeline run start: ${err instanceof Error ? err.message : String(err)}`);
+          this.logger.warn(
+            `Failed to record pipeline run start: ${err instanceof Error ? err.message : String(err)}`,
+          );
         }
       }
 
@@ -114,7 +119,9 @@ export class SchedulerAdapter {
         }
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : String(err);
-        this.logger.error(`Scheduled sync threw unexpected exception: ${message}`);
+        this.logger.error(
+          `Scheduled sync threw unexpected exception: ${message}`,
+        );
         if (runId && this.pipelineRunRepository) {
           await this.pipelineRunRepository.failRun(runId, message);
         }
@@ -138,7 +145,9 @@ export class SchedulerAdapter {
         try {
           runId = await this.pipelineRunRepository.startRun('alerts');
         } catch (err) {
-          this.logger.warn(`Failed to record pipeline run start: ${err instanceof Error ? err.message : String(err)}`);
+          this.logger.warn(
+            `Failed to record pipeline run start: ${err instanceof Error ? err.message : String(err)}`,
+          );
         }
       }
 
@@ -156,12 +165,17 @@ export class SchedulerAdapter {
         } else {
           this.logger.warn('Scheduled review follow-up failed');
           if (runId && this.pipelineRunRepository) {
-            await this.pipelineRunRepository.failRun(runId, 'Review follow-up failed');
+            await this.pipelineRunRepository.failRun(
+              runId,
+              'Review follow-up failed',
+            );
           }
         }
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : String(err);
-        this.logger.error(`Scheduled review follow-up threw unexpected exception: ${message}`);
+        this.logger.error(
+          `Scheduled review follow-up threw unexpected exception: ${message}`,
+        );
         if (runId && this.pipelineRunRepository) {
           await this.pipelineRunRepository.failRun(runId, message);
         }
@@ -186,7 +200,9 @@ export class SchedulerAdapter {
         try {
           runId = await this.pipelineRunRepository.startRun('deadlines');
         } catch (err) {
-          this.logger.warn(`Failed to record pipeline run start: ${err instanceof Error ? err.message : String(err)}`);
+          this.logger.warn(
+            `Failed to record pipeline run start: ${err instanceof Error ? err.message : String(err)}`,
+          );
         }
       }
 
@@ -194,7 +210,9 @@ export class SchedulerAdapter {
         const result = await this.scanDeadlinesUseCase!.execute();
         if (result.ok) {
           if (result.value.skipped) {
-            this.logger.log(`Scheduled scan deadlines skipped: ${result.value.reason}`);
+            this.logger.log(
+              `Scheduled scan deadlines skipped: ${result.value.reason}`,
+            );
           } else {
             this.logger.log(
               `Scheduled scan deadlines completed: ${result.value.alertsCreated} alerts created`,
@@ -208,14 +226,21 @@ export class SchedulerAdapter {
             });
           }
         } else {
-          this.logger.warn(`Scheduled scan deadlines failed: ${result.error.message}`);
+          this.logger.warn(
+            `Scheduled scan deadlines failed: ${result.error.message}`,
+          );
           if (runId && this.pipelineRunRepository) {
-            await this.pipelineRunRepository.failRun(runId, result.error.message);
+            await this.pipelineRunRepository.failRun(
+              runId,
+              result.error.message,
+            );
           }
         }
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : String(err);
-        this.logger.error(`Scheduled scan deadlines threw unexpected exception: ${message}`);
+        this.logger.error(
+          `Scheduled scan deadlines threw unexpected exception: ${message}`,
+        );
         if (runId && this.pipelineRunRepository) {
           await this.pipelineRunRepository.failRun(runId, message);
         }

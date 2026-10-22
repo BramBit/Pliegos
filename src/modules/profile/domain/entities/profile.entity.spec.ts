@@ -33,7 +33,13 @@ describe('Profile Entity & Value Objects', () => {
   describe('ProfilePreferences VO', () => {
     it('normalizes UNSPSC categoryCodes with normalizeUnspsc and drops invalid placeholders', () => {
       const prefs = createProfilePreferences({
-        categoryCodes: ['V1.43230000', '81111500', 'UNSPECIFIED', 'V1.00000000', ''],
+        categoryCodes: [
+          'V1.43230000',
+          '81111500',
+          'UNSPECIFIED',
+          'V1.00000000',
+          '',
+        ],
         keywords: ['software'],
       });
 
@@ -101,7 +107,10 @@ describe('Profile Entity & Value Objects', () => {
         expect(profile.value.id).toBe('profile-001');
         expect(profile.value.ownerId).toBe('user-001');
         expect(profile.value.capabilities).toHaveLength(2);
-        expect(profile.value.preferences.categoryCodes).toEqual(['43230000', '81111500']);
+        expect(profile.value.preferences.categoryCodes).toEqual([
+          '43230000',
+          '81111500',
+        ]);
         expect(profile.value.preferences.departments).toContain('Bogotá D.C.');
         expect(profile.value.alertsEnabled).toBe(true);
         expect(profile.value.deadlineAlertDays).toBe(3);

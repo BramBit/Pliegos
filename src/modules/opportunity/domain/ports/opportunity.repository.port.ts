@@ -16,7 +16,10 @@ export interface OpportunityRepositoryPort {
   save(opportunity: Opportunity): Promise<void>;
   saveMany(opportunities: Opportunity[]): Promise<void>;
   saveAnalysis(id: OpportunityId, analysis: Analysis): Promise<void>;
-  withAnalysisLock?(id: OpportunityId, work: () => Promise<void>): Promise<void>;
+  withAnalysisLock?(
+    id: OpportunityId,
+    work: () => Promise<void>,
+  ): Promise<void>;
   findById(id: OpportunityId): Promise<Opportunity | null>;
   findByExternalId(externalId: string): Promise<Opportunity | null>;
   findByExternalIds(externalIds: string[]): Promise<Opportunity[]>;
@@ -29,4 +32,6 @@ export interface OpportunityRepositoryPort {
   ): Promise<void>;
 }
 
-export const OPPORTUNITY_REPOSITORY_PORT = Symbol('OPPORTUNITY_REPOSITORY_PORT');
+export const OPPORTUNITY_REPOSITORY_PORT = Symbol(
+  'OPPORTUNITY_REPOSITORY_PORT',
+);

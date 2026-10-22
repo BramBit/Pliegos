@@ -16,7 +16,10 @@ export async function hashPassword(password: string): Promise<string> {
 /**
  * Verifies a plaintext password against a stored salt:hash string using timing-safe comparison.
  */
-export async function verifyPassword(password: string, combinedHash: string): Promise<boolean> {
+export async function verifyPassword(
+  password: string,
+  combinedHash: string,
+): Promise<boolean> {
   const parts = combinedHash.split(':');
   if (parts.length !== 2) return false;
   const [salt, key] = parts;

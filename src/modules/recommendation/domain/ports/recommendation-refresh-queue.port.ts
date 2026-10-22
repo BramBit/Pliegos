@@ -5,4 +5,6 @@ export interface RecommendationRefreshQueuePort {
   enqueueRefreshForAllProfiles?(): Promise<number>;
 }
 
-export const RECOMMENDATION_REFRESH_QUEUE_PORT = Symbol('RECOMMENDATION_REFRESH_QUEUE_PORT');
+export const RECOMMENDATION_REFRESH_QUEUE_PORT = Symbol(
+  'RECOMMENDATION_REFRESH_QUEUE_PORT',
+);

@@ -1,10 +1,23 @@
 import { randomUUID } from 'node:crypto';
-import { Inject, Injectable, Logger, LoggerService, Optional } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  Logger,
+  LoggerService,
+  Optional,
+} from '@nestjs/common';
 import { Pool, PoolClient } from 'pg';
 import { DATABASE_POOL } from '../../../shared/infrastructure/persistence/database.module';
-import { ALERT_REPOSITORY_PORT, AlertRepositoryPort } from '../../domain/ports/alert.repository.port';
+import {
+  ALERT_REPOSITORY_PORT,
+  AlertRepositoryPort,
+} from '../../domain/ports/alert.repository.port';
 import { Alert, createAlert } from '../../domain/entities/alert.entity';
-import { asAlertId, asOpportunityId, asProfileId } from '../../../shared/domain/typed-id';
+import {
+  asAlertId,
+  asOpportunityId,
+  asProfileId,
+} from '../../../shared/domain/typed-id';
 import { Clock, CLOCK_PORT, SystemClock } from '../../../shared/domain/clock';
 import { Result, ok, err } from '../../../shared/domain/result';
 
@@ -117,7 +130,9 @@ export class ScanDeadlinesUseCase {
           ) sub
           WHERE sub.rn <= 5;
         `;
-        const recRes = await client.query<DeadlineRow>(recommendationsQuery, [now]);
+        const recRes = await client.query<DeadlineRow>(recommendationsQuery, [
+          now,
+        ]);
         candidateRows.push(...recRes.rows);
       }
 
@@ -127,7 +142,9 @@ export class ScanDeadlinesUseCase {
 
       for (const row of candidateRows) {
         const closingDate =
-          row.closing_date instanceof Date ? row.closing_date : new Date(row.closing_date);
+          row.closing_date instanceof Date
+            ? row.closing_date
+            : new Date(row.closing_date);
         const changeKey = formatClosingDateKey(closingDate);
         const dedupKey = `${row.profile_id}:${row.opportunity_id}:${changeKey}`;
 
@@ -160,14 +177,20 @@ export class ScanDeadlinesUseCase {
       return ok({ alertsCreated: alertsToCreate.length });
     } catch (error) {
       const errObj = error instanceof Error ? error : new Error(String(error));
-      this.logger.error(`ScanDeadlines failed: ${errObj.message}`, errObj.stack);
+      this.logger.error(
+        `ScanDeadlines failed: ${errObj.message}`,
+        errObj.stack,
+      );
       return err(errObj);
     } finally {
       if (acquired) {
         try {
-          await client.query("SELECT pg_advisory_unlock(hashtext('scan-deadlines'))");
+          await client.query(
+            "SELECT pg_advisory_unlock(hashtext('scan-deadlines'))",
+          );
         } catch (unlockErr) {
-          const msg = unlockErr instanceof Error ? unlockErr.message : String(unlockErr);
+          const msg =
+            unlockErr instanceof Error ? unlockErr.message : String(unlockErr);
           this.logger.error(`ScanDeadlines unlock failed: ${msg}`);
         }
       }

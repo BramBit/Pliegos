@@ -1,6 +1,12 @@
-import { EmbedderPort, TextGeneratorPort } from '../../../recommendation/domain/ports/ai-provider.port';
+import {
+  EmbedderPort,
+  TextGeneratorPort,
+} from '../../../recommendation/domain/ports/ai-provider.port';
 import { AiMetricsService } from './ai-metrics.service';
-import { MeasuredEmbedder, MeasuredTextGenerator } from './measured-ai.decorator';
+import {
+  MeasuredEmbedder,
+  MeasuredTextGenerator,
+} from './measured-ai.decorator';
 
 describe('Measured AI Decorators', () => {
   let metricsService: AiMetricsService;
@@ -22,7 +28,11 @@ describe('Measured AI Decorators', () => {
 
     it('records successful calls with latency, characters and ok status', async () => {
       mockInnerEmbedder.embed.mockResolvedValueOnce([[0.1, 0.2, 0.3]]);
-      const decorator = new MeasuredEmbedder(mockInnerEmbedder, metricsService, 'opportunity-indexing');
+      const decorator = new MeasuredEmbedder(
+        mockInnerEmbedder,
+        metricsService,
+        'opportunity-indexing',
+      );
 
       const result = await decorator.embed(['hello world']);
 
@@ -40,9 +50,15 @@ describe('Measured AI Decorators', () => {
       const error = new Error('Ollama connection timeout');
       mockInnerEmbedder.embed.mockRejectedValueOnce(error);
 
-      const decorator = new MeasuredEmbedder(mockInnerEmbedder, metricsService, 'opportunity-indexing');
+      const decorator = new MeasuredEmbedder(
+        mockInnerEmbedder,
+        metricsService,
+        'opportunity-indexing',
+      );
 
-      await expect(decorator.embed(['test input'])).rejects.toThrow('Ollama connection timeout');
+      await expect(decorator.embed(['test input'])).rejects.toThrow(
+        'Ollama connection timeout',
+      );
 
       const report = metricsService.getReport();
       expect(report.overall.calls).toBe(1);
@@ -63,12 +79,19 @@ describe('Measured AI Decorators', () => {
 
     it('records successful summarization calls in metrics', async () => {
       mockInnerGenerator.summarize.mockResolvedValueOnce('Summary text');
-      const decorator = new MeasuredTextGenerator(mockInnerGenerator, metricsService, 'summarization', 'llama3.1');
+      const decorator = new MeasuredTextGenerator(
+        mockInnerGenerator,
+        metricsService,
+        'summarization',
+        'llama3.1',
+      );
 
       const result = await decorator.summarize('Long opportunity description');
 
       expect(result).toBe('Summary text');
-      expect(mockInnerGenerator.summarize).toHaveBeenCalledWith('Long opportunity description');
+      expect(mockInnerGenerator.summarize).toHaveBeenCalledWith(
+        'Long opportunity description',
+      );
 
       const report = metricsService.getReport();
       expect(report.overall.calls).toBe(1);
@@ -80,9 +103,16 @@ describe('Measured AI Decorators', () => {
       const error = new Error('LLM model out of memory');
       mockInnerGenerator.summarize.mockRejectedValueOnce(error);
 
-      const decorator = new MeasuredTextGenerator(mockInnerGenerator, metricsService, 'summarization', 'llama3.1');
+      const decorator = new MeasuredTextGenerator(
+        mockInnerGenerator,
+        metricsService,
+        'summarization',
+        'llama3.1',
+      );
 
-      await expect(decorator.summarize('Some document')).rejects.toThrow('LLM model out of memory');
+      await expect(decorator.summarize('Some document')).rejects.toThrow(
+        'LLM model out of memory',
+      );
 
       const report = metricsService.getReport();
       expect(report.overall.calls).toBe(1);

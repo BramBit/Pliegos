@@ -4,7 +4,10 @@ import {
   OpportunityId,
 } from '../../../shared/domain/typed-id';
 import { Result, ok, err } from '../../../shared/domain/result';
-import { ValidationError, createValidationError } from '../../../shared/domain/errors';
+import {
+  ValidationError,
+  createValidationError,
+} from '../../../shared/domain/errors';
 
 export type AlertTrigger = 'Amendment' | 'DeadlineApproaching' | 'StatusChange';
 
@@ -34,7 +37,9 @@ export interface CreateAlertProps {
   readonly createdAt?: Date;
 }
 
-export const createAlert = (props: CreateAlertProps): Result<Alert, ValidationError> => {
+export const createAlert = (
+  props: CreateAlertProps,
+): Result<Alert, ValidationError> => {
   const missingFields: string[] = [];
 
   if (!props.id || props.id.trim() === '') {
@@ -73,7 +78,10 @@ export const createAlert = (props: CreateAlertProps): Result<Alert, ValidationEr
   });
 };
 
-export const markAlertDelivered = (alert: Alert, deliveredAt: Date = new Date()): Alert => ({
+export const markAlertDelivered = (
+  alert: Alert,
+  deliveredAt: Date = new Date(),
+): Alert => ({
   ...alert,
   deliveredAt,
 });

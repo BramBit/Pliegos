@@ -16,4 +16,6 @@ export const recommendationFeedQuerySchema = z.object({
   ),
 });
 
-export type RecommendationFeedQuery = z.infer<typeof recommendationFeedQuerySchema>;
+export type RecommendationFeedQuery = z.infer<
+  typeof recommendationFeedQuerySchema
+>;

@@ -1,4 +1,5 @@
-export type PipelineRunKind = 'sync' | 'analysis' | 'refresh' | 'deadlines' | 'alerts';
+export type PipelineRunKind =
+  'sync' | 'analysis' | 'refresh' | 'deadlines' | 'alerts';
 export type PipelineRunStatus = 'running' | 'completed' | 'failed';
 
 export interface PipelineRun {
@@ -14,8 +15,14 @@ export interface PipelineRun {
 export interface PipelineRunRepositoryPort {
   startRun(kind: PipelineRunKind): Promise<string>;
   completeRun(id: string, stats?: Record<string, unknown>): Promise<void>;
-  failRun(id: string, error: string, stats?: Record<string, unknown>): Promise<void>;
+  failRun(
+    id: string,
+    error: string,
+    stats?: Record<string, unknown>,
+  ): Promise<void>;
   findRecent(limit?: number): Promise<PipelineRun[]>;
 }
 
-export const PIPELINE_RUN_REPOSITORY_PORT = Symbol('PIPELINE_RUN_REPOSITORY_PORT');
+export const PIPELINE_RUN_REPOSITORY_PORT = Symbol(
+  'PIPELINE_RUN_REPOSITORY_PORT',
+);
