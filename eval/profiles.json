@@ -18,7 +18,7 @@
       }
     ],
     "preferences": {
-      "categoryCodes": ["V1.81111500", "V1.80111600", "V1.43230000"],
+      "categoryCodes": ["81111500", "80111600", "43230000"],
       "keywords": [
         "software",
         "sistemas de información",
@@ -27,7 +27,7 @@
         "soporte tecnológico"
       ],
       "amountRange": { "min": 50000000, "max": 500000000 },
-      "departments": ["Distrito Capital de Bogotá", "Cundinamarca", "Antioquia"]
+      "departments": ["Bogotá D.C.", "Cundinamarca", "Antioquia"]
     }
   },
   {
@@ -43,7 +43,7 @@
       { "name": "Estudios de suelos y topografía", "yearsOfExperience": 6 }
     ],
     "preferences": {
-      "categoryCodes": ["V1.72141000", "V1.81101500", "V1.72121100"],
+      "categoryCodes": ["72141000", "81101500", "72121100"],
       "keywords": [
         "interventoría",
         "mantenimiento vial",
@@ -74,12 +74,7 @@
       }
     ],
     "preferences": {
-      "categoryCodes": [
-        "V1.80101500",
-        "V1.81141500",
-        "V1.93131600",
-        "V1.50000000"
-      ],
+      "categoryCodes": ["80101500", "81141500", "93131600", "50000000"],
       "keywords": [
         "inocuidad alimentaria",
         "calidad de alimentos",
@@ -91,7 +86,7 @@
       ],
       "amountRange": { "min": 20000000, "max": 400000000 },
       "departments": [
-        "Distrito Capital de Bogotá",
+        "Bogotá D.C.",
         "Cundinamarca",
         "Antioquia",
         "Valle del Cauca"

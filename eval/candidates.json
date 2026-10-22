@@ -599,6 +599,706 @@
       "amount": 108794392,
       "modality": "Concurso de méritos abierto",
       "closingDate": "2026-10-19T05:00:00.000Z"
+    },
+    {
+      "id": "3854a994-a0b4-485c-a57b-bb3db620c831",
+      "title": "Implementar la Fase 2 del Sistema de Información SISDA; correspondiente a la línea de operación de Asistencia Técnica; sobre la solución BPMS institucional -el Sistema de Gestión de Procesos (SGP); de",
+      "description": "Implementar la Fase 2 del Sistema de Información SISDA, correspondiente a la línea de operación de Asistencia Técnica, sobre la solución BPMS institucional -el Sistema de Gestión de Procesos (SGP), de la compañía Analítica S.A.S.-, garantizando su integración con la arquitectura tecnológica de la Fase 1 del SISDA y con el sistema SIGA, e incluyendo la renovación del soporte y mantenimiento de la p",
+      "entity": "SECRETARÍA GENERAL DE LA ALCALDÍA MAYOR DE BOGOTÁ",
+      "department": "Bogotá D.C.",
+      "amount": 0,
+      "modality": "Solicitud de información a los Proveedores",
+      "closingDate": "2026-10-20T00:00:00.000Z"
+    },
+    {
+      "id": "1fae6802-43d1-41c1-b1e4-1d5e22afd0b2",
+      "title": "PRESTACIÓN DEL SERVICIO INTEGRAL DE ALOJAMIENTO; MANTENIMIENTO; ADMINISTRACIÓN; SERVICIOS PROFESIONALES PARA LA MODERNIZACIÓN DEL SISTEMA Y SOPORTE DE LA INFRAESTRUCTURA TECNOLÓGICA DEL SISTEMA DE REC",
+      "description": "PRESTACIÓN DEL SERVICIO INTEGRAL DE ALOJAMIENTO, MANTENIMIENTO, ADMINISTRACIÓN, SERVICIOS PROFESIONALES PARA LA MODERNIZACIÓN DEL SISTEMA Y SOPORTE DE LA INFRAESTRUCTURA TECNOLÓGICA DEL SISTEMA DE RECLUTAMIENTO, EL PORTAL DE ACCESO AL SISTEMA DE DEFINICIÓN DE SITUACIÓN MILITAR, INCORPORACIÓN Y RESERVAS Y TODOS SUS COMPONENTES, CON APALANCAMIENTO 2026 Y VIGENCIA FUTURA 2027",
+      "entity": "COMANDO DE RECLUTAMIENTO Y CONTROL RESERVAS DEL EJERCITO NACIONAL",
+      "department": "Bogotá D.C.",
+      "amount": 4500000000,
+      "modality": "Licitación pública",
+      "closingDate": "2026-11-03T00:00:00.000Z"
+    },
+    {
+      "id": "42400b79-de84-4475-b9fa-bcc4a2f4310c",
+      "title": "MEJORAMIENTO DE LA INFRAESTRUCTURA TECNOLÓGICA GARANTIZANDO EL ALOJAMIENTO WEB EN SERVIDOR DEDICADO INCLUYENDO INSTALACIÓN; CONFIGURACIÓN Y SOPORTE A LAS PLATAFORMAS VIRTUALES Y HERRAMIENTAS TECNOLÓGI",
+      "description": "MEJORAMIENTO DE LA INFRAESTRUCTURA TECNOLÓGICA GARANTIZANDO EL ALOJAMIENTO WEB EN SERVIDOR DEDICADO INCLUYENDO INSTALACIÓN, CONFIGURACIÓN Y SOPORTE A LAS PLATAFORMAS VIRTUALES Y HERRAMIENTAS TECNOLÓGICAS QUE APOYAN LOS PROCESOS MISIONALES DE LA INSTITUCIÓN",
+      "entity": "INSTITUTO UNIVERSITARIO DE LA PAZ",
+      "department": null,
+      "amount": 58500000,
+      "modality": "Selección abreviada subasta inversa",
+      "closingDate": "2026-10-20T00:00:00.000Z"
+    },
+    {
+      "id": "90b3af2e-84f2-4cf4-bc6b-d55724685901",
+      "title": "MEJORAMIENTO DE LA INFRAESTRUCTURA TECNOLÓGICA GARANTIZANDO EL ALOJAMIENTO WEB EN SERVIDOR DEDICADO INCLUYENDO INSTALACIÓN; CONFIGURACIÓN Y SOPORTE A LAS PLATAFORMAS VIRTUALES Y HERRAMIENTAS TECNOLÓGI",
+      "description": "MEJORAMIENTO DE LA INFRAESTRUCTURA TECNOLÓGICA GARANTIZANDO EL ALOJAMIENTO WEB EN SERVIDOR DEDICADO INCLUYENDO INSTALACIÓN, CONFIGURACIÓN Y SOPORTE A LAS PLATAFORMAS VIRTUALES Y HERRAMIENTAS TECNOLÓGICAS QUE APOYAN LOS PROCESOS MISIONALES DE LA INSTITUCIÓN",
+      "entity": "INSTITUTO UNIVERSITARIO DE LA PAZ",
+      "department": null,
+      "amount": 58500000,
+      "modality": "Selección abreviada subasta inversa",
+      "closingDate": "2026-10-20T00:00:00.000Z"
+    },
+    {
+      "id": "243b8b77-3f7f-48d0-9c70-9a8340846798",
+      "title": "AMPLIACIÓN; ACTUALIZACIÓN; DESARROLLO; SOPORTE Y MANTENIMIENTO DEL SISTEMA DE INFORMACIÓN MISIONAL Y DE LA PLATAFORMA BPM AURAQUANTIC.",
+      "description": "AMPLIACIÓN, ACTUALIZACIÓN, DESARROLLO, SOPORTE Y MANTENIMIENTO DEL SISTEMA DE INFORMACIÓN MISIONAL Y DE LA PLATAFORMA BPM AURAQUANTIC.",
+      "entity": "UNIDAD ADMINISTRATIVA ESPECIAL DE LA JUSTICIA PENAL MILITAR Y POLICIAL",
+      "department": "Bogotá D.C.",
+      "amount": 8669243461,
+      "modality": "Licitación pública",
+      "closingDate": "2026-11-12T00:00:00.000Z"
+    },
+    {
+      "id": "47d487d9-7999-4768-8b7e-df093afeb434",
+      "title": "Contrato de suministro; renovación; provisión; transferencia y soporte de licenciamiento de software; soluciones de ciberseguridad; servicios de infraestructura en la nube; suscripciones tecnológicas",
+      "description": "Contrato de suministro, renovación, provisión, transferencia y soporte de licenciamiento de software, soluciones de ciberseguridad, servicios de infraestructura en la nube, suscripciones tecnológicas",
+      "entity": "PERSONERIA DISTRITAL DE MEDELLIN*",
+      "department": "Antioquia",
+      "amount": 504328244,
+      "modality": "Selección abreviada subasta inversa",
+      "closingDate": "2026-10-27T00:00:00.000Z"
+    },
+    {
+      "id": "4dad7f32-8193-4361-a9a1-d926158fba33",
+      "title": "CONTRATAR LA AUTOMATIZACIÓN DEL AGENDAMIENTO DE CITAS; INCLUYENDO EL SOFTWARE; PLATAFORMA TECNOLÓGICA; INFRAESTRUCTURA Y EQUIPO TÉCNICO; OPERATIVO Y DE SOPORTE REQUERIDO PARA SU IMPLEMENTACIÓN Y FUNCI",
+      "description": "CONTRATAR LA AUTOMATIZACIÓN DEL AGENDAMIENTO DE CITAS, INCLUYENDO EL SOFTWARE, PLATAFORMA TECNOLÓGICA, INFRAESTRUCTURA Y EQUIPO TÉCNICO, OPERATIVO Y DE SOPORTE REQUERIDO PARA SU IMPLEMENTACIÓN Y FUNCIONAMIENTO, ASÍ COMO LA GESTIÓN DE LAS RUTAS INTEGRALES DE ATENCIÓN EN SALUD DE LA SUBRED SUR E.S.E",
+      "entity": "SUBRED INTEGRADA DE SERVICIOS DE SALUD SUR E.S.E.**",
+      "department": "Bogotá D.C.",
+      "amount": 0,
+      "modality": "Solicitud de información a los Proveedores",
+      "closingDate": "2026-10-23T00:00:00.000Z"
+    },
+    {
+      "id": "714f4f96-5a9f-4fe3-98e4-ee5103889f34",
+      "title": "ADQUISICIÓN DE UN SERVIDOR Y UN SISTEMA DE ALMACENAMIENTO EN RED (NAS); CON SUS LICENCIAS DE SOFTWARE; INSTALACIÓN; CONFIGURACIÓN; INTEGRACIÓN; SOPORTE TÉCNICO Y GARANTÍA DE CALIDAD; QUE BRINDE A LA E",
+      "description": "ADQUISICIÓN DE UN SERVIDOR Y UN SISTEMA DE ALMACENAMIENTO EN RED (NAS), CON SUS LICENCIAS DE SOFTWARE, INSTALACIÓN, CONFIGURACIÓN, INTEGRACIÓN, SOPORTE TÉCNICO Y GARANTÍA DE CALIDAD, QUE BRINDE A LA EMPRESA FÉRREA REGIONAL (EFR) UNA SOLUCIÓN TECNOLÓGICA UNIFICADA PARA EL RESPALDO Y LA DISPONIBILIDAD DE SU INFORMACIÓN INSTITUCIONAL.",
+      "entity": "EFR SAS",
+      "department": "Bogotá D.C.",
+      "amount": 309548750,
+      "modality": "Selección Abreviada de Menor Cuantía",
+      "closingDate": "2026-10-23T00:00:00.000Z"
+    },
+    {
+      "id": "c41550d6-fa55-457c-aaf3-d780d0df7822",
+      "title": "ADQUISICIÓN DE UN SERVIDOR Y UN SISTEMA DE ALMACENAMIENTO EN RED (NAS); CON SUS LICENCIAS DE SOFTWARE; INSTALACIÓN; CONFIGURACIÓN; INTEGRACIÓN; SOPORTE TÉCNICO Y GARANTÍA DE CALIDAD; QUE BRINDE A LA E",
+      "description": "ADQUISICIÓN DE UN SERVIDOR Y UN SISTEMA DE ALMACENAMIENTO EN RED (NAS), CON SUS LICENCIAS DE SOFTWARE, INSTALACIÓN, CONFIGURACIÓN, INTEGRACIÓN, SOPORTE TÉCNICO Y GARANTÍA DE CALIDAD, QUE BRINDE A LA EMPRESA FÉRREA REGIONAL (EFR) UNA SOLUCIÓN TECNOLÓGICA UNIFICADA PARA EL RESPALDO Y LA DISPONIBILIDAD DE SU INFORMACIÓN INSTITUCIONAL.",
+      "entity": "EFR SAS",
+      "department": "Bogotá D.C.",
+      "amount": 309548750,
+      "modality": "Selección Abreviada de Menor Cuantía",
+      "closingDate": "2026-10-23T00:00:00.000Z"
+    },
+    {
+      "id": "d04ec6ed-b196-42a1-8d19-68c4a28cd3ef",
+      "title": "ADQUIRIR; IMPLEMENTAR; ACTUALIZAR Y SOPORTAR SOLUCIONES DE TECNOLOGÍA Y SERVICIOS PARA CONTINUAR EL PROCESO DE RENOVACIÓN DE LA PLATAFORMA TECNOLÓGICA DE LA SECRETARÍA DISTRITAL DE MOVILIDAD (Presenta",
+      "description": "ADQUIRIR, IMPLEMENTAR, ACTUALIZAR Y SOPORTAR SOLUCIONES DE TECNOLOGÍA Y SERVICIOS PARA CONTINUAR EL PROCESO DE RENOVACIÓN DE LA PLATAFORMA TECNOLÓGICA DE LA SECRETARÍA DISTRITAL DE MOVILIDAD",
+      "entity": "SECRETARÍA DISTRITAL DE MOVILIDAD",
+      "department": "Bogotá D.C.",
+      "amount": 13183738878,
+      "modality": "Selección abreviada subasta inversa",
+      "closingDate": "2026-10-23T00:00:00.000Z"
+    },
+    {
+      "id": "f350ae52-322b-42bc-a47a-f3c5b67d6b90",
+      "title": "Contratar la administración; monitoreo; soporte técnico y afinamiento de la Plataforma Tecnológica soportada por bases de datos oracle y actualización de Licencimieno Linux; red Hat; IBM guardium",
+      "description": "TIC18   Contratar   la   administración, monitoreo, soporte   técnico   y afinamiento de la plataforma tecnológica soportada por bases de datos ORACLE, SQL SERVER, POSTGRES   Y SUS   ESQUEMAS DE   BACKUP, WEBLOGIC, IIS, replicación   de   base   de   datos   y   actualización   del LICENCIAMIENTO LINUX Y RED HAT, IBM GUARDIUM, manejadas en nube y en onpremise para TRANSMILENIO S.A",
+      "entity": "TRANSMILENIO S.A.",
+      "department": "Bogotá D.C.",
+      "amount": 898574038,
+      "modality": "Selección Abreviada de Menor Cuantía",
+      "closingDate": "2026-11-19T00:00:00.000Z"
+    },
+    {
+      "id": "24acad45-00a8-4003-80ed-cfdd64be77f8",
+      "title": "RENOVACIÓN DE LA EXTENSIÓN DE GARANTÍA Y SOPORTE (MANTENIMIENTO PREVENTIVO Y CORRECTIVO) DE EQUIPOS Y SOFTWARE DEL CENTRO DE PROCESAMIENTO DE DATOS DE LA POLICÍA NACIONAL. LOTE 1 RENOVACIÓN SOPORTE S",
+      "description": "RENOVACIÓN DE LA EXTENSIÓN DE GARANTÍA Y SOPORTE (MANTENIMIENTO PREVENTIVO Y CORRECTIVO) DE EQUIPOS Y SOFTWARE DEL CENTRO DE PROCESAMIENTO DE DATOS DE LA POLICÍA NACIONAL. LOTE 1 RENOVACIÓN SOPORTE SERVIDORES CISCO Y COMPONENTE CENTRO DE PROCESAMIENTO DE DATOS. LOTE 2  RENOVACIÓN SOPORTE SERVIDORES HPE SYNERGY 660 GEN 10 y LIBRERÍAS HPE MSL 3040",
+      "entity": "DILOF",
+      "department": "Bogotá D.C.",
+      "amount": 3781208300,
+      "modality": "Selección abreviada subasta inversa",
+      "closingDate": "2026-10-22T00:00:00.000Z"
+    },
+    {
+      "id": "339a3db9-6056-4586-b681-d698557c3dae",
+      "title": "SERVICIOS DE MANTENIMIENTO INTEGRAL Y SOPORTE TÉCNICO PARA LA INFRAESTRUCTURA TECNOLÓGICA DEL CENTRO DE PRODUCCIÓN AUDIOVISUAL Y EMISIÓN RADIAL (CER) (Presentación de oferta)",
+      "description": "CONTRATAR SERVICIOS DE MANTENIMIENTO INTEGRAL Y SOPORTE TÉCNICO PARA LA INFRAESTRUCTURA TECNOLÓGICA DEL CENTRO DE PRODUCCIÓN AUDIOVISUAL Y EMISIÓN RADIAL (CER) DE TRANSMILENIO S.A., INCLUYENDO SU ENLACE Y OPERACIÓN CON EL SISTEMA DE AMPLIFICACIÓN DE AUDIO EN ESTACIONES Y PORTALES, ASÍ COMO LA ACTUALIZACIÓN TECNOLÓGICA NECESARIA, GARANTIZANDO LA CONTINUIDAD OPERATIVA Y LA FUNCIONALIDAD DE TODOS LOS",
+      "entity": "TRANSMILENIO S.A.",
+      "department": "Bogotá D.C.",
+      "amount": 2007442000,
+      "modality": "Licitación pública",
+      "closingDate": "2026-11-03T00:00:00.000Z"
+    },
+    {
+      "id": "4a547352-b173-4857-b6eb-d6d29523895e",
+      "title": "SERVICIOS DE MANTENIMIENTO INTEGRAL Y SOPORTE TÉCNICO PARA LA INFRAESTRUCTURA TECNOLÓGICA DEL CENTRO DE PRODUCCIÓN AUDIOVISUAL Y EMISIÓN RADIAL (CER)",
+      "description": "CONTRATAR SERVICIOS DE MANTENIMIENTO INTEGRAL Y SOPORTE TÉCNICO PARA LA INFRAESTRUCTURA TECNOLÓGICA DEL CENTRO DE PRODUCCIÓN AUDIOVISUAL Y EMISIÓN RADIAL (CER) DE TRANSMILENIO S.A., INCLUYENDO SU ENLACE Y OPERACIÓN CON EL SISTEMA DE AMPLIFICACIÓN DE AUDIO EN ESTACIONES Y PORTALES, ASÍ COMO LA ACTUALIZACIÓN TECNOLÓGICA NECESARIA, GARANTIZANDO LA CONTINUIDAD OPERATIVA Y LA FUNCIONALIDAD DE TODOS LOS",
+      "entity": "TRANSMILENIO S.A.",
+      "department": "Bogotá D.C.",
+      "amount": 2007442000,
+      "modality": "Licitación pública",
+      "closingDate": "2026-11-03T00:00:00.000Z"
+    },
+    {
+      "id": "7347bc62-587d-4b81-9ab8-01371410d8d8",
+      "title": "ADQUIRIR E IMPLEMENTAR UN SISTEMA DE PROTECCIÓN EN CIBERSEGURIDAD EDR (Endpoint Detection and Response); PROTECCIÓN DE CORREO; HERRAMIENTAS COLABORATIVAS Y WAF (WEB APPLICATION FIREWALL). PARA FORTALE",
+      "description": "ADQUIRIR E IMPLEMENTAR UN SISTEMA DE PROTECCIÓN EN CIBERSEGURIDAD EDR (Endpoint Detection and Response), PROTECCIÓN DE CORREO, HERRAMIENTAS COLABORATIVAS Y WAF (WEB APPLICATION FIREWALL). PARA FORTALECER LA INFRAESTRUCTURA TECNOLÓGICA DEL INDER MEDELLÍN",
+      "entity": "INSTITUTO DE DEPORTES Y RECREACION DE MEDELLIN",
+      "department": "Antioquia",
+      "amount": 826570000,
+      "modality": "Selección Abreviada de Menor Cuantía",
+      "closingDate": "2026-10-21T00:00:00.000Z"
+    },
+    {
+      "id": "f6f78eb9-0519-4cd3-ba52-641f6aaf5c8a",
+      "title": "ADQUIRIR E IMPLEMENTAR UN SISTEMA DE PROTECCIÓN EN CIBERSEGURIDAD EDR (Endpoint Detection and Response); PROTECCIÓN DE CORREO; HERRAMIENTAS COLABORATIVAS Y WAF (WEB APPLICATION FIREWALL). PARA FORTALE",
+      "description": "ADQUIRIR E IMPLEMENTAR UN SISTEMA DE PROTECCIÓN EN CIBERSEGURIDAD EDR (Endpoint Detection and Response), PROTECCIÓN DE CORREO, HERRAMIENTAS COLABORATIVAS Y WAF (WEB APPLICATION FIREWALL). PARA FORTALECER LA INFRAESTRUCTURA TECNOLÓGICA DEL INDER MEDELLÍN",
+      "entity": "INSTITUTO DE DEPORTES Y RECREACION DE MEDELLIN",
+      "department": "Antioquia",
+      "amount": 826570000,
+      "modality": "Selección Abreviada de Menor Cuantía",
+      "closingDate": "2026-10-21T00:00:00.000Z"
+    },
+    {
+      "id": "1c043821-50da-49f3-9c86-e4d22e7b652b",
+      "title": "Contratar el diseño; desarrollo; implementación; administración tecnológica; soporte; mantenimiento y evolución del Sistema Integral de Gestión de Bienestar Universitario de la Institución Universitar",
+      "description": "Contratar el diseño, desarrollo, implementación, administración tecnológica, soporte, mantenimiento y evolución del Sistema Integral de Gestión de Bienestar Universitario de la Institución Universitaria Oriente de Caldas UNIOC.",
+      "entity": "Institución Universitaria Oriente de Caldas - UNIOC",
+      "department": "Caldas",
+      "amount": 25000000,
+      "modality": "Mínima cuantía",
+      "closingDate": "2026-10-23T00:00:00.000Z"
+    },
+    {
+      "id": "5ff882f2-42d9-486b-bbe0-fd681c849c3b",
+      "title": "Adquisición de licenciamiento  y renovación del servicio de soporte de la suite de mesa de servicios de TI (CA); que incluye soporte especializado; para el Ministerio de Ciencia; Tecnología e Innovaci",
+      "description": "Adquisición de licenciamiento  y renovación del servicio de soporte de la suite de mesa de servicios de TI (CA), que incluye soporte especializado, para el Ministerio de Ciencia, Tecnología e Innovación - MINCIENCIAS",
+      "entity": "MINCIENCIAS",
+      "department": "Bogotá D.C.",
+      "amount": 0,
+      "modality": "Solicitud de información a los Proveedores",
+      "closingDate": "2026-10-20T00:00:00.000Z"
+    },
+    {
+      "id": "7aa70938-e53f-4a81-ba97-5acf67ec2a7b",
+      "title": "HIPERCONVERGENCIA",
+      "description": "1400050  RENOVAR EL LICENCIAMIENTO, CONTRATAR EL SOPORTE TÉCNICO Y ADQUIRIR INFRAESTRUCTURA HIPERCONVERGENTE, CON EL FIN DE GARANTIZAR LA CONTINUIDAD OPERATIVA DE LOS SERVICIOS TECNOLÓGICOS Y LOS SISTEMAS DE INFORMACIÓN DEL MINISTERIO DE TECNOLOGÍAS DE LA INFORMACIÓN Y LAS COMUNICACIONES.",
+      "entity": "FONDO UNICO DE TECNOLOGÍAS DE LA INFORMACIÓN Y LAS COMUNICACIONES",
+      "department": "Bogotá D.C.",
+      "amount": 6857612341,
+      "modality": "Selección abreviada subasta inversa",
+      "closingDate": "2026-10-22T00:00:00.000Z"
+    },
+    {
+      "id": "994c5318-41ea-4ce8-8be5-8a174097130b",
+      "title": "PRESTAR EL SERVICIO DE SOFTWARE PLATAFORMA DE SAAS PARA EL SISTEMA DE GESTION Y ADMINISTRACION DE LAS INSPECCIONES REALIZADAS POR LA SECRETARIA DE SALUD Y SEGURIDAD SOCIAL EN LA DIRECCION DE SALUD PUB",
+      "description": "PRESTAR EL SERVICIO DE SOFTWARE PLATAFORMA DE SAAS PARA EL\nSISTEMA DE GESTION Y ADMINISTRACION DE LAS INSPECCIONES REALIZADAS POR LA\nSECRETARIA DE SALUD Y SEGURIDAD SOCIAL EN LA DIRECCION DE SALUD PUBLICA DEL\nMUNICIPIO DE DOSQUEBRADAS",
+      "entity": "ALCALDIA MUNICIPIO DE DOSQUEBRADAS",
+      "department": "Risaralda",
+      "amount": 78683633,
+      "modality": "Mínima cuantía",
+      "closingDate": "2026-10-20T00:00:00.000Z"
+    },
+    {
+      "id": "9f171c43-478a-4034-8b78-0afe0c6f116e",
+      "title": "MANTENIMIENTO PREVENTIVO Y CORRECTIVO DE LOS SISTEMAS DE AIRES ACONDICIONADOS; SISTEMA DE DETECCIÓN Y EXTINCIÓN DE INCENDIOS; UPS; GENERADORES; SISTEMA DE BOMBAS Y SUBESTACIÓN DEL DATACENTER DE LA FAC",
+      "description": "MANTENIMIENTO PREVENTIVO Y CORRECTIVO DE LOS SISTEMAS DE AIRES\nACONDICIONADOS, SISTEMA DE DETECCIÓN Y EXTINCIÓN DE INCENDIOS, UPS,\nGENERADORES, SISTEMA DE BOMBAS Y SUBESTACIÓN DEL DATACENTER DE LA FAC\nDE ACUERDO CON ANEXO TÉCNICO",
+      "entity": "FUERZA AEROESPACIAL COLOMBIANA",
+      "department": "Bogotá D.C.",
+      "amount": 882000000,
+      "modality": "Selección Abreviada de Menor Cuantía",
+      "closingDate": "2026-11-04T00:00:00.000Z"
+    },
+    {
+      "id": "a45a4b8e-cf03-4a28-a6f9-d6af2a337ae5",
+      "title": "ADQUIRIR VEHÍCULOS  Y SISTEMA DE AERONAVES NO TRIPULADAS (SIART); JUNTO CON LOS BIENES; EQUIPOS; ACCESORIOS; SOFTWARE Y SERVICIOS NECESARIOS PARA SU OPERACIÓN Y SOPORTE TÉCNICO; DESTINADOS AL",
+      "description": "ADQUIRIR VEHÍCULOS Y SISTEMA DE AERONAVES NO TRIPULADAS (SIART), JUNTO CON LOS BIENES, EQUIPOS, ACCESORIOS, SOFTWARE Y SERVICIOS NECESARIOS PARA SU OPERACIÓN Y SOPORTE TÉCNICO, DESTINADOS AL FORTALECIMIENTO DE LA SEGURIDAD Y LA CONVIVENCIA CIUDADANA EN EL MUNICIPIO DE DOSQUEBRADAS",
+      "entity": "ALCALDIA MUNICIPIO DE DOSQUEBRADAS",
+      "department": "Risaralda",
+      "amount": 1700000000,
+      "modality": "Licitación pública",
+      "closingDate": "2026-10-28T00:00:00.000Z"
+    },
+    {
+      "id": "cbf4dfcd-09a1-495e-8a35-a3ac36314053",
+      "title": "Contratar las mejoras y nuevas funcionalidades; soporte técnico especializado mantenimiento y actualización sistemas SIAPO",
+      "description": "TIC29 Contratar las mejoras y nuevas funcionalidades, así como el soporte técnico especializado, mantenimiento y actualización de los sistemas de información de naturaleza Transaccional-SIAPO y Sistema Estadístico   para fortalecer sus funcionalidades acordes a las nuevas necesidades de la Entidad y de los usuarios.",
+      "entity": "TRANSMILENIO S.A.",
+      "department": "Bogotá D.C.",
+      "amount": 323594000,
+      "modality": "Selección Abreviada de Menor Cuantía",
+      "closingDate": "2026-11-13T00:00:00.000Z"
+    },
+    {
+      "id": "da4e12b7-035e-4921-bad6-159b251b1a91",
+      "title": "DISEÑO; DESARROLLO; SOPORTE Y MANTENIMIENTO DEL SISTEMA INTEGRADO DE COMANDO Y CONTROL DE AVIACIÓN (SICCA); Y LA ADQUISICIÓN DE SERVICIOS DE DATOS PARA NOTIFICACIONES SMS DEL SISTEMA; PARA EJECUTAR E",
+      "description": "DISEÑO, DESARROLLO, SOPORTE Y MANTENIMIENTO DEL SISTEMA INTEGRADO DE COMANDO Y CONTROL DE AVIACIÓN (SICCA), Y LA ADQUISICIÓN DE SERVICIOS DE DATOS PARA NOTIFICACIONES SMS DEL SISTEMA, PARA EJECUTAR EN LA VIGENCIA 2026",
+      "entity": "CENTRAL ADMINISTRATIVA Y CONTABLE TELEMATICA",
+      "department": "Cundinamarca",
+      "amount": 173455833,
+      "modality": "Mínima cuantía",
+      "closingDate": "2026-10-21T00:00:00.000Z"
+    },
+    {
+      "id": "e733154d-1362-40e4-9ea4-f328a51170d1",
+      "title": "Contratar los servicios de Centro de Operaciones de Seguridad; administración; protección; pruebas y gestión de incidentes de seguridad relacionadas con la plataforma tecnológica que soportan las acti",
+      "description": "Contratar los servicios de Centro de Operaciones de Seguridad, administración, protección, pruebas y gestión de incidentes de seguridad relacionadas con la plataforma tecnológica que soportan las actividades misionales y de Fiscalización de la Agencia Nacional de Minería ANM. Líneas PAA: 613000126 y 130005426",
+      "entity": "ANM",
+      "department": "Bogotá D.C.",
+      "amount": 1886799596,
+      "modality": "Selección abreviada subasta inversa",
+      "closingDate": "2026-10-20T00:00:00.000Z"
+    },
+    {
+      "id": "06bb5b3d-4309-41d1-924a-1f10cdc865b7",
+      "title": "ADQUISICIÓN Y RENOVACIÓN DE GARANTÍAS SOBRE LA PLATAFORMA E INFRAESTRUCTURA TECNOLÓGICA EXISTENTE EN LAS SEDES DEL MINISTERIO DE SALUD Y PROTECCIÓN SOCIAL PARA ASEGURAR LA CONTINUIDAD OPERATIVA Y LOS",
+      "description": "ADQUISICIÓN Y RENOVACIÓN DE GARANTÍAS SOBRE LA PLATAFORMA E INFRAESTRUCTURA TECNOLÓGICA EXISTENTE EN LAS SEDES DEL MINISTERIO DE SALUD Y PROTECCIÓN SOCIAL PARA ASEGURAR LA CONTINUIDAD OPERATIVA Y LOS SERVICIOS DE INFORMACIÓN ACTUALIZADOS",
+      "entity": "MINISTERIO DE SALUD Y PROTECCIÓN SOCIAL",
+      "department": "Bogotá D.C.",
+      "amount": 9057430848,
+      "modality": "Selección abreviada subasta inversa",
+      "closingDate": "2026-10-23T00:00:00.000Z"
+    },
+    {
+      "id": "10f0f81a-70f1-4c9f-9e94-5805afb09153",
+      "title": "4440013 Contratar el servicio de vigilancia y seguridad privada en el edificio Murillo Toro; sede central del Ministerio de Tecnologías de la Información y las Comunicaciones y en los bienes inmuebles",
+      "description": "4440013 Contratar el servicio de vigilancia y seguridad privada en el edificio Murillo Toro, sede central del Ministerio de Tecnologías de la Información y las Comunicaciones y en los bienes inmuebles que la entidad lo requiera a nivel nacional, con arrendamiento de medios tecnológicos para bienes inmuebles y muebles de propiedad del Mintic.",
+      "entity": "FONDO UNICO DE TECNOLOGÍAS DE LA INFORMACIÓN Y LAS COMUNICACIONES",
+      "department": "Bogotá D.C.",
+      "amount": 11754349281,
+      "modality": "Licitación pública",
+      "closingDate": "2026-10-20T00:00:00.000Z"
+    },
+    {
+      "id": "1a0751a3-7632-4cea-83f8-5d5262070367",
+      "title": "ADQUIRIR; INSTALAR Y PONER EN FUNCIONAMIENTO UN SISTEMA DE MODELAMIENTO Y SIMULACIÓN DE SISTEMAS ENERGÉTICOS PARA FORTALECER LOS PROCESOS ACADÉMICOS Y FORMATIVOS DE LOS ESTUDIANTES DE LAS UNIDADES TEC",
+      "description": "ADQUIRIR, INSTALAR Y PONER EN FUNCIONAMIENTO UN SISTEMA DE MODELAMIENTO Y SIMULACIÓN DE SISTEMAS ENERGÉTICOS PARA FORTALECER LOS PROCESOS ACADÉMICOS Y FORMATIVOS DE LOS ESTUDIANTES DE LAS UNIDADES TECNOLÓGICAS DE SANTANDER, CAMPUS BARRANCABERMEJA, EN DESARROLLO DEL PROYECTO N.º 39-2026",
+      "entity": "UNIDADES TECNOLOGICAS DE SANTANDER",
+      "department": "Santander",
+      "amount": 998500000,
+      "modality": "Licitación pública",
+      "closingDate": "2026-10-23T00:00:00.000Z"
+    },
+    {
+      "id": "218274b9-4197-4fbc-8f4d-ef946c18a97c",
+      "title": "ACTUALIZACIÓN Y SOPORTE DEL SOFTWARE DE GESTIÓN DE VULNERABILIDADES",
+      "description": "Adquirir la actualización y soporte del software de gestión de vulnerabilidades de la infraestructura tecnológica de la Secretaría General de la Alcaldía Mayor de Bogotá D.C",
+      "entity": "SECRETARÍA GENERAL DE LA ALCALDÍA MAYOR DE BOGOTÁ",
+      "department": "Bogotá D.C.",
+      "amount": 208994388,
+      "modality": "Selección abreviada subasta inversa",
+      "closingDate": "2026-10-21T00:00:00.000Z"
+    },
+    {
+      "id": "fbb03088-26cf-42ee-995f-1e2e86b17374",
+      "title": "EQUIPOS TECNOLÓGICOS; SOFTWARE Y MOBILIARIO",
+      "description": "CONTRATAR EL SUMINISTRO DE EQUIPOS TECNOLÓGICOS, SOFTWARE Y MOBILIARIO INSTITUCIONAL, DESTINADOS AL FORTALECIMIENTO Y MODERNIZACIÓN DE LA INFRAESTRUCTURA TECNOLÓGICA Y DE LOS ESPACIOS ACADEMICOS EN EL MARCO DEL PLAN INTEGRAL DE COBERTURA CONVENCIONAL PIC CO Y DEMÁS PROGRAMAS DE LA INSTITUCIÓN UNIVERSITARIA DE EL ESPINAL",
+      "entity": "INSTITUCIÓN UNIVERSITARIA DE EL ESPINAL - UNIESPINAL",
+      "department": "Tolima",
+      "amount": 1329694100,
+      "modality": "Selección abreviada subasta inversa",
+      "closingDate": "2026-10-29T00:00:00.000Z"
+    },
+    {
+      "id": "a03840d8-978e-4a14-ab63-5c8bc4677337",
+      "title": "(INFO-059) ADQUISICIÓN DE LICENCIAS Y SUSCRIPCIONES DE SOFTWARE",
+      "description": "(INFO-059) ADQUISICIÓN DE LICENCIAS Y SUSCRIPCIONES DE SOFTWARE",
+      "entity": "INSTITUTO DE HIDROLOGIA, METEOROLOGÍA Y ESTUDIOS AMBIENTALES",
+      "department": "Bogotá D.C.",
+      "amount": 134194100,
+      "modality": "Selección abreviada subasta inversa",
+      "closingDate": "2026-10-30T00:00:00.000Z"
+    },
+    {
+      "id": "36821748-3992-41e6-8c4d-a6fa174f3712",
+      "title": "SOFTWARE COMPRAS PUBLICAS",
+      "description": "ADQUIRIR LICENCIA, USO, INSTALACIÓN, PARAMETRIZACIÓN, CAPACITACIÓN Y SOPORTE TÉCNICO DE UN SOFTWARE PARA LA CENTRALIZACIÒN DE LA OFERTA DE PRODUCTORES LOCALES EN EL MARCO DE LA POLÍTICA DE COMPRAS PÙBLICAS LEY 2046 DE 2020, SU DECRETO REGLAMETARIO NÚMERO 248 DE 2021, LA DIRECTIVA PRESIDENCIAL 09 DE 2024, EL PLAN DE DESARROLLO DEPARTAMENTAL 2024-2027 Y LAS NORMAS QUE SUSTITUYAN O MODIFIQUEN LAS ANT",
+      "entity": "GOBERNACION DE CALDAS",
+      "department": "Caldas",
+      "amount": 99666666,
+      "modality": "Mínima cuantía",
+      "closingDate": "2026-10-22T00:00:00.000Z"
+    },
+    {
+      "id": "ebe69f2d-7831-4f33-a60a-53612fd4fa02",
+      "title": "ITC-SIP-024-2026",
+      "description": "Adquirir licencias y suscripciones de software especializado para el desarrollo, producción y publicación de contenidos digitales, recursos educativos interactivos y material audiovisual, así como para el análisis de datos y el uso de herramientas de inteligencia artificial, con destino a la estrategia de formación B-Learning de la Escuela Tecnológica Instituto Técnico Central.",
+      "entity": "ESCUELA TECNOLÓGICA INSTITUTO TÉCNICO CENTRAL",
+      "department": "Bogotá D.C.",
+      "amount": 0,
+      "modality": "Solicitud de información a los Proveedores",
+      "closingDate": "2026-10-22T00:00:00.000Z"
+    },
+    {
+      "id": "ebe2e233-1606-4ce3-88b4-1f7b8e36401a",
+      "title": "Solicitud de cotizaciones de licencias",
+      "description": "Solicitud de cotizaciones de licenciasde software para entidad estatal",
+      "entity": "EMPRESA DE DESARROLLO URBANO Y VIVIENDA DE INTERES SOCIAL DE BARRANCABERMEJA",
+      "department": "Santander",
+      "amount": 0,
+      "modality": "Solicitud de información a los Proveedores",
+      "closingDate": "2026-10-20T00:00:00.000Z"
+    },
+    {
+      "id": "a4d3dd8e-42ec-4fba-929c-9ead54762c6f",
+      "title": "RENOVACIÓN DEL SOPORTE Y GARANTÍA PARA SOFTWARE Y EQUIPOS DE MISIÓN CRÍTICA PARA LA INSTITUCIÓN UNIVERSITARIA ITM; DE ACUERDO CON LAS ESPECIFICACIONES TÉCNICAS (Presentación de oferta)",
+      "description": "RENOVACIÓN DEL SOPORTE Y GARANTÍA PARA SOFTWARE Y EQUIPOS DE MISIÓN CRÍTICA PARA LA INSTITUCIÓN UNIVERSITARIA ITM, DE ACUERDO CON LAS ESPECIFICACIONES TÉCNICAS",
+      "entity": "INSTITUCIÓN UNIVERSITARIA ITM",
+      "department": "Antioquia",
+      "amount": 373630677,
+      "modality": "Selección abreviada subasta inversa",
+      "closingDate": "2026-10-20T00:00:00.000Z"
+    },
+    {
+      "id": "2f740763-c7b9-4c72-a3af-daa0a08f62c6",
+      "title": "Licenciamiento de software Microsoft bajo la modalidad OVS-ES (Open Value Subscription) para el Politécnico Colombiano Jaime Isaza Cadavid (Presentación de oferta)",
+      "description": "Licenciamiento de software Microsoft bajo la modalidad OVS-ES (Open Value Subscription) para el Politécnico Colombiano Jaime Isaza Cadavid",
+      "entity": "POLITECNICO COLOMBIANO JAIME ISAZA CADAVID",
+      "department": "Antioquia",
+      "amount": 168510895,
+      "modality": "Selección abreviada subasta inversa",
+      "closingDate": "2026-10-21T00:00:00.000Z"
+    },
+    {
+      "id": "7fbd7226-8cd6-45c8-9300-602bd57577ef",
+      "title": "ADQUISICIÓN DE EQUIPOS DE CÓMPUTO Y DEMÁS ELEMENTOS TECNOLÓGICOS",
+      "description": "ADQUISICIÓN DE EQUIPOS DE CÓMPUTO Y DEMÁS ELEMENTOS TECNOLÓGICOS PARA LOS DIFERENTES PROGRAMAS Y PROYECTOS Y ACTIVIDADES DE LA COMISARIA DE FAMILIA, LA INSPECION DE CONVIVENCIA Y PAZ MUNICIPAL, LA SECRETARIA DE HACIENDA, SECRETARIA LOCAL DE SALUD Y BIENESTAR SOCIAL, SECRETARIA DE PLANEACION E INFRAESTRUCTURA FISICA, SECRETARIA DE EDUCACION, CULTURA Y DEPORTE Y LA SECRETARIA GENERAL DE GOBIERNO Y S",
+      "entity": "ALCALDIA DE SALGAR",
+      "department": "Antioquia",
+      "amount": 152029002,
+      "modality": "Selección abreviada subasta inversa",
+      "closingDate": "2026-10-29T00:00:00.000Z"
+    },
+    {
+      "id": "62a3a555-7847-4ead-8d1a-adba240f4f79",
+      "title": "Adquisición y renovación de licencias de software; necesarias para garantizar la operatividad institucional y el desarrollo de las funciones misionales de la Gobernación de Caldas (Manifestación de in",
+      "description": "",
+      "entity": "GOBERNACION DE CALDAS",
+      "department": "Caldas",
+      "amount": 383294170,
+      "modality": "Selección Abreviada de Menor Cuantía",
+      "closingDate": "2026-10-19T05:00:00.000Z"
+    },
+    {
+      "id": "1a3ad7ea-5c64-4956-a4b3-87e1eaa82cc9",
+      "title": "ADQUIRIR HARDWARE; SOFTWARE Y COMPONENTES TECNOLÓGICOS DE PROCESAMIENTO; ALMACENAMIENTO Y BACKUP PARA EL FORTALECIMIENTO DEL DATA CENTER DEL MINISTERIO DEL DEPORTE",
+      "description": "ADQUIRIR HARDWARE, SOFTWARE Y COMPONENTES TECNOLÓGICOS DE PROCESAMIENTO, ALMACENAMIENTO Y BACKUP PARA EL FORTALECIMIENTO DEL DATA CENTER DEL MINISTERIO DEL DEPORTE",
+      "entity": "MINISTERIO DEL DEPORTE",
+      "department": "Bogotá D.C.",
+      "amount": 1499937219,
+      "modality": "Selección abreviada subasta inversa",
+      "closingDate": "2026-11-06T00:00:00.000Z"
+    },
+    {
+      "id": "30666ac4-df0c-4bfb-85d9-952d436b1324",
+      "title": "ACTUALIZACIÓN Y SOPORTE DEL SOFTWARE DE GESTIÓN DE VULNERABILIDADES (Presentación de oferta)",
+      "description": "Adquirir la actualización y soporte del software de gestión de vulnerabilidades de la infraestructura tecnológica de la Secretaría General de la Alcaldía Mayor de Bogotá D.C",
+      "entity": "SECRETARÍA GENERAL DE LA ALCALDÍA MAYOR DE BOGOTÁ",
+      "department": "Bogotá D.C.",
+      "amount": 208994388,
+      "modality": "Selección abreviada subasta inversa",
+      "closingDate": "2026-10-21T00:00:00.000Z"
+    },
+    {
+      "id": "84834adc-a309-499c-9360-6aa4540254db",
+      "title": "RENOVACIÓN DEL SOPORTE Y GARANTÍA PARA SOFTWARE Y EQUIPOS DE MISIÓN CRÍTICA PARA LA INSTITUCIÓN UNIVERSITARIA ITM; DE ACUERDO CON LAS ESPECIFICACIONES TÉCNICAS",
+      "description": "RENOVACIÓN DEL SOPORTE Y GARANTÍA PARA SOFTWARE Y EQUIPOS DE MISIÓN CRÍTICA PARA LA INSTITUCIÓN UNIVERSITARIA ITM, DE ACUERDO CON LAS ESPECIFICACIONES TÉCNICAS",
+      "entity": "INSTITUCIÓN UNIVERSITARIA ITM",
+      "department": "Antioquia",
+      "amount": 373630677,
+      "modality": "Selección abreviada subasta inversa",
+      "closingDate": "2026-10-20T00:00:00.000Z"
+    },
+    {
+      "id": "76d443cd-7b03-4628-a989-d784cc7e2d54",
+      "title": "ADQUIRIR LICENCIAS DE SOFTWARE ANTIMALWARE DE ULTIMA GENERACION PARA LOS EQUIPOS DE COMPUTO DE LA ALCALDIA DE PEREIRA Y LICENCIA DE PLATAFORMA CLOUD PARA EL MONITOREO DE ALERTAS Y OPERACIONES DE CIBER",
+      "description": "ADQUIRIR LICENCIAS DE SOFTWARE ANTIMALWARE DE ÚLTIMA GENERACIÓN PARA LOS EQUIPOS DE COMPUTO DE LA ALCALDÍA DE PEREIRA Y LICENCIA DE PLATAFORMA CLOUD PARA EL MONITOREO DE ALERTAS Y OPERACIONES DE CIBERSEGURIDAD",
+      "entity": "MUNICIPIO DE PEREIRA- OFICIAL",
+      "department": "Risaralda",
+      "amount": 571333107,
+      "modality": "Selección abreviada subasta inversa",
+      "closingDate": "2026-11-10T00:00:00.000Z"
+    },
+    {
+      "id": "1095007f-74ac-4ae1-ad13-68b8dd3dfbbd",
+      "title": "ADQUISICION DE ELEMENTOS TECNOLÓGICOS; (COMPUTADORES DE ESCRITORIO; PORTATILES Y SOFTWARE DE OFIMATICA) PARA LA DIRECCION DE EDUCACION POLICIAL Y ESCUELAS ADSCRITAS (Presentación de oferta)",
+      "description": "ADQUISICION DE ELEMENTOS TECNOLÓGICOS, (COMPUTADORES DE ESCRITORIO, PORTATILES Y SOFTWARE DE OFIMATICA) PARA LA DIRECCION DE EDUCACION POLICIAL Y ESCUELAS ADSCRITAS.",
+      "entity": "DIEPO",
+      "department": "Bogotá D.C.",
+      "amount": 580650100,
+      "modality": "Selección abreviada subasta inversa",
+      "closingDate": "2026-10-23T00:00:00.000Z"
+    },
+    {
+      "id": "60c5a9de-8a1e-4f00-9277-b8b04608f755",
+      "title": "RENOVACIÓN DEL LICENCIAMIENTO DEL SOFTWARE CST STUDIO SUITE; PARA LA INSTITUCIÓN UNIVERSITARIA ITM; DE CONFORMIDAD CON LAS ESPECIFICACIONES TÉCNICAS",
+      "description": "RENOVACIÓN DEL LICENCIAMIENTO DEL SOFTWARE CST STUDIO SUITE, PARA LA INSTITUCIÓN UNIVERSITARIA ITM, DE CONFORMIDAD CON LAS ESPECIFICACIONES TÉCNICAS.",
+      "entity": "INSTITUCIÓN UNIVERSITARIA ITM",
+      "department": "Antioquia",
+      "amount": 22981454,
+      "modality": "Mínima cuantía",
+      "closingDate": "2026-10-23T00:00:00.000Z"
+    },
+    {
+      "id": "e854b3ef-c0a6-437a-91d8-892c6ba4b8be",
+      "title": "RENOVACIÓN DEL LICENCIAMIENTO DEL SOFTWARE FIMMWAVE PARA LA INSTITUCIÓN UNIVERSITARIA ITM; DE CONFORMIDAD CON LAS ESPECIFICACIONES TÉCNICAS.",
+      "description": "RENOVACIÓN DEL LICENCIAMIENTO DEL SOFTWARE FIMMWAVE PARA LA INSTITUCIÓN UNIVERSITARIA ITM, DE CONFORMIDAD CON LAS ESPECIFICACIONES TÉCNICAS.",
+      "entity": "INSTITUCIÓN UNIVERSITARIA ITM",
+      "department": "Antioquia",
+      "amount": 20226826,
+      "modality": "Mínima cuantía",
+      "closingDate": "2026-10-21T00:00:00.000Z"
+    },
+    {
+      "id": "31f6ea86-6e29-46f6-89b5-0c9f1042a2f9",
+      "title": "PROGRAMA DE CIBERSEGURIDAD - AQUISICIÓN DE LICENCIAS",
+      "description": "Contratar una solución integral de ciberseguridad y fortalecimiento de la infraestructura de red que incluya licenciamiento antivirus para servidores y equipos de usuario final, protección avanzada mediante firewall de aplicaciones web para el CNMH.",
+      "entity": "CENTRO NACIONAL DE MEMORIA  HISTORICA",
+      "department": "Bogotá D.C.",
+      "amount": 387139799,
+      "modality": "Selección abreviada subasta inversa",
+      "closingDate": "2026-11-05T00:00:00.000Z"
+    },
+    {
+      "id": "13a49dfe-ae5c-48f1-bd9a-c2f14f399bd1",
+      "title": "EL DESARROLLO; CONFIGURACIÓN; INSTALACIÓN E IMPLEMENTACIÓN DE LA PAGINA WEB Y MIGRACIÓN DE LA INFORMACIÓN DE LA ESCUELA SUPERIOR DE GUERRA  GENERAL RAFAEL REYES PRIETO",
+      "description": "EL DESARROLLO, CONFIGURACIÓN, INSTALACIÓN E IMPLEMENTACIÓN DE LA PAGINA WEB Y MIGRACIÓN DE LA INFORMACIÓN DE LA ESCUELA SUPERIOR DE GUERRA  GENERAL RAFAEL REYES PRIETO",
+      "entity": "ESCUELA SUPERIOR DE GUERRA",
+      "department": "Bogotá D.C.",
+      "amount": 169000000,
+      "modality": "Mínima cuantía",
+      "closingDate": "2026-10-21T00:00:00.000Z"
+    },
+    {
+      "id": "8776b3e8-e553-429c-8698-f0f85e2d1154",
+      "title": "Licenciamiento de software Microsoft bajo la modalidad OVS-ES (Open Value Subscription) para el Politécnico Colombiano Jaime Isaza Cadavid",
+      "description": "Licenciamiento de software Microsoft bajo la modalidad OVS-ES (Open Value Subscription) para el Politécnico Colombiano Jaime Isaza Cadavid",
+      "entity": "POLITECNICO COLOMBIANO JAIME ISAZA CADAVID",
+      "department": "Antioquia",
+      "amount": 168510895,
+      "modality": "Selección abreviada subasta inversa",
+      "closingDate": "2026-10-21T00:00:00.000Z"
+    },
+    {
+      "id": "7aa6f732-00a3-4b49-a12e-c9efdd9d118e",
+      "title": "ADQUIRIR EQUIPOS DE CÓMPUTO PARA ACTUALIZAR LA INFRAESTRUCTURA TECNOLÓGICA DE LOS CENTROS INTERACTIVOS DEL DEPARTAMENTO. (Presentación de oferta)",
+      "description": "ADQUIRIR EQUIPOS DE CÓMPUTO PARA ACTUALIZAR LA INFRAESTRUCTURA TECNOLÓGICA DE LOS CENTROS INTERACTIVOS DEL DEPARTAMENTO.",
+      "entity": "SECRETARIA DE TRANSFORMACIÓN DIGITAL - GOBERNACIÓN DE CUNDINAMARCA",
+      "department": "Bogotá D.C.",
+      "amount": 1670364312,
+      "modality": "Selección abreviada subasta inversa",
+      "closingDate": "2026-10-22T00:00:00.000Z"
+    },
+    {
+      "id": "bb2bb99e-6060-4659-b0f7-907a1b540347",
+      "title": "ADQUISICIÓN DE EQUIPOS TECNOLÓGICOS; AUDIOVISUALES Y ELECTRÓNICOS EN EL MARCO DE LA CONVOCATORIA INTERNA PARA EL FORTALECIMIENTO DE LA INVESTIGACIÓN; DESARROLLO TECNOLÓGICO; INNOVACIÓN E INVESTIGACIÓN",
+      "description": "ADQUISICIÓN DE EQUIPOS TECNOLÓGICOS, AUDIOVISUALES Y ELECTRÓNICOS EN EL MARCO DE LA CONVOCATORIA INTERNA PARA EL FORTALECIMIENTO DE LA INVESTIGACIÓN, DESARROLLO TECNOLÓGICO, INNOVACIÓN E INVESTIGACIÓN-CREACIÓN DEL INSTITUTO UNIVERSITARIO DE LA PAZ UNIPAZ 2026",
+      "entity": "INSTITUTO UNIVERSITARIO DE LA PAZ",
+      "department": null,
+      "amount": 120447622,
+      "modality": "Selección abreviada subasta inversa",
+      "closingDate": "2026-10-28T00:00:00.000Z"
+    },
+    {
+      "id": "e538ea35-785b-439a-8de6-5f04655b11af",
+      "title": "Soporte técnico; mantenimiento y suministro de soluciones para la infraestructura tecnológica de la Corporación Social de Cundinamarca.",
+      "description": "CONTRATAR LA PRESTACIÓN DE SERVICIOS DE SOPORTE TÉCNICO INTEGRAL Y\nMANTENIMIENTO PREVENTIVO Y CORRECTIVO, ASÍ COMO EL SUMINISTRO,\nINSTALACIÓN, CONFIGURACIÓN, IMPLEMENTACIÓN Y PUESTA EN\nFUNCIONAMIENTO DE EQUIPOS, COMPONENTES, LICENCIAS Y SOLUCIONES\nPARA EL FORTALECIMIENTO, MODERNIZACIÓN Y CONTINUIDAD OPERATIVA DE\nLA INFRAESTRUCTURA TECNOLÓGICA DE LA CORPORACIÓN SOCIAL DE\nCUNDINAMARCA.",
+      "entity": "CORPORACIÓN SOCIAL DE CUNDINAMARCA",
+      "department": "Bogotá D.C.",
+      "amount": 161206244,
+      "modality": "Selección Abreviada de Menor Cuantía",
+      "closingDate": "2026-11-05T00:00:00.000Z"
+    },
+    {
+      "id": "a930186c-1031-4b3a-83cc-c421223478fc",
+      "title": "SERVICIO DE VIGILANCIA",
+      "description": "SERVICIO DE VIGILANCIA ESPECIALIZADA PARA LA PLAZA DE MERCADO DE PROPIEDAD DEL MUNICIPIO DE AGUA DE DIOS",
+      "entity": "MUNICIPIO DE AGUA DE DIOS",
+      "department": "Cundinamarca",
+      "amount": 69000000,
+      "modality": "Selección Abreviada de Menor Cuantía",
+      "closingDate": "2026-10-23T00:00:00.000Z"
+    },
+    {
+      "id": "51f243a5-6070-4496-a63d-49c9486bb53b",
+      "title": "PRESTAR LOS SERVICIOS PARA LA IMPLEMENTACIÓN DE UN PROYECTO INTEGRAL DE CONVIVENCIA CIUDADANA EN LA LOCALIDAD DE CHAPINERO; ORIENTADO AL FORTALECIMIENTO DE CAPACIDADES CIUDADANAS Y COMUNITARIAS PARA L",
+      "description": "PRESTAR LOS SERVICIOS PARA LA IMPLEMENTACIÓN DE UN PROYECTO INTEGRAL DE CONVIVENCIA CIUDADANA EN LA LOCALIDAD DE CHAPINERO, ORIENTADO AL FORTALECIMIENTO DE CAPACIDADES CIUDADANAS Y COMUNITARIAS PARA LA APROPIACIÓN DEL CÓDIGO NACIONAL DE SEGURIDAD Y CONVIVENCIA CIUDADANA Y AL FORTALECIMIENTO DE ACTORES COMUNITARIOS JUVENILES PARA LA PREVENCIÓN Y NO NORMALIZACIÓN DEL ACOSO SEXUAL EN EL ESPACIO PÚBLI",
+      "entity": "ALCALDÍA LOCAL DE CHAPINERO - FONDO DE DESARROLLO LOCAL",
+      "department": "Bogotá D.C.",
+      "amount": 416900000,
+      "modality": "Selección Abreviada de Menor Cuantía",
+      "closingDate": "2026-10-21T00:00:00.000Z"
+    },
+    {
+      "id": "396ba6de-ca04-4837-9087-34618287c6b3",
+      "title": "REALIZAR MEJORAS LOCATIVAS DE LA CASA INDÍGENA DEL RESGUARDO / CABILDO INDÍGENA MUISCA DE FONQUETÁ Y CERCA DE PIEDRA CONSTITUIDO MEDIANTE ACUERDO 315 DE 2013 POR EL INCODER Y UBICADO EN EL MUNICIPIO D",
+      "description": "REALIZAR MEJORAS LOCATIVAS DE LA CASA INDÍGENA DEL RESGUARDO / CABILDO INDÍGENA MUISCA DE FONQUETÁ Y CERCA DE PIEDRA CONSTITUIDO MEDIANTE ACUERDO 315 DE 2013 POR EL INCODER Y UBICADO EN EL MUNICIPIO DE CHÍA, EN CUMPLIMIENTO A LOS PROGRAMAS DE PRESUPUESTO PARTICIPATIVO",
+      "entity": "ALCALDIA MUNICIPAL DE CHIA",
+      "department": "Cundinamarca",
+      "amount": 186262588,
+      "modality": "Selección Abreviada de Menor Cuantía",
+      "closingDate": "2026-10-20T00:00:00.000Z"
+    },
+    {
+      "id": "88b1c7ca-8d0f-46dd-bd51-f118e3d0ece4",
+      "title": "SELECCIONAR AL ACCIONISTA PRIVADO ESTRATÉGICO O A LOS ACCIONISTAS PRIVADOS ESTRATÉGICOS QUE CONCURRIRÁN CON EL MUNICIPIO DE MONTENEGRO A LA CONSTITUCIÓN DE UNA EMPRESA DE SERVICIOS PÚBLICOS MIXTA; DEL",
+      "description": "SELECCIONAR AL ACCIONISTA PRIVADO ESTRATÉGICO O A LOS ACCIONISTAS PRIVADOS ESTRATÉGICOS QUE CONCURRIRÁN CON EL MUNICIPIO DE MONTENEGRO A LA CONSTITUCIÓN DE UNA EMPRESA DE SERVICIOS PÚBLICOS MIXTA, DEL ORDEN MUNICIPAL, BAJO LA FORMA DE SOCIEDAD POR ACCIONES SIMPLIFICADA, DENOMINADA  INTEGRA SERVICIOS S.A.S. E.S.P. , CON PARTICIPACIÓN ACCIONARIA PÚBLICA DEL CINCUENTA Y CINCO POR CIENTO (55 %) Y PRIV",
+      "entity": "Municipio de Montenegro--",
+      "department": "Quindío",
+      "amount": 0,
+      "modality": "Licitación pública",
+      "closingDate": "2026-11-02T00:00:00.000Z"
+    },
+    {
+      "id": "fa9f9720-66e7-4ba4-9e15-eae556b329f1",
+      "title": "Contratar la renovación del licenciamiento y soporte para la plataforma marca Palo Alto de conformidad con las especificaciones técnicas requeridas por la Entidad.",
+      "description": "Contratar la renovación del licenciamiento y soporte para la plataforma marca Palo Alto de conformidad con las especificaciones técnicas requeridas por la Entidad.",
+      "entity": "DAPRE",
+      "department": "Bogotá D.C.",
+      "amount": 648313505,
+      "modality": "Selección abreviada subasta inversa",
+      "closingDate": "2026-11-04T00:00:00.000Z"
+    },
+    {
+      "id": "184c1f35-ed80-44d6-9c58-9640451e1b83",
+      "title": "EL CONTRATISTA SE OBLIGA PARA CON EL MUNICIPIO A PRESTAR LOS SERVICIOS DE MANTENIMIENTO PREVENTIVO Y/O CORRECTIVO DE LA MAQUINARIA PESADA PARA EL MANTENIMIENTO RUTINARIO DE LAS VÍAS RURALES Y URBANAS",
+      "description": "",
+      "entity": "MUNICIPIO DE TIMBIO",
+      "department": "Cauca",
+      "amount": 80000000,
+      "modality": "Selección Abreviada de Menor Cuantía",
+      "closingDate": "2026-10-21T00:00:00.000Z"
+    },
+    {
+      "id": "74698cb0-0f13-41a3-8da6-a0183baa9b95",
+      "title": "PRESTACIÓN DE SERVICIOS AMBULATORIOS Y HOSPITALARIOS EN CARDIOLOGIA; CIRUGIA CARDIOVASCULAR (ABIERTA; MINIMAMENTE INVASIVA Y ENDOVASCULAR) CIRUGIA VASCULAR PERIFERICA DE ALTA COMPLEJIDAD (MINIMAMENTE",
+      "description": "PRESTACIÓN DE SERVICIOS AMBULATORIOS Y HOSPITALARIOS EN CARDIOLOGIA, CIRUGIA CARDIOVASCULAR (ABIERTA, MINIMAMENTE INVASIVA Y ENDOVASCULAR) CIRUGIA VASCULAR PERIFERICA DE ALTA COMPLEJIDAD (MINIMAMENTE INVASIVA Y ENDOVASCULAR) Y NEUROCIRUGIA (ENDOVASCULAR) PARA LOS USUARIOS Y BENEFICIARIOS (POBLACIÓN ADULTA Y PEDIATRICA) DE LA POLICIA NACIONAL QUE PERTENECEN A LA REGIONAL DE ASEGURAMIENTO EN SALUD N",
+      "entity": "REGIONAL DE ASEGURAMIENTO EN SALUD No. 1",
+      "department": "Bogotá D.C.",
+      "amount": 2500000000,
+      "modality": "Selección Abreviada de Menor Cuantía",
+      "closingDate": "2026-10-28T00:00:00.000Z"
+    },
+    {
+      "id": "9471ee4d-4891-40cf-8cb3-8ab58bea9424",
+      "title": "EXPANSIÓN DE LAS REDES DE ALUMBRADO PÚBLICO MEDIANTE EL SUMINISTRO E INSTALACIÓN; CONSTRUCCIÓN Y ADECUACIÓN DE LA INFRAESTRUCTURA ELÉCTRICA EN LOS SECTORES EL CHANCO - CALLE 17 CON CARRERA 1; ENTRADA",
+      "description": "EXPANSIÓN DE LAS REDES DE ALUMBRADO PÚBLICO MEDIANTE EL SUMINISTRO E INSTALACIÓN, CONSTRUCCIÓN Y ADECUACIÓN DE LA INFRAESTRUCTURA ELÉCTRICA EN LOS SECTORES EL CHANCO - CALLE 17 CON CARRERA 1, ENTRADA AL CORREGIMIENTO DE SAN ANTONIO Y ENTRADA AL CORREGIMIENTO DE SAN FRANCISCO - SECTOR EL CEMENTERIO, DEL MUNICIPIO DE TORO, VALLE DEL CAUCA",
+      "entity": "MUNICIPIO DE TORO",
+      "department": "Valle del Cauca",
+      "amount": 199384435,
+      "modality": "Selección Abreviada de Menor Cuantía",
+      "closingDate": "2026-10-26T00:00:00.000Z"
+    },
+    {
+      "id": "01b2f317-22ce-4b57-8384-6c49ec12e5cb",
+      "title": "IMPLEMENTACIÓN DE VEINTICUATRO (24) ESCUELAS DE CAMPO AGROPECUARIAS PARA EL FORTALECIMIENTO DE LAS CAPACIDADES TÉCNICAS Y PRODUCTIVAS DE VEINTICUATRO (24) ORGANIZACIONES AGROPECUARIAS DEL DEPARTAMENTO",
+      "description": "IMPLEMENTACIÓN DE VEINTICUATRO (24) ESCUELAS DE CAMPO AGROPECUARIAS PARA EL FORTALECIMIENTO DE LAS CAPACIDADES TÉCNICAS Y PRODUCTIVAS DE VEINTICUATRO (24) ORGANIZACIONES AGROPECUARIAS DEL DEPARTAMENTO DE CASANARE, INCLUYENDO LA FORMACIÓN TEÓRICO-PRÁCTICA Y LA ENTREGA DE MAQUINARIA, EQUIPOS, HERRAMIENTAS, MATERIALES E INSUMOS AGROPECUARIOS",
+      "entity": "GOBERNACION DEL CASANARE",
+      "department": "Casanare",
+      "amount": 1137171838,
+      "modality": "Selección Abreviada de Menor Cuantía",
+      "closingDate": "2026-11-05T00:00:00.000Z"
+    },
+    {
+      "id": "0aa7fd2c-01eb-4090-a1c9-538e202da5ea",
+      "title": "ADQUIRIR EL PROGRAMA DE SEGUROS PARA AMPARAR LOS INTERESES PATRIMONIALES Y LOS BIENES DE PROPIEDAD; RESPONSABILIDAD Y CUSTODIA DE LA AGENCIA NACIONAL DE SEGURIDAD VIAL; INCLUIDOS AQUELLOS QUE SE ADQUI",
+      "description": "ADQUIRIR EL PROGRAMA DE SEGUROS PARA AMPARAR LOS INTERESES PATRIMONIALES Y LOS BIENES DE PROPIEDAD, RESPONSABILIDAD Y CUSTODIA DE LA AGENCIA NACIONAL DE SEGURIDAD VIAL, INCLUIDOS AQUELLOS QUE SE ADQUIERAN DURANTE LA VIGENCIA-STG-011",
+      "entity": "AGENCIA NACIONAL DE SEGURIDAD VIAL",
+      "department": "Bogotá D.C.",
+      "amount": 813891811,
+      "modality": "Licitación pública",
+      "closingDate": "2026-11-17T00:00:00.000Z"
+    },
+    {
+      "id": "6db47d26-e2a2-4dfc-a37f-d19197996387",
+      "title": "CONTRATO DE PRESTACIÓN DE SERVICIOS DE VIGILANCIA Y SEGURIDAD PRIVADA INCLUYE MEDIOS TECNOLÓGICOS CON DESTINO A SALVAGUARDAR LOS BIENES MUEBLES E INMUEBLES DE LAS INSTITUCIONES EDUCATIVAS OFICIALES DE",
+      "description": "CONTRATO DE PRESTACION DE SERVICIOS DE VIGILANCIA Y SEGURIDAD PRIVADA INCLUYE MEDIOS TECNOLÓGICOS CON DESTINO A SALVAGUARDAR LOS BIENES MUEBLES E INMUEBLES DE LAS INSTITUCIONES EDUCATIVAS OFICIALES DEL MUNICIPIO DE NEIVA - DEPARTAMENTO DEL HUILA",
+      "entity": "MUNICIPIO DE NEIVA",
+      "department": "Huila",
+      "amount": 811106693,
+      "modality": "Selección Abreviada de Menor Cuantía",
+      "closingDate": "2026-10-23T00:00:00.000Z"
+    },
+    {
+      "id": "2946469f-fd7d-4dc5-a72e-942a626026ce",
+      "title": "INTERVENTORÍA (Presentación de oferta)",
+      "description": "REALIZAR LA RECUPERACIÓN GEOMORFOLÓGICA Y DE LA BERMA ALUVIAL EN LOS TRAMOS PRIORIZADOS DEL RÍO MELENDEZ Y RIO LILI, EN EL MARCO DEL PROYECTO 0505",
+      "entity": "CVC",
+      "department": "Valle del Cauca",
+      "amount": 180000000,
+      "modality": "Concurso de méritos abierto",
+      "closingDate": "2026-10-20T00:00:00.000Z"
+    },
+    {
+      "id": "9c704977-c1f8-4fa9-aa56-3c59a621813b",
+      "title": "Contratar servicios integrales de administración; operación; soporte y mantenimiento del SICOM; mediante el arrendamiento de una solución tecnológica en nube privada.",
+      "description": "Contratar servicios integrales de administración, operación, soporte y mantenimiento del SICOM, mediante el arrendamiento de una solución tecnológica en nube privada.",
+      "entity": "MINISTERIO DE MINAS Y ENERGIA",
+      "department": "Distrito Capital de Bogotá",
+      "amount": 0,
+      "modality": "Solicitud de información a los Proveedores",
+      "closingDate": "2026-10-27T00:00:00.000Z"
+    },
+    {
+      "id": "0db50c48-8e51-4a76-8076-8b9bcfbc7712",
+      "title": "INTERVENTORÍA TÉCNICA; ADMINISTRATIVA; FINANCIERO; CONTABLE; Y JURÍDICA DE LA CONSTRUCCIÓN DEL CENTRO VIDA PARA LA ATENCIÓN INTEGRAL DEL ADULTO MAYOR EN EL MUNICIPIO DE RESTREPO; META",
+      "description": "INTERVENTORÍA TÉCNICA, ADMINISTRATIVA, FINANCIERO, CONTABLE, Y JURÍDICA DE LA CONSTRUCCIÓN DEL CENTRO VIDA PARA LA ATENCIÓN INTEGRAL DEL ADULTO MAYOR EN EL MUNICIPIO DE RESTREPO, META",
+      "entity": "AGENCIA PARA LA INFRAESTRUCTURA DEL META",
+      "department": "Meta",
+      "amount": 725481049,
+      "modality": "Concurso de méritos abierto",
+      "closingDate": "2026-10-22T00:00:00.000Z"
+    },
+    {
+      "id": "8b115705-fce5-4013-b7f5-a57f300cbd00",
+      "title": "SASI-04-2026 (Presentación de oferta)",
+      "description": "ADQUIRIR EL LICENCIAMIENTO, IMPLEMENTACIÓN, MANTENIMIENTO Y SOPORTE TÉCNICO DE UNA SOLUCIÓN DE PROTECCIÓN AVANZADA DE ENDPOINTS CON CAPACIDADES EDR/XDR, ORIENTADA A LA DETECCIÓN, PREVENCIÓN, MONITOREO, ANÁLISIS Y RESPUESTA ANTE AMENAZAS DE SEGURIDAD INFORMÁTICA, CON EL FIN DE FORTALECER LA SEGURIDAD DIGITAL, LA CONTINUIDAD OPERATIVA Y LA PROTECCIÓN DE LOS ACTIVOS DE\nINFORMACIÓN INSTITUCIONALES EN ",
+      "entity": "SUPERINTENDENCIA DE LA ECONOMIA SOLIDARIA",
+      "department": "Bogotá D.C.",
+      "amount": 230000000,
+      "modality": "Selección abreviada subasta inversa",
+      "closingDate": "2026-10-28T00:00:00.000Z"
+    },
+    {
+      "id": "2cc64ab7-eec6-4ed2-8676-d1bf9aed58bd",
+      "title": "ITC-CMA-002-2026",
+      "description": "CONSULTORÍA INTEGRAL PARA LA ELABORACIÓN DE ESTUDIOS Y DISEÑOS TÉCNICOS REQUERIDOS PARA LA OBTENCIÓN DE LICENCIAS DE DEMOLICIÓN Y CONSTRUCCIÓN EN CUALQUIERA DE SUS MODALIDADES Y/O LICENCIA DE URBANISMO CON LOS PERMISOS Y APROBACIONES NECESARIOS PARA LA CONSTRUCCIÓN DE LA NUEVA SEDE EN EL PREDIO DE LA CALLE 18 DE LA ESCUELA TECNOLÓGICA INSTITUTO TÉCNICO CENTRAL",
+      "entity": "ESCUELA TECNOLÓGICA INSTITUTO TÉCNICO CENTRAL",
+      "department": "Bogotá D.C.",
+      "amount": 886716029,
+      "modality": "Concurso de méritos abierto",
+      "closingDate": "2026-10-27T00:00:00.000Z"
+    },
+    {
+      "id": "162b076d-b06b-4e7d-8b64-5dfc5a57be97",
+      "title": "CONSTRUCCIÓN DE REDES DE ALCANTARILLADO  SANITARIO Y OBRAS PARA EL MANEJO Y EVACUACIÓN  DE AGUAS SUPERFICIALES EN VARIOS SECTORES DE  MANAGRÚ; CABECERA MUNICIPAL DE EL CANTÓN DEL  SAN PABLO - CHOCÓ",
+      "description": "CONSTRUCCIÓN DE REDES DE ALCANTARILLADO \nSANITARIO Y OBRAS PARA EL MANEJO Y EVACUACIÓN \nDE AGUAS SUPERFICIALES EN VARIOS SECTORES DE \nMANAGRÚ, CABECERA MUNICIPAL DE EL CANTÓN DEL \nSAN PABLO - CHOCÓ",
+      "entity": "EDUP",
+      "department": "Chocó",
+      "amount": 349722492,
+      "modality": "Contratación régimen especial (con ofertas)",
+      "closingDate": "2026-10-20T00:00:00.000Z"
+    },
+    {
+      "id": "ee4c1961-87c3-4783-ac77-ceca42cede66",
+      "title": "IMPLEMENTACIÓN DE ACCIONES PARA LA PROTECCIÓN Y BIENESTAR ANIMAL MEDIANTE EL SUMINISTRO DE VEHÍCULOS MOTO CARGUEROS COMO SUSTITUCIÓN DE VEHÍCULOS DE TRACCIÓN ANIMAL; EN EL MUNICIPIO DE PUERTO ASÍS; PU",
+      "description": "IMPLEMENTACIÓN DE ACCIONES PARA LA PROTECCIÓN Y BIENESTAR ANIMAL MEDIANTE EL SUMINISTRO DE VEHÍCULOS MOTO CARGUEROS COMO SUSTITUCIÓN DE VEHÍCULOS DE TRACCIÓN ANIMAL, EN EL MUNICIPIO DE PUERTO ASÍS, PUTUMAYO",
+      "entity": "MUNICIPIO DE PÚERTO ASIS PUTUMAYO",
+      "department": "Putumayo",
+      "amount": 257850000,
+      "modality": "Selección abreviada subasta inversa",
+      "closingDate": "2026-10-28T00:00:00.000Z"
+    },
+    {
+      "id": "3739ae53-e20c-408e-b485-c0c72f63fc83",
+      "title": "ADQUISICIÓN CÁMARAS FDLS",
+      "description": "ADQUISICIÓN CÁMARAS FDLS",
+      "entity": "ALCALDÍA LOCAL DE SUBA",
+      "department": "Bogotá D.C.",
+      "amount": 0,
+      "modality": "Solicitud de información a los Proveedores",
+      "closingDate": "2026-10-20T00:00:00.000Z"
     }
   ],
   "golden-infra": [
@@ -1201,6 +1901,746 @@
       "amount": 202958000,
       "modality": "Selección abreviada subasta inversa",
       "closingDate": "2026-10-19T05:00:00.000Z"
+    },
+    {
+      "id": "317597d0-20ae-4dd5-a4a4-b57797ab7518",
+      "title": "SUMINISTRO DE MATERIAL DE OBRAS CIVILES; OBRAS ELECTRICAS Y HERRAMIENTAS PARA LA REALIZACION Y EJECUCION DEL PLAN DE MANTENIMIENTO PREVENTIVO Y/O CORRECTIVO DE LA INFRAESTRUCTURA DE LAS DIFERENTES OFI",
+      "description": "SUMINISTRO DE MATERIAL DE OBRAS CIVILES, OBRAS ELECTRICAS Y HERRAMIENTAS PARA LA REALIZACION Y EJECUCION DEL PLAN DE MANTENIMIENTO PREVENTIVO Y/O CORRECTIVO DE LA INFRAESTRUCTURA DE LAS DIFERENTES OFICINAS UBICADAS DENTRO Y FUERA DEL EDIFICIO CENTRAL DE LA ALCALDÍA DISTRITAL DE BARRANQUILLA",
+      "entity": "DISTRITO ESPECIAL INDUSTRIAL Y PORTUARIO DE BARRANQUILLA",
+      "department": "Atlántico",
+      "amount": 1500000000,
+      "modality": "Selección abreviada subasta inversa",
+      "closingDate": "2026-10-26T00:00:00.000Z"
+    },
+    {
+      "id": "4a3cf838-3bea-405b-926e-63a2117c4307",
+      "title": "EJECUCIÓN DE LAS OBRAS PARA LA CONSTRUCCIÓN DE LOS ACCESOS VIALES Y OBRAS COMPLEMENTARIAS DEL PUENTE SOBRE EL CAÑO DENOMINADO CHUPADERO; UBICADO EN LA VEREDA BOTIJERA ALTA SECTOR LA GILEÑA; MUNICIPIO",
+      "description": "EJECUCIÓN DE LAS OBRAS PARA LA CONSTRUCCIÓN DE LOS ACCESOS VIALES Y OBRAS COMPLEMENTARIAS DEL PUENTE SOBRE EL CAÑO DENOMINADO CHUPADERO, UBICADO EN LA VEREDA BOTIJERA ALTA SECTOR LA GILEÑA, MUNICIPIO DE SABANALARGA, DEPARTAMENTO DE CASANARE",
+      "entity": "Alcaldía Municipal de Sabanalarga",
+      "department": "Casanare",
+      "amount": 129874709,
+      "modality": "Selección Abreviada de Menor Cuantía",
+      "closingDate": "2026-10-21T00:00:00.000Z"
+    },
+    {
+      "id": "89b7e031-961f-461d-8d9e-b7dfd19f4c28",
+      "title": "EJECUCIÓN DE LAS OBRAS PARA LA CONSTRUCCIÓN DE LOS ACCESOS VIALES Y OBRAS COMPLEMENTARIAS DEL PUENTE SOBRE EL CAÑO DENOMINADO CHUPADERO; UBICADO EN LA VEREDA BOTIJERA ALTA SECTOR LA GILEÑA; MUNICIPIO",
+      "description": "EJECUCIÓN DE LAS OBRAS PARA LA CONSTRUCCIÓN DE LOS ACCESOS VIALES Y OBRAS COMPLEMENTARIAS DEL PUENTE SOBRE EL CAÑO DENOMINADO CHUPADERO, UBICADO EN LA VEREDA BOTIJERA ALTA SECTOR LA GILEÑA, MUNICIPIO DE SABANALARGA, DEPARTAMENTO DE CASANARE",
+      "entity": "Alcaldía Municipal de Sabanalarga",
+      "department": "Casanare",
+      "amount": 129874709,
+      "modality": "Selección Abreviada de Menor Cuantía",
+      "closingDate": "2026-10-21T00:00:00.000Z"
+    },
+    {
+      "id": "9123960e-6794-4390-9d21-79fd1279025b",
+      "title": "MANTENIMIENTO A LOS EQUIPOS DE RESPALDO DE ENERGÍA Y CLIMATIZACIÓN DEL DATA CENTER Y LA DIRECCIÓN GENERAL DE LA POLICÍA NACIONAL. LOTE 1 -MANTENIMIENTO DE UPS. LOTE 2 MANTENIMIENTO DE PLANTAS ELÉCTR",
+      "description": "MANTENIMIENTO A LOS EQUIPOS DE RESPALDO DE ENERGÍA Y CLIMATIZACIÓN DEL DATA CENTER Y LA DIRECCIÓN GENERAL DE LA POLICÍA NACIONAL. LOTE 1 MANTENIMIENTO DE UPS. LOTE 2 MANTENIMIENTO DE PLANTAS ELÉCTRICAS. LOTE 3 MANTENIMIENTO DE AIRES ACONDICIONADOS. LOTE 4 MANTENIMIENTO DE SISTEMA CONTRAINCENDIOS",
+      "entity": "DILOF",
+      "department": "Bogotá D.C.",
+      "amount": 505000000,
+      "modality": "Selección abreviada subasta inversa",
+      "closingDate": "2026-10-22T00:00:00.000Z"
+    },
+    {
+      "id": "1f61fc48-5703-42a0-9f98-4dcd44a6046e",
+      "title": "CONSTRUCCIÓN DE OBRAS DE PAVIMENTACIÓN EN CONCRETO RÍGIDO EN EL BARRIO 15 DE SEPTIEMBRE DEL MUNICIPIO DE MONTERREY; CASANARE; DISTRIBUIDAS EN DOS 2  LOTES; ASÍ LOTE 1 CONSTRUCCIÓN EN PAVIMENTO HIDRÁUL",
+      "description": "CONSTRUCCIÓN DE OBRAS DE PAVIMENTACIÓN EN CONCRETO RÍGIDO EN EL BARRIO 15 DE SEPTIEMBRE DEL MUNICIPIO DE MONTERREY, CASANARE, DISTRIBUIDAS EN DOS 2  LOTES, ASÍ LOTE 1 CONSTRUCCIÓN EN PAVIMENTO HIDRÁULICO EN LA CALLE 1 Y 1A ENTRE CARRERAS 10A Y 10B DEL MUNICIPIO DE MONTERREY, CASANARE. LOTE 2 PAVIMENTACIÓN EN CONCRETO RÍGIDO EN LA CARRERA 10B ENTRE CALLES 1 Y 2A DEL MUNICIPIO DE MONTERREY, CASANARE",
+      "entity": "MUNICIPIO DE MONTERREY",
+      "department": "Casanare",
+      "amount": 1021182843,
+      "modality": "Licitación pública Obra Publica",
+      "closingDate": "2026-10-26T00:00:00.000Z"
+    },
+    {
+      "id": "129079d2-f80a-49e5-bb0e-cf42e64ea7d8",
+      "title": "CONSTRUCCIÓN DEL PUENTE PEATONAL EL INEM Y SUS OBRAS COMPLEMENTARIAS; EN EL MUNICIPIO DE SOLEDAD Y MANTENIMIENTO DE LA RUTA 2516; EN EL DEPARTAMENTO DEL ATLÁNTICO",
+      "description": "CONSTRUCCIÓN DEL PUENTE PEATONAL EL INEM Y SUS OBRAS COMPLEMENTARIAS, EN EL MUNICIPIO DE SOLEDAD Y MANTENIMIENTO DE LA RUTA 2516, EN EL DEPARTAMENTO DEL ATLÁNTICO",
+      "entity": "INVIAS",
+      "department": "Bogotá D.C.",
+      "amount": 13488000000,
+      "modality": "Licitación pública Obra Publica",
+      "closingDate": "2026-11-13T00:00:00.000Z"
+    },
+    {
+      "id": "244c46a3-9a27-421f-ad9c-52f3baddbfcb",
+      "title": "MANTENIMIENTO; MEJORAMIENTO E INSTALACION DE SEÑALIZACION VIAL VERTICAL DEMARCACION Y OTROS DISPOSITIVOS PARA LA REGULACION DEL TRANSITO PARA EL MEJORAMIENTO DE LA INFRAESTRUCTURA DE SEGURIDAD VIAL EN",
+      "description": "MANTENIMIENTO, MEJORAMIENTO E INSTALACION DE SEÑALIZACION VIAL VERTICAL DEMARCACION Y OTROS DISPOSITIVOS PARA LA REGULACION DEL TRANSITO PARA EL MEJORAMIENTO DE LA INFRAESTRUCTURA DE SEGURIDAD VIAL EN EL MUNICIPIO DE VILLANUEVA CASANARE",
+      "entity": "Alcaldía Municipal de Villanueva Casanare",
+      "department": "Casanare",
+      "amount": 242410337,
+      "modality": "Selección Abreviada de Menor Cuantía",
+      "closingDate": "2026-11-03T00:00:00.000Z"
+    },
+    {
+      "id": "2a275dba-6193-43b1-969e-3ff4b4110ef1",
+      "title": "OBRAS DE CONSTRUCCIÓN; ADECUACIÓN Y MANTENIMIENTO DE CANCHAS EN ARENILLA Y/O SINTÉTICAS; ASÍ COMO LA EJECUCIÓN DE OBRAS COMPLEMENTARIAS EN ESCENARIOS DEPORTIVOS ADMINISTRADOS POR EL INDER MEDELLÍN.",
+      "description": "OBRAS DE CONSTRUCCIÓN, ADECUACIÓN Y MANTENIMIENTO DE CANCHAS EN ARENILLA Y/O SINTÉTICAS, ASÍ COMO LA EJECUCIÓN DE OBRAS COMPLEMENTARIAS EN ESCENARIOS DEPORTIVOS ADMINISTRADOS POR EL INDER MEDELLÍN.",
+      "entity": "INSTITUTO DE DEPORTES Y RECREACION DE MEDELLIN",
+      "department": "Antioquia",
+      "amount": 7952790583,
+      "modality": "Licitación pública Obra Publica",
+      "closingDate": "2026-10-30T00:00:00.000Z"
+    },
+    {
+      "id": "898221e6-4857-4fcf-ab4c-d468a032b9e6",
+      "title": "CONTRATAR EL MANTENIMIENTO PREVENTIVO Y CORRECTIVO A TODO COSTO DEL KIT DE MAQUINARIA AMARILLA; A TODO COSTO VOLQUETAS Y VEHICULOS PARA EL MANTENIMIENTO D E LA RED VIAL DEL MUNICIPIO DE CHAPARRAL",
+      "description": "CONTRATAR EL MANTENIMIENTO PREVENTIVO Y CORRECTIVO A TODO COSTO DEL KIT DE MAQUINARIA AMARILLA, A TODO COSTO VOLQUETAS Y VEHICULOS PARA EL MANTENIMIENTO D E LA RED VIAL DEL MUNICIPIO DE CHAPARRAL",
+      "entity": "ALCALDÍA MUNICIPAL DE CHAPARRAL",
+      "department": "Tolima",
+      "amount": 220000000,
+      "modality": "Selección Abreviada de Menor Cuantía",
+      "closingDate": "2026-10-30T00:00:00.000Z"
+    },
+    {
+      "id": "89f1e4b1-6de7-447a-9b63-3ba04a1ca432",
+      "title": "3116502726_3118502726_A_02_SERVICIOS_MANTENIMIENTO_2026_contratar las obras de mantenimiento; adecuación y reparaciones locativas de las oficinas de la dirección territorial noroccidente del dane; en",
+      "description": "3116502726_3118502726_A_02_SERVICIOS_MANTENIMIENTO_2026_contratar las obras de mantenimiento, adecuación y reparaciones locativas de las oficinas de la dirección territorial noroccidente del dane, en la ciudad de medellín, de acuerdo con las características técnicas determinadas por la entidad,",
+      "entity": "DEPARTAMENTO ADMINISTRATIVO NACIONAL DE ESTADÍSTICA - DIR TER NOROCCIDENTE - (DANE NOROCCIDENTE)",
+      "department": "Antioquia",
+      "amount": 188500000,
+      "modality": "Selección Abreviada de Menor Cuantía",
+      "closingDate": "2026-10-28T00:00:00.000Z"
+    },
+    {
+      "id": "97241a28-2afb-4866-9176-906786bb4a7e",
+      "title": "3116502726_3118502726_A_02_SERVICIOS_MANTENIMIENTO_2026_contratar las obras de mantenimiento; adecuación y reparaciones locativas de las oficinas de la dirección territorial noroccidente del dane; en",
+      "description": "3116502726_3118502726_A_02_SERVICIOS_MANTENIMIENTO_2026_contratar las obras de mantenimiento, adecuación y reparaciones locativas de las oficinas de la dirección territorial noroccidente del dane, en la ciudad de medellín, de acuerdo con las características técnicas determinadas por la entidad,",
+      "entity": "DEPARTAMENTO ADMINISTRATIVO NACIONAL DE ESTADÍSTICA - DIR TER NOROCCIDENTE - (DANE NOROCCIDENTE)",
+      "department": "Antioquia",
+      "amount": 188500000,
+      "modality": "Selección Abreviada de Menor Cuantía",
+      "closingDate": "2026-10-28T00:00:00.000Z"
+    },
+    {
+      "id": "a20c6cf0-39d5-4a85-b779-77fe048fde7e",
+      "title": "OBRAS DE CONSTRUCCIÓN; ADECUACIÓN Y MANTENIMIENTO DE CANCHAS DE FÚTBOL EN ARENILLA Y/O SINTÉTICAS; ASÍ COMO LA EJECUCIÓN DE OBRAS COMPLEMENTARIAS EN ESCENARIOS DEPORTIVOS ADMINISTRADOS POR EL INDER ME",
+      "description": "OBRAS DE CONSTRUCCIÓN, ADECUACIÓN Y MANTENIMIENTO DE CANCHAS DE FÚTBOL EN ARENILLA Y/O SINTÉTICAS, ASÍ COMO LA EJECUCIÓN DE OBRAS COMPLEMENTARIAS EN ESCENARIOS DEPORTIVOS ADMINISTRADOS POR EL INDER MEDELLÍN.",
+      "entity": "INSTITUTO DE DEPORTES Y RECREACION DE MEDELLIN",
+      "department": "Antioquia",
+      "amount": 6740114727,
+      "modality": "Licitación pública Obra Publica",
+      "closingDate": "2026-10-30T00:00:00.000Z"
+    },
+    {
+      "id": "b27e98b2-1de5-4cbd-8cf4-4ce37ba82ed7",
+      "title": "CONTRATAR LA EJECUCIÓN DE LAS OBRAS DE MANTENIMIENTO; MEJORAMIENTO; ADECUACIÓN Y OBRAS COMPLEMENTARIAS EN ESPACIOS DE USO COMUNAL DEL MUNICIPIO DE CHÍA CUNDINAMARCA",
+      "description": "CONTRATAR LA EJECUCIÓN DE LAS OBRAS DE MANTENIMIENTO, MEJORAMIENTO, ADECUACIÓN Y OBRAS COMPLEMENTARIAS EN ESPACIOS DE USO COMUNAL DEL MUNICIPIO DE CHÍA CUNDINAMARCA",
+      "entity": "IDUVI",
+      "department": "Cundinamarca",
+      "amount": 1968619977,
+      "modality": "Licitación pública Obra Publica",
+      "closingDate": "2026-10-30T00:00:00.000Z"
+    },
+    {
+      "id": "c3e7920d-3a57-4ebe-bfcf-25b38ecd70a0",
+      "title": "OBRAS DE CONSTRUCCIÓN; ADECUACIÓN Y MANTENIMIENTO DE CANCHAS DE ARENILLA Y/O SINTÉTICAS DE FÚTBOL Y/O MICROFÚTBOL; ASÍ COMO LA EJECUCIÓN DE OBRAS COMPLEMENTARIAS EN ESCENARIOS DEPORTIVOS ADMINISTRADOS",
+      "description": "OBRAS DE CONSTRUCCIÓN, ADECUACIÓN Y MANTENIMIENTO DE CANCHAS DE ARENILLA Y/O SINTÉTICAS DE FÚTBOL Y/O MICROFÚTBOL, ASÍ COMO LA EJECUCIÓN DE OBRAS COMPLEMENTARIAS EN ESCENARIOS DEPORTIVOS ADMINISTRADOS POR EL INDER MEDELLÍN.",
+      "entity": "INSTITUTO DE DEPORTES Y RECREACION DE MEDELLIN",
+      "department": "Antioquia",
+      "amount": 6702597510,
+      "modality": "Licitación pública Obra Publica",
+      "closingDate": "2026-10-30T00:00:00.000Z"
+    },
+    {
+      "id": "01cec3ba-ce9d-4ec3-8416-c8f4d9d04c25",
+      "title": "CONCURSO DE MERITOS  INTERVENTORIA TECNICA; ADMINISTRATIVA Y FINANCIERA AL CONTRATO DE OBRA RESULTANTE DE LA LICITACION PÚBLICA CUYO OBJETO ES LA  DIAGNÓSTICO Y EJECUCIÓN DE LAS OBRAS DE MANTENIMIENTO",
+      "description": "INTERVENTORIA TECNICA, ADMINISTRATIVA Y FINANCIERA AL CONTRATO DE OBRA RESULTANTE DE LA LICITACION PÚBLICA CUYO OBJETO ES LA  DIAGNÓSTICO Y EJECUCIÓN DE LAS OBRAS DE MANTENIMIENTO Y REFORZAMIENTO ESTRUCTURAL DE LA CUBIERTA, ASÍ COMO LA CONSTRUCCIÓN DE LA CAFETERÍA Y OBRAS COMPLEMENTARIAS, EN LA SEDE DE LA CORPORACIÓN AUTÓNOMA REGIONAL DE LA FRONTERA NORORIENTA CORPONOR MUNICIPIO DE CÚCUTA, DEPARTA",
+      "entity": "CORPORACION AUTONOMA REGIONAL DE LA FRONTERA NORORIENTAL+",
+      "department": "Norte de Santander",
+      "amount": 123612148,
+      "modality": "Concurso de méritos abierto",
+      "closingDate": "2026-11-03T00:00:00.000Z"
+    },
+    {
+      "id": "08d06d7d-26ad-4736-ae5f-0f7b03700051",
+      "title": "MANTENIMIENTO PREVENTIVO Y CORRECTIVO A TODO COSTO DEL PARQUE AUTOMOTOR MULTIMARCAS CARROS Y MOTOCICLETAS AL SERVICIO DE LA POLICÍA NACIONAL: LOTE 1: MANTENIMIENTO PARQUE AUTOMOTOR  CARROS  y LOTE 2",
+      "description": "MANTENIMIENTO PREVENTIVO Y CORRECTIVO A TODO COSTO DEL PARQUE AUTOMOTOR MULTIMARCAS CARROS Y MOTOCICLETAS AL SERVICIO DE LA POLICÍA NACIONAL: LOTE 1: MANTENIMIENTO PARQUE AUTOMOTOR  CARROS  y LOTE 2: MANTENIMIENTO PARQUE AUTOMOTOR  MOTOCICLETAS",
+      "entity": "DEPARTAMENTO DE POLICIA URABA",
+      "department": "Atlántico",
+      "amount": 1039050000,
+      "modality": "Selección Abreviada de Menor Cuantía",
+      "closingDate": "2026-11-11T00:00:00.000Z"
+    },
+    {
+      "id": "280c6166-57f2-4c18-8ff7-f21961669760",
+      "title": "CONTRATAR LA INTERVENCIÓN TÉCNICA PARA EL MEJORAMIENTO DE LAS  CONDICIONES DE MOVILIDAD Y SEGURIDAD VIAL EN CORREDORES ESTRATÉGICOS DE  LA  INFRAESTRUCTURA VIAL URBANA DEL MUNICIPIO DE LÍBANO; TOLIMA;",
+      "description": "CONTRATAR LA INTERVENCIÓN TÉCNICA PARA EL MEJORAMIENTO DE LAS CONDICIONES DE MOVILIDAD Y SEGURIDAD VIAL EN CORREDORES ESTRATÉGICOS DE LA INFRAESTRUCTURA VIAL URBANA DEL MUNICIPIO DE LÍBANO, TOLIMA, CARACTERIZADOS POR PRESENTAR ALTO FLUJO DE VEHÍCULOS DE SERVICIO PÚBLICO DE TRANSPORTE DE PASAJEROS, CIRCULACIÓN COMPARTIDA CON BICICLETAS, VEHÍCULOS DE MOVILIDAD ELÉCTRICA LIVIANA Y DEMÁS ACTORES VIALE",
+      "entity": "ALCALDÍA LIBANO",
+      "department": "Tolima",
+      "amount": 239482144,
+      "modality": "Selección Abreviada de Menor Cuantía",
+      "closingDate": "2026-11-10T00:00:00.000Z"
+    },
+    {
+      "id": "3d419cbb-0a02-4a7b-919a-b9beff04f485",
+      "title": "REALIZAR LAS OBRAS DE MEJORAMIENTO DEL ANILLO VIAL DE VEREDA GONZALES EN EL TRAMO 1 SOBRE LA CARRERA 5B; ENTRE LA CALLE 67N Y LA CALLE 69N; Y DEL TRAMO 2 SOBRE LA CALLE 68N; ENTRE LA CARRERA 5B Y LA C",
+      "description": "REALIZAR LAS OBRAS DE MEJORAMIENTO DEL ANILLO VIAL DE VEREDA GONZÁLEZ EN EL TRAMO 1 SOBRE LA CARRERA 5B ENTRE LA CALLE 67N Y LA CALLE 69N Y DEL TRAMO 2 SOBRE LA CALLE 68N ENTRE LA CARRERA 5B Y LA CARRERA 6 Y SOBRE LA CARRERA 6 ENTRE LA CALLE 68N Y LA CALLE 69N, EN EL MARCO DEL PROYECTO  MEJORAMIENTO VIAL MUNICIPAL DE POPAYÁN",
+      "entity": "ALCALDÍA DE POPAYÁN",
+      "department": "Cauca",
+      "amount": 2787214098,
+      "modality": "Licitación pública Obra Publica",
+      "closingDate": "2026-11-09T00:00:00.000Z"
+    },
+    {
+      "id": "41f9b064-5714-48d2-ae3b-14d555d5a786",
+      "title": "INTERVENTORÍA TÉCNICA; ADMINISTRATIVA; JURÍDICA; FINANCIERA; CONTABLE; AMBIENTAL Y DE CONTROL PRESUPUESTAL",
+      "description": "CONTRATAR LA INTERVENTORÍA TÉCNICA, ADMINISTRATIVA, JURÍDICA, FINANCIERA, CONTABLE, AMBIENTAL Y DE CONTROL PRESUPUESTAL RESULTANTE DEL PROCESO CUYO OBJETO ES  Contratar por el sistema de precios unitarios fijos, sin fórmula de ajuste, las obras civiles para ejecutar la impermeabilización de cubiertas y trabajos de mantenimiento de carpintería de madera, así como, la renovación de pintura de muros ",
+      "entity": "DAPRE",
+      "department": "Bogotá D.C.",
+      "amount": 123637996,
+      "modality": "Concurso de méritos abierto",
+      "closingDate": "2026-10-21T00:00:00.000Z"
+    },
+    {
+      "id": "8c99821c-0e15-485f-8a3b-1d9430590752",
+      "title": "INTERVENTORIA INTEGRAL PARA LA TERMINACIÓN DE LAS OBRAS DE PAVIMENTACIÓN DE LOS PARQUEADEROS Y ACCESOS DEL SECTOR I Y II DE LA URBANIZACIÓN ARBOLEDA SANTA TERESITA EN LA CIUDAD DE BOGOTÁ D.C.",
+      "description": "PRESTAR EL SERVICIO DE INTERVENTORÍA INTEGRAL PARA LA VIGILANCIA, CONTROL, SEGUIMIENTO Y CERTIFICACIÓN DE LA EJECUCIÓN DEL CONTRATO DE OBRA, CUYO OBJETO ES:  TERMINACIÓN DE LAS OBRAS DE PAVIMENTACIÓN DE LOS PARQUEADEROS Y ACCESOS DEL SECTOR 1 Y 2 DE LA URBANIZACIÓN ARBOLEDA SANTA TERESITA EN LA CIUDAD DE BOGOTÁ D.C .",
+      "entity": "CAJA DE LA VIVIENDA POPULAR//",
+      "department": "Bogotá D.C.",
+      "amount": 122231149,
+      "modality": "Contratación régimen especial (con ofertas)",
+      "closingDate": "2026-11-04T00:00:00.000Z"
+    },
+    {
+      "id": "957c4b3c-7e06-40b7-938b-96e9f18b0c03",
+      "title": "INTERVENTORIA TÉCNICA; ADMINISTRATIVA; CONTABLE; LEGAL; AMBIENTAL Y FINANCIERA PARA LAS OBRAS DE MEJORAMIENTO; MANTENIMIENTO Y/O ADECUACIÓN Y DE COLISEOS; CANCHAS CUBIERTAS Y DEMÁS ESCENARIOS DEPORTIV",
+      "description": "INTERVENTORIA TÉCNICA, ADMINISTRATIVA, CONTABLE, LEGAL, AMBIENTAL Y FINANCIERA PARA LAS OBRAS DE MEJORAMIENTO, MANTENIMIENTO Y/O ADECUACIÓN Y DE COLISEOS, CANCHAS CUBIERTAS Y DEMÁS ESCENARIOS DEPORTIVOS Y RECREATIVOS ADMINISTRADOS POR EL INDER MEDELLÍN, ASÍ COMO LA EJECUCIÓN DE OBRAS COMPLEMENTARIAS NECESARIAS PARA SU ADECUADO FUNCIONAMIENTO.",
+      "entity": "INSTITUTO DE DEPORTES Y RECREACION DE MEDELLIN",
+      "department": "Antioquia",
+      "amount": 496404692,
+      "modality": "Concurso de méritos abierto",
+      "closingDate": "2026-11-05T00:00:00.000Z"
+    },
+    {
+      "id": "ac5482eb-c170-4ec3-bdf0-37b2d27834d9",
+      "title": "INTERVENTORIA DE OBRA MANTENIMIENTO DE MALLA VIAL URBANA COMUNAS 1 A 7",
+      "description": "El contratista se compromete con el Municipio de Pasto a realizar la  INTERVENTORÍA TECNICA, FINANCIERA, AMBIENTAL Y JURÍDICA PARA LA EJECUCIÓN DEL MANTENIMIENTO DE LA MALLA VIAL URBANA EN EL MUNICIPIO DE PASTO 2026 - COMUNAS 1 A 7 , de conformidad con las especificaciones técnicas determinadas. (SU-0045-051)",
+      "entity": "ALCALDIA DE PASTO",
+      "department": "Nariño",
+      "amount": 52535411,
+      "modality": "Mínima cuantía",
+      "closingDate": "2026-10-20T00:00:00.000Z"
+    },
+    {
+      "id": "cdcce057-942b-4f23-bfda-5d962f3feac7",
+      "title": "INTERVENTORÍA TÉCNICA; ADMINISTRATIVA; JURÍDICA; FINANCIERA; CONTABLE Y AMBIENTAL PARA LA VIGILANCIA DE LA EJECUCIÓN DE LOS TRABAJOS DE MANTENIMIENTO PREVENTIVO Y CORRECTIVO; ASÍ COMO LA REALIZACIÓN D",
+      "description": "INTERVENTORÍA TÉCNICA, ADMINISTRATIVA, JURÍDICA, FINANCIERA, CONTABLE Y AMBIENTAL PARA LA VIGILANCIA DE LA EJECUCIÓN DE LOS TRABAJOS DE MANTENIMIENTO PREVENTIVO Y CORRECTIVO, ASÍ COMO LA REALIZACIÓN DE MEJORAS LOCATIVAS, ADECUACIONES, REPARACIONES, REPOSICIONES, ADECUACIÓN DE REDES, CAMBIO DE ELEMENTOS DETERIORADOS, LIMPIEZA ESPECIALIZADA, OBRAS MENORES DE INFRAESTRUCTURA Y DEMÁS ACTIVIDADES NECES",
+      "entity": "HOSPITAL MILITAR CENTRAL",
+      "department": "Bogotá D.C.",
+      "amount": 0,
+      "modality": "Solicitud de información a los Proveedores",
+      "closingDate": "2026-10-20T00:00:00.000Z"
+    },
+    {
+      "id": "0229a704-c4a8-43d7-8b10-21f04da13f1c",
+      "title": "ESTUDIOS; DISEÑOS; TRAMITE DE PERMISOS AMBIENTALES Y OBRAS PARA LA REHABILITACIÓN Y MANTENIMIENTO QUE GARANTICEN LA OPERACIÓN Y PUESTA EN MARCHA DE UN TRAMO DE LA RED DE ALCANTARILLADO EN EL CENTRO PO",
+      "description": "ESTUDIOS, DISEÑOS, TRAMITE DE PERMISOS AMBIENTALES Y OBRAS PARA LA REHABILITACIÓN Y MANTENIMIENTO QUE GARANTICEN LA OPERACIÓN Y PUESTA EN MARCHA DE UN TRAMO DE LA RED DE ALCANTARILLADO EN EL CENTRO POBLADO NARIÑO DEL MUNICIPIO DE CALDAS EN CUMPLIMIENTO DE LOS CRITERIOS TECNICOS DE LA CORPORACIÓN AUTÓNOMA REGIONAL DE CUNDINAMARCA CAR BAJO LA MODALIDAD LLAVE EN MANO",
+      "entity": "ALCALDIA MUNICIPIO DE CALDAS BOYACÁ",
+      "department": "Boyacá",
+      "amount": 258279434,
+      "modality": "Selección Abreviada de Menor Cuantía",
+      "closingDate": "2026-10-21T00:00:00.000Z"
+    },
+    {
+      "id": "022edb2c-9345-4367-8489-aa90fbf320a2",
+      "title": "CONTRATACIÓN DE OBRAS DE MANTENIMIENTO; ADECUACIÓN; REHABILITACIÓN Y MEJORAMIENTO DE LA INFRAESTRUCTURA FÍSICA; ESTRUCTURAL; ELÉCTRICA; HIDROSANITARIA; LOCATIVA Y ARQUITECTÓNICA DE LAS ÁREAS CORRESPON",
+      "description": "CONTRATACIÓN DE OBRAS DE MANTENIMIENTO, ADECUACIÓN, REHABILITACIÓN Y MEJORAMIENTO DE LA INFRAESTRUCTURA FÍSICA, ESTRUCTURAL, ELÉCTRICA, HIDROSANITARIA, LOCATIVA Y ARQUITECTÓNICA DE LAS ÁREAS CORRESPONDIENTES A LA BIBLIOTECA, AULAS DEL SEGUNDO Y TERCER PISO, RECTORÍA, BAÑOS DEL PRIMER PISO, BAÑOS Y ÁREA INTERNA DEL GIMNASIO, ASÍ COMO EL SUMINISTRO E INSTALACIÓN DE PUERTAS Y DEMÁS ELEMENTOS COMPLEME",
+      "entity": "INSTITUTO NACIONAL DE FORMACION TECNICA PROFESIONAL DE SAN ANDRES Y PROVIDENCIA ISLAS",
+      "department": null,
+      "amount": 2866918261,
+      "modality": "Licitación pública Obra Publica",
+      "closingDate": "2026-11-04T00:00:00.000Z"
+    },
+    {
+      "id": "0833beb0-7fac-43fa-952e-fa9df0ac8e85",
+      "title": "INTERVENTORÍA INTEGRAL PARA EL DRAGADO DE MANTENIMIENTO DE LAS BOCAS DEL RÍO ATRATO; BOCA COQUITO; BOCA EL ROTO Y BOCA MATUNTUGO; EN EL GOLFO DE URABÁ; DEPARTAMENTO DE ANTIOQUIA (Presentación de ofert",
+      "description": "INTERVENTORÍA INTEGRAL PARA EL DRAGADO DE MANTENIMIENTO DE LAS BOCAS DEL RÍO ATRATO, BOCA COQUITO, BOCA EL ROTO Y BOCA MATUNTUGO, EN EL GOLFO DE URABÁ, DEPARTAMENTO DE ANTIOQUIA",
+      "entity": "INVIAS",
+      "department": "Bogotá D.C.",
+      "amount": 720877000,
+      "modality": "Concurso de méritos abierto",
+      "closingDate": "2026-10-23T00:00:00.000Z"
+    },
+    {
+      "id": "0a2d3bf3-4be9-4a8b-a32c-2f0b4963a331",
+      "title": "EJECUTAR LAS OBRAS Y ACTIVIDADES PARA LA CONSTRUCCIÓN Y CONSERVACIÓN DE MALLA VIAL Y ESPACIO PÚBLICO DE LA LOCALIDAD DE RAFAEL URIBE URIBE A PRECIOS UNITARIOS FIJOS Y A MONTO AGOTABLE EN LA CIUDAD DE",
+      "description": "EJECUTAR LAS OBRAS Y ACTIVIDADES PARA LA CONSTRUCCIÓN Y CONSERVACIÓN DE MALLA VIAL Y ESPACIO PÚBLICO DE LA LOCALIDAD DE RAFAEL URIBE URIBE A PRECIOS UNITARIOS FIJOS Y A MONTO AGOTABLE EN LA CIUDAD DE BOGOTÁ, D.C",
+      "entity": "ALCALDIA LOCAL RAFAEL URIBE URIBE",
+      "department": "Bogotá D.C.",
+      "amount": 11246096549,
+      "modality": "Licitación pública Obra Publica",
+      "closingDate": "2026-11-03T00:00:00.000Z"
+    },
+    {
+      "id": "139cbd20-417e-463d-8db2-b12eaff80010",
+      "title": "CONTRATAR LA INTERVENTORÍA INTEGRAL PARA LOS CONTRATOS DE CONCESIÓN; CONTRATOS DE OBRA Y DEMÁS INSTRUMENTOS CONTRACTUALES PARA LA ADMINISTRACIÓN; OPERACIÓN Y MANTENIMIENTO DEL PIDJ",
+      "description": "Solicitud de cotización para determinar precios de mercado de la interventoría integral de los contratos relacionados con la administración, operación y mantenimiento del Parque de Innovación Doña Juana (PIDJ).",
+      "entity": "UNIDAD ADMINISTRATIVA ESPECIAL DE SERVICIOS PÚBLICOS..",
+      "department": "Bogotá D.C.",
+      "amount": 0,
+      "modality": "Solicitud de información a los Proveedores",
+      "closingDate": "2026-10-28T00:00:00.000Z"
+    },
+    {
+      "id": "1f4c0066-ff44-42fb-be22-14b2b997dde1",
+      "title": "SERVICIO DE MANTENIMIENTO PREVENTIVO Y CORRECTIVO A TODO COSTO; INCLUYE REPUESTOS; ANÁLISIS TÉCNICO-PROFESIONAL Y MANO DE OBRA; PARA EL SUBCOMPONENTE DE MOVILIDAD TERRESTRE ASIGNADO A LA POLICÍA NACIO",
+      "description": "SERVICIO DE MANTENIMIENTO PREVENTIVO Y CORRECTIVO A TODO COSTO, INCLUYE REPUESTOS, ANÁLISIS TÉCNICO PROFESIONAL Y MANO DE OBRA, PARA EL SUBCOMPONENTE DE MOVILIDAD TERRESTRE ASIGNADO A LA POLICÍA NACIONAL - DEPARTAMENTO DE POLICÍA AMAZONAS Y UNIDADES ADSCRITAS AL SERVICIO O EN TRANSITO EN EL DEPARTAMENTO DEL AMAZONAS VIGENCIA 2026-2027. \n\nDividido en los siguientes lotes:\n\nLOTE. 1 MANTENIMIENTO DE ",
+      "entity": "DEPARTAMENTO DE POLICÍA AMAZONAS",
+      "department": "Amazonas",
+      "amount": 421300000,
+      "modality": "Selección Abreviada de Menor Cuantía",
+      "closingDate": "2026-10-30T00:00:00.000Z"
+    },
+    {
+      "id": "24631b88-ace2-4bd9-a847-910cf4841f3e",
+      "title": "INTERVENTORÍA TÉCNICA; ADMINISTRATIVA; FINANCIERA Y AMBIENTAL PARA LA PAVIMENTACIÓN DE VÍAS URBANAS EN EL MUNICIPIO DE PURIFICACIÓN; TOLIMA",
+      "description": "INTERVENTORÍA TÉCNICA, ADMINISTRATIVA, FINANCIERA Y AMBIENTAL PARA LA\nPAVIMENTACIÓN DE VÍAS URBANAS EN EL MUNICIPIO DE PURIFICACIÓN, TOLIMA",
+      "entity": "MUNICIPIO DE PURIFICACION",
+      "department": "Tolima",
+      "amount": 468431297,
+      "modality": "Concurso de méritos abierto",
+      "closingDate": "2026-10-30T00:00:00.000Z"
+    },
+    {
+      "id": "b04292bc-1ab5-4977-9718-260ac8c2aebb",
+      "title": "INTERVENTORIA TÉCNICA; AMBIENTAL; ADMINISTRATIVA; CONTABLE Y JURÍDICA PARA EL CONTRATO DE OBRA PUBLICA DE OBJETO:  MANTENIMIENTO DE LA INFRAESTRUCTURA FÍSICA EN BIBLIOTECAS PÚBLICAS (BIBLIOTECA PÚBLIC",
+      "description": "INTERVENTORIA TÉCNICA, AMBIENTAL, ADMINISTRATIVA, CONTABLE Y JURÍDICA PARA EL CONTRATO DE OBRA PUBLICA DE OBJETO:  MANTENIMIENTO DE LA INFRAESTRUCTURA FÍSICA EN BIBLIOTECAS PÚBLICAS (BIBLIOTECA PÚBLICA MUNICIPAL DE DIBULLA MILAGROS PADILLA DE PEÑARÁN, BIBLIOTECA PÚBLICA RURAL DE PARAGUACHÓN), Y MEJORAMIENTO DEL SISTEMA ELÉCTRICO DEL CENTRO CULTURAL DEL DISTRITO DE RIOHACHA, DEPARTAMENTO DE LA GUAJ",
+      "entity": "GOBERNACIÓN DE LA GUAJIRA",
+      "department": "La Guajira",
+      "amount": 187515084,
+      "modality": "Concurso de méritos abierto",
+      "closingDate": "2026-10-28T00:00:00.000Z"
+    },
+    {
+      "id": "2dd08f5f-1a8e-4624-9ee6-c6e937f9149f",
+      "title": "INTERVENTORIA TÉCNICA; AMBIENTAL; ADMINISTRATIVA; CONTABLE Y JURÍDICA PARA EL CONTRATO DE OBRA PUBLICA DE OBJETO:  ADECUACIÓN Y MEJORAMIENTO DE LA INFRAESTRUCTURA ADMINISTRATIVA E INSTITUCIONAL PARA L",
+      "description": "INTERVENTORIA TÉCNICA, AMBIENTAL, ADMINISTRATIVA, CONTABLE Y JURÍDICA PARA EL CONTRATO DE OBRA PUBLICA DE OBJETO:  MEJORAMIENTO DE LA INFRAESTRUCTURA EDUCATIVA EXISTENTE PARA LA IMPLEMENTACIÓN DE AMBIENTES EDUCATIVOS TECNOLÓGICOS EN SEDES EDUCATIVAS OFICIALES DE RIOHACHA Y FONSECA, DEPARTAMENTO DE LA GUAJIRA",
+      "entity": "GOBERNACIÓN DE LA GUAJIRA",
+      "department": "La Guajira",
+      "amount": 45462568,
+      "modality": "Mínima cuantía",
+      "closingDate": "2026-10-23T00:00:00.000Z"
+    },
+    {
+      "id": "96e07e8e-56d2-477f-9c01-bbedb0c9b928",
+      "title": "Interventoría técnica; administrativa; financiera; legal y ambiental para estudios; diseños; permisos; licencias y construcción de cubiertas en infraestructura educativa",
+      "description": "Interventoría técnica, administrativa, financiera, legal y ambiental para estudios, diseños, permisos, licencias y construcción de cubiertas en infraestructura educativa",
+      "entity": "DISTRITO ESPECIAL DE CIENCIA TECNOLOGIA E INNOVACION DE MEDELLIN",
+      "department": "Antioquia",
+      "amount": 688020256,
+      "modality": "Concurso de méritos abierto",
+      "closingDate": "2026-10-21T00:00:00.000Z"
+    },
+    {
+      "id": "9ffa5a01-e6db-432b-ab90-d01e9509800a",
+      "title": "INTERVENTORIA ADMINISTRATIVA; TECNICA; FINANCIERA Y AMBIENTAL AL CONTRATO DE OBRA; QUE TIENE COMO OBJETO CONSTRUCCIÓN EN PAVIMENTO RIGIDO E INTERVENCION DE ANDENES EN LA CL 4 CRR 3 Y 2 Y PAVIMENTACIÓN",
+      "description": "CONTRATO DE INTERVENTORIA ADMINISTRATIVA, TECNICA, FINANCIERA Y AMBIENTAL AL CONTRATO DE OBRA, QUE TIENE COMO OBJETO  CONSTRUCCIÓN EN PAVIMENTO RIGIDO E INTERVENCION DE ANDENES EN LA CALLE 4 ENTRE CARRERA 3 Y 2 Y PAVIMENTACION EN CONCRETO RIGIDO DE LA CALLE 9 ENTRE CARRERA 4 Y 3 EN LA ZONA URBANA DEL MUNICIPIO DE SAN SEBASTIAN DE MARIQUITA",
+      "entity": "MUNICIPIO DE MARIQUTA",
+      "department": "Tolima",
+      "amount": 80134139,
+      "modality": "Concurso de méritos abierto",
+      "closingDate": "2026-10-28T00:00:00.000Z"
+    },
+    {
+      "id": "acb4a901-2af9-4423-a5fa-ccc04b9783a6",
+      "title": "INTERVENTORÍA TÉCNICA; ADMINISTRATIVA; FINANCIERA; CONTABLE; JURÍDICA Y AMBIENTAL PARA LA CONSTRUCCION Y MEJORAMIENTO DE LA RED VIAL URBANA DEL MUNICIPIO DE GUADUAS; CUNDINAMARCA",
+      "description": "INTERVENTORÍA TÉCNICA, ADMINISTRATIVA, FINANCIERA, CONTABLE, JURÍDICA Y AMBIENTAL PARA LA CONSTRUCCION Y MEJORAMIENTO DE LA RED VIAL URBANA DEL MUNICIPIO DE GUADUAS, CUNDINAMARCA",
+      "entity": "ALCALDIA MUNICIPAL DE GUADUAS",
+      "department": "Cundinamarca",
+      "amount": 261877762,
+      "modality": "Concurso de méritos abierto",
+      "closingDate": "2026-10-28T00:00:00.000Z"
+    },
+    {
+      "id": "f31ccb93-9b12-40b4-bf4d-a11031d443ee",
+      "title": "EJECUTAR LAS OBRAS DE ADECUACIÓN DE INFRAESTRUCTURA PREVISTAS PARA LAS SEDES PORVENIR; ASUNCIÓN BOCHICA Y CARVAJAL; CONFORME A LOS ESTUDIOS TÉCNICOS; PLANOS Y PRESUPUESTO APROBADOS; PARA SU HABILITACI",
+      "description": "EJECUTAR LAS OBRAS DE ADECUACIÓN DE INFRAESTRUCTURA PREVISTAS PARA LAS SEDES PORVENIR, ASUNCIÓN BOCHICA Y CARVAJAL, CONFORME A LOS ESTUDIOS TÉCNICOS, PLANOS Y PRESUPUESTO APROBADOS, PARA SU HABILITACIÓN COMO UNIDADES ALTAMENTE RESOLUTIVAS",
+      "entity": "SUBRED INTEGRADA DE SERVICIOS DE SALUD SUR OCCIDENTE ESE.",
+      "department": "Bogotá D.C.",
+      "amount": 2276405047,
+      "modality": "Licitación pública Obra Publica",
+      "closingDate": "2026-11-04T00:00:00.000Z"
+    },
+    {
+      "id": "5b18d01e-b085-49ea-bb32-5664be11d740",
+      "title": "REALIZAR LA INTERVENTORÍA TÉCNICA; ADMINISTRATIVA; FINANCIERA; JURÍDICA; AMBIENTAL; SOCIAL Y SST; DEL CONTRATO DE OBRA PÚBLICA CUYO OBJETO ES EJECUTAR; A PRECIOS UNITARIOS Y A MONTO AGOTABLE; LAS OBRA",
+      "description": "REALIZAR LA INTERVENTORÍA TÉCNICA, ADMINISTRATIVA, FINANCIERA, JURÍDICA, AMBIENTAL, SOCIAL Y SST, DEL CONTRATO DE OBRA PÚBLICA CUYO OBJETO ES EJECUTAR, A PRECIOS UNITARIOS Y A MONTO AGOTABLE, LAS OBRAS DE MANTENIMIENTO, ADECUACIÓN, REPARACIONES LOCATIVAS Y DOTACION NECESARIAS PARA GARANTIZAR LAS CONDICIONES ÓPTIMAS DE HABITABILIDAD, SEGURIDAD Y FUNCIONALIDAD DE LAS UNIDADES OPERATIVAS DE INTEGRACI",
+      "entity": "ALCALDIA LOCAL DE SAN CRISTOBAL",
+      "department": "Bogotá D.C.",
+      "amount": 109182101,
+      "modality": "Concurso de méritos abierto",
+      "closingDate": "2026-11-03T00:00:00.000Z"
+    },
+    {
+      "id": "c31cad07-4161-4479-aa30-7170396f5bd8",
+      "title": "INTERVENTORIA TÉCNICA; ADMINISTRATIVA; FINANCIERA; CONTABLE; JURIDICA Y AMBIENTAL DEL CONTRATO DE OBRA PARA EL MEJORAMIENTO Y REHABILITACIÓN DE LA INFRAESTRUCTURA VIAL PRIORIZADA DEL CORREGIMIENTO DE",
+      "description": "INTERVENTORIA TÉCNICA, ADMINISTRATIVA, FINANCIERA, CONTABLE, JURIDICA Y AMBIENTAL DEL CONTRATO DE OBRA PARA EL MEJORAMIENTO Y REHABILITACIÓN DE LA INFRAESTRUCTURA VIAL PRIORIZADA DEL CORREGIMIENTO DE PUERTO BOGOTÁ DEL MUNICIOIO DE GUADUAS, CUNDINAMARCA",
+      "entity": "ALCALDIA MUNICIPAL DE GUADUAS",
+      "department": "Cundinamarca",
+      "amount": 50774188,
+      "modality": "Concurso de méritos abierto",
+      "closingDate": "2026-11-03T00:00:00.000Z"
+    },
+    {
+      "id": "348c4adf-506f-4473-9a5b-2532a10ccabd",
+      "title": "REALIZAR INTERVENTORÍA TECNICA; ADMINISTRATIVA; JURIDICA; FINANCIERA; AMBIENTAL Y CONTABLE",
+      "description": "REALIZAR LA INTERVENTORÍA TECNICA, ADMINISTRATIVA, JURIDICA, FINANCIERA, AMBIENTAL Y CONTABLE A LOS CONTRATOS DE OBRA QUE RESULTEN ADJUDICADOS EN EL PROCESO DE LICITACIÓN PÚBLICA, CUYO OBJETO ES:  REALIZAR LAS INTERVENCIONES FÍSICAS ORIENTADAS A LA OPTIMIZACION Y FORTALECIMIENTO DE LA INFRAESTRUCTURA DE LOS ESCENARIOS DESTINADOS AL DEPORTE Y LA RECREACIÓN EN EL DISTRITO ESPECIAL, DEPORTIVO, CULTUR",
+      "entity": "SANTIAGO DE CALI DISTRITO ESPECIAL - SECRETARIA DEL DEPORTE Y LA RECREACIÓN",
+      "department": "Valle del Cauca",
+      "amount": 540822123,
+      "modality": "Concurso de méritos abierto",
+      "closingDate": "2026-10-30T00:00:00.000Z"
+    },
+    {
+      "id": "8ffd8293-863e-4086-bd95-3da7a7bfbe53",
+      "title": "INTERVENTORÍA TÉCNICA; ADMINISTRATIVA Y FINANCIERA PARA LA CONSTRUCCIÓN ALUMBRADO PÚBLICO VÍA A CAJA DE AGUA DEL MUNICIPIO DE PAICOL HUILA",
+      "description": "INTERVENTORÍA TÉCNICA, ADMINISTRATIVA Y FINANCIERA PARA LA CONSTRUCCIÓN ALUMBRADO PÚBLICO VÍA A CAJA DE AGUA DEL MUNICIPIO DE PAICOL HUILA",
+      "entity": "ALCALDIA DE PAICOL HUILA",
+      "department": "Huila",
+      "amount": 82464338,
+      "modality": "Concurso de méritos abierto",
+      "closingDate": "2026-11-04T00:00:00.000Z"
+    },
+    {
+      "id": "3d33706c-354a-4834-9436-434dcc024d39",
+      "title": "Interventoría a las Obras de construcción y mejoramiento de espacios públicos en el centro de Medellin (Presentación de oferta)",
+      "description": "Interventoría a las Obras de construcción y mejoramiento de espacios públicos en el centro de Medellin",
+      "entity": "DISTRITO ESPECIAL DE CIENCIA TECNOLOGIA E INNOVACION DE MEDELLIN",
+      "department": "Antioquia",
+      "amount": 604787071,
+      "modality": "Concurso de méritos abierto",
+      "closingDate": "2026-10-16T00:00:00.000Z"
+    },
+    {
+      "id": "305ab303-cf17-4b07-bc64-991ce6a3fc10",
+      "title": "INTERVENTORIA CADILLAL",
+      "description": "REALIZAR LA INTERVENTORÍA TÉCNICA, ADMINISTRATIVA, FINANCIERA, CONTABLE, AMBIENTAL Y JURÍDICA AL CONTRATO DE OBRA CUYO OBJETO ES  REALIZAR LAS OBRAS DE MEJORAMIENTO VIAL DE LA CALLE 1N ENTRE CARRERA 11 Y TRANSVERSAL 9 NORTE CARRERA 17  DEL BARRIO CADILLAL EN EL MUNICIPIO DE POPAYÁN EN EL MARCO DEL PROYECTO MEJORAMIENTO VIAL MUNICIPAL DE POPAYÁN .",
+      "entity": "ALCALDÍA DE POPAYÁN",
+      "department": "Cauca",
+      "amount": 509711273,
+      "modality": "Concurso de méritos abierto",
+      "closingDate": "2026-10-21T00:00:00.000Z"
+    },
+    {
+      "id": "766d2b26-3d61-4992-9b54-eadedb8ad515",
+      "title": "INTERVENTORIA TÉCNICA; ADMINISTRATIVA; FINANCIERA; CONTABLE Y JURIDICA PARA LA CONSTRUCCIÓN DE PAVIMENTO RÍGIDO EN LOS DIFERENTES SECTORES DE LA ZONA URBANA DEL MUNICIPIO DE CERETÉ; DEPARTAMENTO DE CÓ",
+      "description": "INTERVENTORIA TÉCNICA, ADMINISTRATIVA, FINANCIERA, CONTABLE Y JURIDICA PARA LA CONSTRUCCIÓN DE PAVIMENTO RÍGIDO EN LOS DIFERENTES SECTORES DE LA ZONA URBANA DEL MUNICIPIO DE CERETÉ, DEPARTAMENTO DE CÓRDOBA",
+      "entity": "MUNICIPIO DE CERETE",
+      "department": "Córdoba",
+      "amount": 165361700,
+      "modality": "Concurso de méritos abierto",
+      "closingDate": "2026-10-26T00:00:00.000Z"
+    },
+    {
+      "id": "cab21f96-7710-4e27-a448-6ad61d9fc0eb",
+      "title": "INTERVENTORIA TÉCNICA; ADMINISTRATIVA; FINANCIERA; CONTABLE Y JURIDICA PARA LA CONSTRUCCIÓN DE PAVIMENTO RÍGIDO EN LOS DIFERENTES SECTORES DE LA ZONA URBANA DEL MUNICIPIO DE CERETÉ; DEPARTAMENTO DE CÓ",
+      "description": "INTERVENTORIA TÉCNICA, ADMINISTRATIVA, FINANCIERA, CONTABLE Y JURIDICA PARA LA CONSTRUCCIÓN DE PAVIMENTO RÍGIDO EN LOS DIFERENTES SECTORES DE LA ZONA URBANA DEL MUNICIPIO DE CERETÉ, DEPARTAMENTO DE CÓRDOBA",
+      "entity": "MUNICIPIO DE CERETE",
+      "department": "Córdoba",
+      "amount": 165361700,
+      "modality": "Concurso de méritos abierto",
+      "closingDate": "2026-10-21T00:00:00.000Z"
+    },
+    {
+      "id": "66e59427-fc9c-4389-87e7-bf5caa12b3bc",
+      "title": "INTERVENTORIA TECNICA; ADMINISTRATIVA; FINANCIERA Y AMBIENTAL PARA LA REPOSICIÓN DE PAVIMENTO DE LAS VÍAS URBANAS CARRERA 4A ENTRE CALLE 8A Y CALLE 5A BARRIO EL PUERTO DEL MUNICIPIO DE PURIFICACIÓN",
+      "description": "INTERVENTORIA TECNICA, ADMINISTRATIVA, FINANCIERA Y AMBIENTAL PARA LA REPOSICIÓN DE PAVIMENTO DE LAS VÍAS URBANAS CARRERA 4A ENTRE CALLE 8A Y CALLE 5A BARRIO EL PUERTO DEL MUNICIPIO DE PURIFICACIÓN, TOLIMA",
+      "entity": "MUNICIPIO DE PURIFICACION",
+      "department": "Tolima",
+      "amount": 232459177,
+      "modality": "Concurso de méritos abierto",
+      "closingDate": "2026-10-30T00:00:00.000Z"
+    },
+    {
+      "id": "705dc0a3-3793-4ced-a5b7-917f21b2cc3d",
+      "title": "INTERVENTORIA TECNICA; ADMINISTRATIVA; JURIDICA; FINANCIERA; SOCIAL Y AMBIENTAL PARA LA EJECUCIÓN DEL CONTRATO QUE TIENE POR OBJETO:  MEJORAMIENTO DEL ESPACIO PUBLICO Y EMBELLECIMIENTO DE FACHADAS  DE",
+      "description": "INTERVENTORIA TECNICA, ADMINISTRATIVA, JURIDICA, FINANCIERA, SOCIAL Y AMBIENTAL PARA LA EJECUCIÓN DEL CONTRATO QUE TIENE POR OBJETO:  MEJORAMIENTO DEL ESPACIO PUBLICO Y EMBELLECIMIENTO DE FACHADAS  DEL MUNICIPIO DE APULO, CUNDINAMARCA, EN CUMPLIMIENTO DEL CONVENIO INTERADMINISTRATIVO ICCU 866-2025.",
+      "entity": "MUNICIPIO DE APULO",
+      "department": "Cundinamarca",
+      "amount": 181818149,
+      "modality": "Concurso de méritos abierto",
+      "closingDate": "2026-10-23T00:00:00.000Z"
+    },
+    {
+      "id": "0db50c48-8e51-4a76-8076-8b9bcfbc7712",
+      "title": "INTERVENTORÍA TÉCNICA; ADMINISTRATIVA; FINANCIERO; CONTABLE; Y JURÍDICA DE LA CONSTRUCCIÓN DEL CENTRO VIDA PARA LA ATENCIÓN INTEGRAL DEL ADULTO MAYOR EN EL MUNICIPIO DE RESTREPO; META",
+      "description": "INTERVENTORÍA TÉCNICA, ADMINISTRATIVA, FINANCIERO, CONTABLE, Y JURÍDICA DE LA CONSTRUCCIÓN DEL CENTRO VIDA PARA LA ATENCIÓN INTEGRAL DEL ADULTO MAYOR EN EL MUNICIPIO DE RESTREPO, META",
+      "entity": "AGENCIA PARA LA INFRAESTRUCTURA DEL META",
+      "department": "Meta",
+      "amount": 725481049,
+      "modality": "Concurso de méritos abierto",
+      "closingDate": "2026-10-22T00:00:00.000Z"
+    },
+    {
+      "id": "9fc9bfc9-641a-48e4-9ef2-26daecebb952",
+      "title": "OBRAS DE INFRAESTRUCTURA PARA EL FORTALECIMIENTO DE LA SEGURIDAD Y CONVIVENCIA EN EL DISTRITO DE BARRANQUILLA FASE 2 (Fase de Selección (Presentación de ofertas))",
+      "description": "OBRAS DE INFRAESTRUCTURA PARA EL FORTALECIMIENTO DE LA SEGURIDAD Y CONVIVENCIA EN EL DISTRITO DE BARRANQUILLA FASE 2",
+      "entity": "DISTRITO ESPECIAL INDUSTRIAL Y PORTUARIO DE BARRANQUILLA",
+      "department": "Atlántico",
+      "amount": 95947137840,
+      "modality": "Licitación pública Obra Publica",
+      "closingDate": "2026-10-29T00:00:00.000Z"
+    },
+    {
+      "id": "e232d0b7-56fa-4fc5-9cd4-b75d23c08a5d",
+      "title": "OBRAS DE MANTENIMIENTO DE INFRAESTRUCTURA; INCLUIDO MOBILIARIO EN LA PLANTA FÍSICA DEL CANTÓN MILITAR DE LA DÉCIMA PRIMERA BRIGADA DEL EJÉRCITO NACIONAL Y EN LAS INSTALACIONES DE LAS ESTACIONES DE POL",
+      "description": "OBRAS DE MANTENIMIENTO DE INFRAESTRUCTURA, INCLUIDO MOBILIARIO EN LA PLANTA FÍSICA DEL CANTÓN MILITAR DE LA DÉCIMA PRIMERA BRIGADA DEL EJÉRCITO NACIONAL Y EN LAS INSTALACIONES DE LAS ESTACIONES DE POLICÍA ADSCRITAS AL DEPARTAMENTO DE POLICÍA DE CÓRDOBA",
+      "entity": "DEPARTAMENTO DE CORDOBA",
+      "department": "Córdoba",
+      "amount": 7489224870,
+      "modality": "Licitación pública Obra Publica",
+      "closingDate": "2026-11-18T00:00:00.000Z"
+    },
+    {
+      "id": "e4138e30-7c4a-49d8-add9-030ad54164aa",
+      "title": "INTERVENTORÍA TÉCNICA; ADMINISTRATIVA; FINANCIERA; AMBIENTAL Y LEGAL PARA EL MANTENIMIENTO; SUMINISTRO Y PUESTA EN MARCHA DEL SISTEMA INTEGRADO DE SEGURIDAD CIUDADANA EN EL MUNICIPIO DE LA JAGUA DE IB",
+      "description": "INTERVENTORÍA TÉCNICA, ADMINISTRATIVA, FINANCIERA, AMBIENTAL Y LEGAL PARA EL MANTENIMIENTO, SUMINISTRO Y PUESTA EN MARCHA DEL SISTEMA INTEGRADO DE SEGURIDAD CIUDADANA EN EL MUNICIPIO DE LA JAGUA DE IBIRICO.",
+      "entity": "ALCALDIA MUNICIPAL DE LA JAGUA DE IBIRICO",
+      "department": "Cesar",
+      "amount": 67920397,
+      "modality": "Concurso de méritos abierto",
+      "closingDate": "2026-10-30T00:00:00.000Z"
+    },
+    {
+      "id": "f1fd6f32-6f56-4164-be21-3a4cc9ccccf3",
+      "title": "INTERVENTORIA TECNICA; AMBIENTAL; FINANCIERA; ADMINISTRATIVA; CONTABLE Y JURIDICA AL CONTRATO QUE TIENE COMO OBJETO CONTRATAR BAJO EL SISTEMA DE PRECIOS UNITARIOS Y MONTO AGOTABLE LOS SERVICIOS DE MAN",
+      "description": "INTERVENTORIA TECNICA, AMBIENTAL, FINANCIERA, ADMINISTRATIVA, CONTABLE Y JURIDICA AL CONTRATO QUE TIENE COMO OBJETO CONTRATAR BAJO EL SISTEMA DE PRECIOS UNITARIOS Y MONTO AGOTABLE LOS SERVICIOS DE MANTENIMIENTO PREVENTIVO, ADECUACIÓN, MEJORAMIENTO Y REPARACIÓN DE LOS ESCENARIOS DEPORTIVOS Y RECREATIVOS, EN EL MARCO DE LA ESTRATEGIA DE LA RUTA DE LA RENOVACIÓN EN EL DEPARTAMENTO DE CASANARE.",
+      "entity": "INDERCAS**",
+      "department": "Casanare",
+      "amount": 80715579,
+      "modality": "Concurso de méritos abierto",
+      "closingDate": "2026-10-26T00:00:00.000Z"
+    },
+    {
+      "id": "fa40e055-1117-41f2-9228-fc801d7b540f",
+      "title": "INTERVENTORIA TÉCNICA; ADMINISTRATIVA; FINANCIERA; LEGAL; Y AMBIENTAL PARA LA  CONSTRUCCION; ADECUACION Y MEJORAMIENTO DEL POLIDEPORTIVO EN LA VEREDA EL CARMEN AREA RURAL DEL MUNICIPIO DE OPORAPA HUIL",
+      "description": "INTERVENTORIA TÉCNICA, ADMINISTRATIVA, FINANCIERA, LEGAL, Y AMBIENTAL PARA LA  CONSTRUCCION, ADECUACION Y MEJORAMIENTO DEL POLIDEPORTIVO EN LA VEREDA EL CARMEN AREA RURAL DEL MUNICIPIO DE OPORAPA HUILA",
+      "entity": "ALCALDÍA MUNICIPIO DE OPORAPA - HUILA",
+      "department": "Huila",
+      "amount": 57676250,
+      "modality": "Concurso de méritos abierto",
+      "closingDate": "2026-11-03T00:00:00.000Z"
+    },
+    {
+      "id": "1f40324f-2b0a-473e-8d84-2338204343dc",
+      "title": "INTERVENTORIA TECNICA; ADMINISTRATIVA; FINANCIERA Y AMBIENTAL PARA EL MEJORAMIENTO DE LA INFRAESTRUCTURA EDUCATIVA EN DISTINTOS MUNICIPIOS DEL DEPARTAMENTO DEL CESAR",
+      "description": "INTERVENTORIA TECNICA, ADMINISTRATIVA, FINANCIERA Y AMBIENTAL PARA EL MEJORAMIENTO DE LA INFRAESTRUCTURA EDUCATIVA EN DISTINTOS MUNICIPIOS DEL DEPARTAMENTO DEL CESAR",
+      "entity": "GOBERNACION DEL DEPARTAMENTO DEL CESAR",
+      "department": "Cesar",
+      "amount": 3035119126,
+      "modality": "Concurso de méritos abierto",
+      "closingDate": "2026-10-30T00:00:00.000Z"
+    },
+    {
+      "id": "90519408-1f39-4044-be8f-d1991d85ce63",
+      "title": "REALIZAR LA INTERVENTORÍA TÉCNICA; ADMINISTRATIVA; FINANCIERA; LEGAL; AMBIENTAL Y CONTABLE DEL PROYECTO  CARACTERIZACIÓN DEL SISTEMA ACUÍFERO DEL VALLE DE ABURRÁ A PARTIR DE ACTIVIDADES DE EXPLORACIÓN",
+      "description": "REALIZAR LA INTERVENTORÍA TÉCNICA, ADMINISTRATIVA, FINANCIERA, LEGAL, AMBIENTAL Y CONTABLE DEL PROYECTO  CARACTERIZACIÓN DEL SISTEMA ACUÍFERO DEL VALLE DE ABURRÁ A PARTIR DE ACTIVIDADES DE EXPLORACIÓN HIDROGEOLÓGICA",
+      "entity": "AREA METROPOLITANA DEL VALLE DE ABURRA",
+      "department": "Antioquia",
+      "amount": 385544558,
+      "modality": "Concurso de méritos abierto",
+      "closingDate": "2026-11-05T00:00:00.000Z"
+    },
+    {
+      "id": "4f23e6a4-e89e-4c38-ae03-5319f3b93fb6",
+      "title": "INTERVENTORÍA TÉCNICA; ADMINISTRATIVA; FINANCIERA; JURÍDICA Y CONTABLE A LA CONSULTORÍA PARA LA ELABORACIÓN DE LOS ESTUDIOS Y DISEÑOS PARA LA CONSTRUCCIÓN DE UNA NUEVA ESTACIÓN DEL CUERPO OFICIAL DE B",
+      "description": "INTERVENTORÍA TÉCNICA, ADMINISTRATIVA, FINANCIERA, JURÍDICA Y CONTABLE A LA CONSULTORÍA PARA LA ELABORACIÓN DE LOS ESTUDIOS Y DISEÑOS PARA LA CONSTRUCCIÓN DE UNA NUEVA ESTACIÓN DEL CUERPO OFICIAL DE BOMBEROS EN EL MUNICIPIO DE BUCARAMANGA.",
+      "entity": "BOMBEROS DE BUCARAMANGA",
+      "department": "Santander",
+      "amount": 130321141,
+      "modality": "Concurso de méritos abierto",
+      "closingDate": "2026-10-29T00:00:00.000Z"
+    },
+    {
+      "id": "2a7c6d6d-d4f4-4851-90fc-75df4f3bf7ec",
+      "title": "Concurso de méritos abierto Número No. 003 de 2026 (Presentación de oferta)",
+      "description": "CONSULTORIA PARA LA REALIZACION DE LOS ESTUDIOS DE VULNERABILIDAD SÍSIMICA Y PATOLOGÍA ESTRUCTURAL DE LAS SEDES EDUCATIVAS VOLCÁN, ERMITAÑO, RESGUARDO Y ROA, Y DEL ESTUDIO DE SUELOS Y GEOTÉCNICA DE LA SEDE EDUCATIVA KENNEDY DEL MUNICIPIO DE SUTAMARCHÁN.",
+      "entity": "sutamarchan",
+      "department": "Boyacá",
+      "amount": 100000000,
+      "modality": "Concurso de méritos abierto",
+      "closingDate": "2026-10-23T00:00:00.000Z"
+    },
+    {
+      "id": "434c66fe-8f59-44b6-898c-6c46646e5908",
+      "title": "ADQUIRIR EQUIPOS DE CÓMPUTO PARA ACTUALIZAR LA INFRAESTRUCTURA TECNOLÓGICA DE LOS CENTROS INTERACTIVOS DEL DEPARTAMENTO.",
+      "description": "ADQUIRIR EQUIPOS DE CÓMPUTO PARA ACTUALIZAR LA INFRAESTRUCTURA TECNOLÓGICA DE LOS CENTROS INTERACTIVOS DEL DEPARTAMENTO.",
+      "entity": "SECRETARIA DE TRANSFORMACIÓN DIGITAL - GOBERNACIÓN DE CUNDINAMARCA",
+      "department": "Bogotá D.C.",
+      "amount": 1670364312,
+      "modality": "Selección abreviada subasta inversa",
+      "closingDate": "2026-10-22T00:00:00.000Z"
+    },
+    {
+      "id": "520a4f84-cb1f-4e25-afbf-19aa4b276757",
+      "title": "MANTENIMIENTO REC. PROPIOS 2026",
+      "description": "MANTENIMIENTO Y ADECUACIÓN DE PATIOS, JARDINES Y OTRAS INSTALACIONES\nDE LA SEDE 1.\nSEGÚN ORDEN DE SERVICIO 003 DE 2026.\nCORRESPONDIENTE AL MES DE ABRIL DEL 2026.\nSEGÚN CUENTA DE COBRO",
+      "entity": "I  E D LICEO SAMARIO",
+      "department": "Magdalena",
+      "amount": 1751000,
+      "modality": "Contratación régimen especial (con ofertas)",
+      "closingDate": "2026-12-30T00:00:00.000Z"
+    },
+    {
+      "id": "9d4ec56a-928f-49e2-a799-e151212e0f60",
+      "title": "MANTENIMIENTO INFRAESTRUCTURA CENTRO DE LA CONSTRUCCION",
+      "description": "CONTRATAR EL MANTENIMIENTO DE LA INFRAESTRUCTURA DEL CENTRO DE LA CONSTRUCCION DE LA VIGENCIA 2026",
+      "entity": "SENA REGIONAL VALLE Grupo de Apoyo Administrativo Mixto",
+      "department": "Valle del Cauca",
+      "amount": 251046564,
+      "modality": "Selección Abreviada de Menor Cuantía",
+      "closingDate": "2026-10-21T00:00:00.000Z"
+    },
+    {
+      "id": "4834f16e-e969-4f9f-ab70-2d22728347b6",
+      "title": "Adquirir certificados de firma digital con token virtual para la Superintendencia Nacional de Salud.",
+      "description": "Adquirir certificados de firma digital con token virtual para la Superintendencia Nacional de Salud.",
+      "entity": "SUPERINTENDENCIA NACIONAL DE SALUD",
+      "department": null,
+      "amount": 21239517,
+      "modality": "Mínima cuantía",
+      "closingDate": "2026-10-20T00:00:00.000Z"
+    },
+    {
+      "id": "fd4312f9-d809-46cc-ab29-da2bf1bb0b08",
+      "title": "SERVICIO DE CORREO CERTIFICADO Y ENVIO DE PAQUETES ENCOMIENDA NORMAL",
+      "description": "PRESTACION DE SERVICIOS DE CORREO CERTIFICADO Y ENCOMIENDA NORMAL PARA LA REGIONAL DE ASEGURAMIENTO EN SALUD N. 5, LAS UNIDADES PRESTADORAS DE SALUD SANTANDER DE NORTE DE SANTANDER Y ARAUCA INCLUIDOS SUS ESTABLECIMIENTOS COMPLEMENTARIOS Y PRIMARIOS",
+      "entity": "REGIONAL DE ASEGURAMIENTO EN SALUD No. 5",
+      "department": "Santander",
+      "amount": 0,
+      "modality": "Solicitud de información a los Proveedores",
+      "closingDate": "2026-10-22T00:00:00.000Z"
+    },
+    {
+      "id": "e15bcd61-2d53-4d25-9e50-cbc4f13d960f",
+      "title": "MANTENIMIENTO PREVENTIVO DEL SISTEMA DE ALCANTARILLADO PLUVIAL EN LA ZONA URBANA DEL MUNICIPIO DE FORTUL; DEPARTAMENTO DE ARAUCA",
+      "description": "MANTENIMIENTO PREVENTIVO DEL SISTEMA DE ALCANTARILLADO PLUVIAL EN LA ZONA URBANA DEL MUNICIPIO DE FORTUL, DEPARTAMENTO DE ARAUCA",
+      "entity": "MUNICIPIO DE FORTUL",
+      "department": "Arauca",
+      "amount": 49000000,
+      "modality": "Mínima cuantía",
+      "closingDate": "2026-10-21T00:00:00.000Z"
+    },
+    {
+      "id": "997532a8-d73f-4c66-8e1f-72b7400641da",
+      "title": "INSTALACIÓN DE UN SISTEMA AUTOGENERADOR HÍBRIDO A PEQUEÑA ESCALA (AGPE) Y MANTENIMIENTO PREVENTIVO Y CORRECTIVO DE CUBIERTA Y CIELORRASOS.",
+      "description": "INSTALACIÓN DE UN SISTEMA AUTOGENERADOR HÍBRIDO A PEQUEÑA ESCALA (AGPE) Y MANTENIMIENTO PREVENTIVO Y CORRECTIVO DE CUBIERTA Y CIELORRASOS",
+      "entity": "CONTRALORIA GENERAL DEL DEPARTAMENTO DE CORDOBA",
+      "department": "Córdoba",
+      "amount": 415417905,
+      "modality": "Selección Abreviada de Menor Cuantía",
+      "closingDate": "2026-10-20T00:00:00.000Z"
+    },
+    {
+      "id": "a415a8ac-0cad-4019-9628-2c554fa0ca52",
+      "title": "SUMINISTRO DE COMBUSTIBLE (GASOLINA CORRIENTE Y ACPM) PARA EL PARQUE AUTOMOTOR; MOTORES FUERA DE BORDA; PLANTAS ELÉCTRICAS Y MOTORES ESTACIONARIOS PROPIEDAD DE LA POLICÍA NACIONAL - DEPARTAMENTO DE PO",
+      "description": "SUMINISTRO DE COMBUSTIBLE (GASOLINA CORRIENTE Y ACPM) PARA EL PARQUE AUTOMOTOR, MOTORES FUERA DE BORDA, PLANTAS ELÉCTRICAS Y MOTORES ESTACIONARIOS PROPIEDAD DE LA POLICÍA NACIONAL DEPARTAMENTO DE POLICÍA AMAZONAS Y SUS UNIDADES ADSCRITAS O QUE SON LEGALMENTE RESPONSABLE MEDIANTE LA UTILIZACION DE UN MEDIO DE PAGO ALTERNATIVO Y UN SISTEMA TECNOLOGICO DE CONTROL Y ADMINISTRACION DE CONSUMO, DURANTE ",
+      "entity": "DEPARTAMENTO DE POLICÍA AMAZONAS",
+      "department": "Amazonas",
+      "amount": 370000000,
+      "modality": "Selección abreviada subasta inversa",
+      "closingDate": "2026-10-30T00:00:00.000Z"
+    },
+    {
+      "id": "4a803acb-ef50-40ab-868e-6941dcd936e0",
+      "title": "FDLK-SIP-037-2026 copia",
+      "description": "Suministro y adquisición de elementos requeridos para la dotación y fortalecimiento institucional, comunitario y social de la Alcaldía Local de Kennedy, en el marco de los proyectos de inversión No. 2646 Kennedy Espacios de Buen Trato",
+      "entity": "ALCALDIA LOCAL DE KENNEDY",
+      "department": "Bogotá D.C.",
+      "amount": 0,
+      "modality": "Solicitud de información a los Proveedores",
+      "closingDate": "2026-10-21T00:00:00.000Z"
+    },
+    {
+      "id": "c5c20232-1056-459a-97f9-01383ed32d0c",
+      "title": "Alumbrado navideño",
+      "description": "Contratar la puesta en funcionamiento del alumbrado navideño, incluyendo el montaje, mantenimiento y desmontaje , en desarrollo del proyecto Implementación del Espectáculo Luminoso y Visual de Alumbrado Navideño en Santiago de Cali. BP-26005329",
+      "entity": "SANTIAGO DE CALI DISTRITO ESPECIAL - UNIDAD ADMINISTRATIVA ESPECIAL DE SERVICIOS PUBLICOS",
+      "department": "Valle del Cauca",
+      "amount": 19727798919,
+      "modality": "Licitación pública",
+      "closingDate": "2026-11-06T00:00:00.000Z"
+    },
+    {
+      "id": "f3fe882e-c639-4201-b9af-2e6c53618e3b",
+      "title": "SUMINISTRO DE COMPLEMENTOS ALIMENTARIOS A LOS ESTUDIANTES MATRICULADOS EN LOS ESTABLECIMIENTOS EDUCATIVOS OFICIALES DE LAS ZONAS URBANAS Y RURALES EN EL MARCO DEL PROGRAMA DE ALIMENTACION ESCOLAR DESA",
+      "description": "SUMINISTRO DE COMPLEMENTOS ALIMENTARIOS A LOS ESTUDIANTES MATRICULADOS EN LOS ESTABLECIMIENTOS EDUCATIVOS OFICIALES DE LAS ZONAS URBANAS Y RURALES EN EL MARCO DEL PROGRAMA DE ALIMENTACION ESCOLAR DESARROLLADO EN 24 MUNICIPIOS NO CERTIFICADOS DEL DEPARTAMENTO DEL CESAR, ACORDE A LOS LINEAMIENTOS TÉCNICO ADMINISTRATIVOS, LOS ESTANDARES Y CONDICIONES MINIMAS DEL PROGRAMA DE ALIMENTACIÓN ESCOLAR - PAE",
+      "entity": "GOBERNACION DEL DEPARTAMENTO DEL CESAR",
+      "department": "Cesar",
+      "amount": 30554669840,
+      "modality": "Licitación pública",
+      "closingDate": "2026-10-21T00:00:00.000Z"
+    },
+    {
+      "id": "de22b3a7-f17d-4959-b9d8-791178292d55",
+      "title": "SERVICIO DE MANTENIMIENTO PREVENTIVO Y CORRECTIVO A TODO COSTO INCLUIDAS AUTOPARTES Y MANO DE OBRA DE LOS VEHÍCULOS MULTI-MARCA",
+      "description": "SERVICIO DE MANTENIMIENTO PREVENTIVO Y CORRECTIVO A TODO COSTO INCLUIDAS AUTOPARTES Y MANO DE OBRA DE LOS VEHÍCULOS MULTI-MARCA",
+      "entity": "MESAN",
+      "department": "Antioquia",
+      "amount": 2209479190,
+      "modality": "Selección Abreviada de Menor Cuantía",
+      "closingDate": "2026-11-04T00:00:00.000Z"
+    },
+    {
+      "id": "b5fcdef2-9962-4bf2-8355-3ffcdf2e8e70",
+      "title": "SOLICITUD DE COTIZACION MUNICIPIO DE DOSQUEBRADAS",
+      "description": "LA PRESTACION DE SERVICIOS DE SALUD MEDICOS HOSPITALARIOS, URGENCIAS, AMBULATORIOS, SEGUN SU COMPLEJIDAD PARA LOS AFILIADOS Y BENEFICIARIOS DEL SUBSISTEMA DE SALUD DE POLICÍA NACIONAL DE LA REGIONAL DE ASEGURAMIENTO EN SALUD No. 3, EN EL MUNICIPIO DE DOSQUEBRADAS - RISARALDA",
+      "entity": "REGIONAL DE ASEGURAMIENTO EN SALUD No 3",
+      "department": "Risaralda",
+      "amount": 0,
+      "modality": "Solicitud de información a los Proveedores",
+      "closingDate": "2026-10-22T00:00:00.000Z"
+    },
+    {
+      "id": "557a70ac-e717-4102-a9ac-822fd724c64b",
+      "title": "Realizar el diseño; adquisición e instalación de los sistemas de detección y alarma de incendios para la UPN",
+      "description": "Realizar el diseño, adquisición e instalación de los sistemas de detección y alarma de incendios para las instalaciones de la Universidad Pedagógica Nacional, en el marco de los proyectos desarrollados mediante el convenio Atenea-558-2025",
+      "entity": "UNIVERSIDAD PEDAGÓGICA NACIONAL",
+      "department": "Bogotá D.C.",
+      "amount": 399999688,
+      "modality": "Contratación régimen especial (con ofertas)",
+      "closingDate": "2026-10-20T00:00:00.000Z"
+    },
+    {
+      "id": "5a21da71-1fe7-4e24-99f7-be4e45c00157",
+      "title": "PRESTAR LOS SERVICIOS DE ORGANIZACIÓN; LOGÍSTICA Y APOYO OPERATIVO; BAJO LA MODALIDAD DE MONTO AGOTABLE; PARA EL DESARROLLO DE LAS OLIMPIADAS INTERBARRIOS Y DEMÁS ACTIVIDADES MISIONALES DEL IDERF; EN",
+      "description": "PRESTAR LOS SERVICIOS DE ORGANIZACIÓN, LOGÍSTICA Y APOYO OPERATIVO, BAJO LA MODALIDAD DE MONTO AGOTABLE, PARA EL DESARROLLO DE LAS OLIMPIADAS INTERBARRIOS Y DEMÁS ACTIVIDADES MISIONALES DEL IDERF, EN LAS DIFERENTES COMUNAS Y CORREGIMIENTOS DEL MUNICIPIO DE FUSAGASUGÁ, EN EL MARCO DEL CUMPLIMIENTO DE LOS PROCESOS ESTABLECIDOS DENTRO DEL MODELO DE PLANEACIÓN Y PRESUPUESTOS PARTICIPATIVOS 2026.",
+      "entity": "IDERF",
+      "department": "Cundinamarca",
+      "amount": 225236456,
+      "modality": "Selección Abreviada de Menor Cuantía",
+      "closingDate": "2026-10-26T00:00:00.000Z"
+    },
+    {
+      "id": "03a2cf8c-e890-4a3c-b30e-3946706533cf",
+      "title": "CONSTRUCCIÓN DE LA E.S.E. HOSPITAL LOCAL DEL MUNICIPIO DE TENERIFE",
+      "description": "CONSTRUCCIÓN DE LA E.S.E. HOSPITAL LOCAL DEL MUNICIPIO DE TENERIFE.",
+      "entity": "E.S.E HOSPITAL LOCAL DE TENERIFE",
+      "department": null,
+      "amount": 17373412887,
+      "modality": "Contratación régimen especial (con ofertas)",
+      "closingDate": "2026-11-06T00:00:00.000Z"
+    },
+    {
+      "id": "18245009-e394-47b0-aa58-96d63ef83a6a",
+      "title": "Adquirir elementos e insumos de bioseguridad; protección personal; necesarios para la realización de las actividades; proyectos de investigación y trabajos de campo; llevados a cabo por los diferentes",
+      "description": "Adquirir elementos e insumos de bioseguridad, protección personal, necesarios para la realización de las actividades, proyectos de investigación y trabajos de campo, llevados a cabo por los diferentes grupos del INS.",
+      "entity": "INSTITUTO NACIONAL DE SALUD",
+      "department": "Bogotá D.C.",
+      "amount": 533032787,
+      "modality": "Selección abreviada subasta inversa",
+      "closingDate": "2026-10-20T00:00:00.000Z"
+    },
+    {
+      "id": "6e9ca5d6-45b4-4f19-9691-59c772375804",
+      "title": "OBRAS DE MANTENIMIENTO Y ADECUACIÓN DE LAS BATERÍAS SANITARIAS DE UNIBAC; QUE INCLUYAN EL SUMINISTRO; INSTALACIÓN Y PUESTA EN FUNCIONAMIENTO DE LOS ACABADOS; APARATOS SANITARIOS; EQUIPOS; ELEMENTOS Y",
+      "description": "OBRAS DE MANTENIMIENTO Y ADECUACIÓN DE LAS BATERÍAS SANITARIAS DE UNIBAC, QUE INCLUYAN EL SUMINISTRO, INSTALACIÓN Y PUESTA EN FUNCIONAMIENTO DE LOS ACABADOS, APARATOS SANITARIOS, EQUIPOS, ELEMENTOS Y ACCESORIOS REQUERIDOS",
+      "entity": "INSTITUCION UNIVERSITARIA BELLAS ARTES Y CIENCIAS DE BOLIVAR",
+      "department": "Bolívar",
+      "amount": 451688443,
+      "modality": "Selección Abreviada de Menor Cuantía",
+      "closingDate": "2026-10-22T00:00:00.000Z"
     }
   ],
   "golden-food": [
@@ -1803,6 +3243,696 @@
       "amount": 889769346,
       "modality": "Licitación pública",
       "closingDate": "2026-10-29T05:00:00.000Z"
+    },
+    {
+      "id": "49d6e7ab-a262-4793-9e11-21b2cbb7d9e0",
+      "title": "Ejecución del Programa de Alimentación Escolar - PAE del Municipio de Guadalupe; mediante el suministro de complementos alimentarios en modalidad de ración preparada en sitio; transporte de alimentos;",
+      "description": "Ejecución del Programa de Alimentación Escolar - PAE del Municipio de Guadalupe, mediante el suministro de complementos alimentarios en modalidad de ración preparada en sitio, transporte de alimentos, apoyo logístico y operativo requerido, dotación y demás componentes necesarios para atender hasta setecientos treinta y cinco (735) niños, niñas, adolescentes y jóvenes priorizados conforme a la matr",
+      "entity": "MUNICIPIO DE GUADALUPE ANTIOQUIA",
+      "department": "Antioquia",
+      "amount": 118221817,
+      "modality": "Contratación régimen especial (con ofertas)",
+      "closingDate": "2026-10-20T00:00:00.000Z"
+    },
+    {
+      "id": "25d59eaf-0d63-4bee-9b40-61d369d6ba94",
+      "title": "SUMINISTRO DE VIVERES Y PAGO DE BONIFICACION PERSONAL MANIPULADOR DE ALIMENTOS PARA EL PROGRAMA DE ALIMENTACION ESCOLAR EN LA VlGENCIA 2026-2",
+      "description": "SUMINISTRO DE VIVERES Y PAGO DE BONIFICACION PERSONAL MANIPULADOR DE ALIMENTOS PARA EL PROGRAMA DE ALIMENTACION ESCOLAR EN LA VlGENCIA 2026-2 CONFORME A LO ESTIPULADO EN EL\nCONVENIO INTERADMINISTRATIVO 4600019304 SUSCRITO ENTRE LA SECRETARIA DE EDUCACION DEL DEPARTAMENTO DE ANTIOQUIA Y EL MUNICIPIO DE CAREPA",
+      "entity": "MUNICIPIO DE CAREPA",
+      "department": "Antioquia",
+      "amount": 1371734590,
+      "modality": "Licitación pública",
+      "closingDate": "2026-10-26T00:00:00.000Z"
+    },
+    {
+      "id": "4d33db2a-aba3-49fd-9ab4-8c52db519ae9",
+      "title": "SUMINISTRO DE VIVERES Y PAGO DE BONIFICACION PERSONAL MANIPULADOR DE ALIMENTOS PARA EL PROGRAMA DE ALIMENTACION ESCOLAR EN LA VlGENCIA 2026-2 (Presentación de oferta)",
+      "description": "SUMINISTRO DE VIVERES Y PAGO DE BONIFICACION PERSONAL MANIPULADOR DE ALIMENTOS PARA EL PROGRAMA DE ALIMENTACION ESCOLAR EN LA VlGENCIA 2026-2 CONFORME A LO ESTIPULADO EN EL\nCONVENIO INTERADMINISTRATIVO 4600019304 SUSCRITO ENTRE LA SECRETARIA DE EDUCACION DEL DEPARTAMENTO DE ANTIOQUIA Y EL MUNICIPIO DE CAREPA",
+      "entity": "MUNICIPIO DE CAREPA",
+      "department": "Antioquia",
+      "amount": 1371734590,
+      "modality": "Licitación pública",
+      "closingDate": "2026-10-26T00:00:00.000Z"
+    },
+    {
+      "id": "503e6a55-8288-4434-8998-8db6ae3e11ff",
+      "title": "ADQUISICIÓN DE MENAJE ESCOLAR Y ELEMENTOS COMPLEMENTARIOS DESTINADOS A LAS INSTITUCIONES EDUCATIVAS PÚBLICAS DEL MUNICIPIO DE SAN GIL; PARA EL FORTALECIMIENTO DEL SERVICIO DE ALIMENTACIÓN ESCOLAR",
+      "description": "ADQUISICIÓN DE MENAJE ESCOLAR Y ELEMENTOS COMPLEMENTARIOS DESTINADOS A LAS INSTITUCIONES EDUCATIVAS PÚBLICAS DEL MUNICIPIO DE SAN GIL, PARA EL FORTALECIMIENTO DEL SERVICIO DE ALIMENTACIÓN ESCOLAR",
+      "entity": "ALCALDIA MUNICIPIO DE SAN GIL - SANTANDER",
+      "department": "Santander",
+      "amount": 80163450,
+      "modality": "Selección abreviada subasta inversa",
+      "closingDate": "2026-10-26T00:00:00.000Z"
+    },
+    {
+      "id": "844e9be4-b65f-42b2-8560-37f037743f42",
+      "title": "PRESTACIÓN DE SERVICIOS PARA AMPLIAR COBERTURA DEL PROGRAMA DE ALIMENTACIÓN ESCOLAR; A TRAVÉS DEL CUAL SE BRINDA UN COMPLEMENTO ALIMENTARIO A NIÑOS; NIÑAS Y ADOLESCENTES REGISTRADOS EN EL SISTEMA INTE",
+      "description": "PRESTACIÓN DE SERVICIOS PARA AMPLIAR COBERTURA DEL PROGRAMA DE ALIMENTACIÓN ESCOLAR, A TRAVÉS DEL CUAL SE BRINDA UN COMPLEMENTO ALIMENTARIO A NIÑOS, NIÑAS Y ADOLESCENTES REGISTRADOS EN EL SISTEMA INTEGRADO DE MATRÍCULA  SIMAT  EN LAS SEDES EDUCATIVAS PÚBLICAS DEL MUNICIPIO DE MADRID CUNDINAMARCA VIGENCIA 2026-2027",
+      "entity": "ALCALDÍA MUNICIPAL DE MADRID CUNDINAMARCA",
+      "department": "Cundinamarca",
+      "amount": 4025000000,
+      "modality": "Licitación pública",
+      "closingDate": "2026-10-21T00:00:00.000Z"
+    },
+    {
+      "id": "ab460727-47b6-48b1-9215-4db5db82ab0c",
+      "title": "SUMINISTRO DE LOS ALIMENTOS INSUMOS Y DEMAS ELEMENTOS NECESARIOS PARA GARANTIZAR LA EJECUCIÓN DEL PROGRAMA DE ALIMENTACIÓN ESCOLAR - PAE; EN EL MUNICIPIO DE COCORNÁ - ANTIOQUIA; DURANTE EL PERÍODO CO",
+      "description": "SUMINISTRO DE LOS ALIMENTOS, INSUMOS Y DEMAS ELEMENTOS NECESARIOS PARA GARANTIZAR LA EJECUCIÓN DEL PROGRAMA DE ALIMENTACIÓN ESCOLAR PAE, EN EL MUNICIPIO DE COCORNÁ - ANTIOQUIA, DURANTE EL PERÍODO COMPRENDIDO ENTRE EL 01 Y EL 27 DE NOVIEMBRE DE 2026, DE CONFORMIDAD CON LOS LINEAMIENTOS TÉCNICOS, ADMINISTRATIVOS Y FINANCIEROS VIGENTES",
+      "entity": "ALCALDÍA MUNICIPAL DE COCORNÁ",
+      "department": "Antioquia",
+      "amount": 467502560,
+      "modality": "Selección abreviada subasta inversa",
+      "closingDate": "2026-10-21T00:00:00.000Z"
+    },
+    {
+      "id": "c30a3c94-41c0-4ab8-b984-66ac28875410",
+      "title": "SUMINISTRO DE LOS ALIMENTOS INSUMOS Y DEMAS ELEMENTOS NECESARIOS PARA GARANTIZAR LA EJECUCIÓN DEL PROGRAMA DE ALIMENTACIÓN ESCOLAR - PAE; EN EL MUNICIPIO DE COCORNÁ - ANTIOQUIA; DURANTE EL PERÍODO CO",
+      "description": "SUMINISTRO DE LOS ALIMENTOS, INSUMOS Y DEMAS ELEMENTOS NECESARIOS PARA GARANTIZAR LA EJECUCIÓN DEL PROGRAMA DE ALIMENTACIÓN ESCOLAR PAE, EN EL MUNICIPIO DE COCORNÁ - ANTIOQUIA, DURANTE EL PERÍODO COMPRENDIDO ENTRE EL 01 Y EL 27 DE NOVIEMBRE DE 2026, DE CONFORMIDAD CON LOS LINEAMIENTOS TÉCNICOS, ADMINISTRATIVOS Y FINANCIEROS VIGENTES",
+      "entity": "ALCALDÍA MUNICIPAL DE COCORNÁ",
+      "department": "Antioquia",
+      "amount": 467502560,
+      "modality": "Selección abreviada subasta inversa",
+      "closingDate": "2026-10-21T00:00:00.000Z"
+    },
+    {
+      "id": "f3fe882e-c639-4201-b9af-2e6c53618e3b",
+      "title": "SUMINISTRO DE COMPLEMENTOS ALIMENTARIOS A LOS ESTUDIANTES MATRICULADOS EN LOS ESTABLECIMIENTOS EDUCATIVOS OFICIALES DE LAS ZONAS URBANAS Y RURALES EN EL MARCO DEL PROGRAMA DE ALIMENTACION ESCOLAR DESA",
+      "description": "SUMINISTRO DE COMPLEMENTOS ALIMENTARIOS A LOS ESTUDIANTES MATRICULADOS EN LOS ESTABLECIMIENTOS EDUCATIVOS OFICIALES DE LAS ZONAS URBANAS Y RURALES EN EL MARCO DEL PROGRAMA DE ALIMENTACION ESCOLAR DESARROLLADO EN 24 MUNICIPIOS NO CERTIFICADOS DEL DEPARTAMENTO DEL CESAR, ACORDE A LOS LINEAMIENTOS TÉCNICO ADMINISTRATIVOS, LOS ESTANDARES Y CONDICIONES MINIMAS DEL PROGRAMA DE ALIMENTACIÓN ESCOLAR - PAE",
+      "entity": "GOBERNACION DEL DEPARTAMENTO DEL CESAR",
+      "department": "Cesar",
+      "amount": 30554669840,
+      "modality": "Licitación pública",
+      "closingDate": "2026-10-21T00:00:00.000Z"
+    },
+    {
+      "id": "47ed69b5-97d4-47c7-9c25-4a8dec2d8d10",
+      "title": "CONTRATACION DEL PROGRAMA DE ALIMENTACION ESCOLAR PARA POBLACION MAYORITARIAMENTE CAMPESINA (Presentación de oferta)",
+      "description": "ESTACION DEL SERVICIO PARA LA IMPLEMENTACION DEL PROGRAMA DE ALIMENTACION ESCOLAR EN 47 MUNICIPIOS NO CERTIFICADOS DEL DEPARTAMENTO DE NARINO DE CONFORMIDAD CON LA RESOLUCIÓN 003 DE 2026 MODIFICADA POR LA RESOLUCIÓN 0155 DE 2026 EXPEDIDAS POR LA UNIDAD ADMINISTRATIVA ESPECIAL DE ALIMENTACIÓN ESCOLAR ALIMENTOS PARA APRENDER (UAPA) Y DEMÁS NORMAS QUE LAS MODIFIQUEN ADICIONEN O SUSTITUYAN",
+      "entity": "GOBERNACION DE NARIÑO",
+      "department": "Nariño",
+      "amount": 6000624467,
+      "modality": "Licitación pública",
+      "closingDate": "2026-10-22T00:00:00.000Z"
+    },
+    {
+      "id": "a7d5e8c3-d2d0-41ed-af80-6da9d996090d",
+      "title": "ALIMENTACIÓN DIARIA PARA LAS PERSONAS PRIVADAS DE LA LIBERTAD",
+      "description": "SUMINISTRO DE ALIMENTACIÓN DIARIA PARA LAS PERSONAS PRIVADAS DE LA LIBERTAD, RECLUIDAS EN CALIDAD DE SINDICADOS EN LA ESTACIÓN DE POLICÍA DEL MUNICIPIO DE RESTREPO, VALLE DEL CAUCA, DE CONFORMIDAD CON LA NORMATIVA VIGENTE Y BAJO LAS CONDICIONES DE CALIDAD, CANTIDAD, OPORTUNIDAD E INOCUIDAD REQUERIDAS.",
+      "entity": "ALCALDIA MUNICIPAL DE RESTREPO VALLE DEL CAUCA",
+      "department": "Valle del Cauca",
+      "amount": 35617200,
+      "modality": "Mínima cuantía",
+      "closingDate": "2026-10-21T00:00:00.000Z"
+    },
+    {
+      "id": "18c9f6d5-1608-4006-a44d-f80c17ffecaa",
+      "title": "FORTALECIMIENTO A LA IMPLEMENTACIÓN DEL PROGRAMA DE ALIMENTACIÓN ESCOLAR PAE DIRIGIDO A LOS NIÑOS; NIÑAS; ADOLESCENTES Y JÓVENES MATRICULADOS EN LAS SEDES EDUCATIVAS OFICIALES PRIORIZADAS POR EL DEP",
+      "description": "FORTALECIMIENTO A LA IMPLEMENTACIÓN DEL PROGRAMA DE ALIMENTACIÓN ESCOLAR PAE DIRIGIDO A LOS NIÑOS, NIÑAS, ADOLESCENTES Y JÓVENES MATRICULADOS EN LAS SEDES EDUCATIVAS OFICIALES PRIORIZADAS POR EL DEPARTAMENTO DE ARAUCA - POBLACION MAYORITARIA CONFORME A LA RESOLUCIÓN No. 003 DE 2026 (PROYECTO CON AUTORIZACIÓN DE VIGENCIAS FUTURAS ORDINARIAS - ORDENANZA No. 225 DE 2026)",
+      "entity": "DEPARTAMENTO DEL ARAUCA",
+      "department": "Arauca",
+      "amount": 23203504860,
+      "modality": "Selección abreviada subasta inversa",
+      "closingDate": "2026-10-28T00:00:00.000Z"
+    },
+    {
+      "id": "1fe1a512-e091-4780-ac25-eebfcbcb4fd2",
+      "title": "COMPRA DE ELEMENTOS Y COMPONENTES PARA PROVEER DE KIT ESCOLAR A ESTUDIANTES PERTENECIENTES A LAS INSTITUCIONES EDUCATIVAS OFICIALES DEL MUNICIPIO DE ENVIGADO- CALENDARIO ESCOLAR 2027 (Presentación de",
+      "description": "COMPRA DE ELEMENTOS Y COMPONENTES PARA PROVEER DE KIT ESCOLAR A ESTUDIANTES PERTENECIENTES A LAS INSTITUCIONES EDUCATIVAS OFICIALES DEL MUNICIPIO DE ENVIGADO- CALENDARIO ESCOLAR 2027",
+      "entity": "MUNICIPIO DE ENVIGADO*",
+      "department": "Antioquia",
+      "amount": 801707566,
+      "modality": "Selección abreviada subasta inversa",
+      "closingDate": "2026-10-23T00:00:00.000Z"
+    },
+    {
+      "id": "207f1439-8f09-4c21-b7a2-772c39cc79d0",
+      "title": "INTEGRAR ESFUERZOS PARA LA EJECUCIÓN DEL PROGRAMA DE ALIMENTACIÓN ESCOLAR - PAE; PARA LOS NIÑOS; NIÑAS Y ADOLESCENTES DE LA MATRÍCULA OFICIAL DEL MUNICIPIO DE EL SANTUARIO- ANTIOQUIA; NO CERTIFICADOS",
+      "description": "INTEGRAR ESFUERZOS PARA LA EJECUCIÓN DEL PROGRAMA DE ALIMENTACIÓN ESCOLAR - PAE, PARA LOS NIÑOS, NIÑAS Y ADOLESCENTES DE LA MATRÍCULA OFICIAL DE LOS MUNICIPIOS DE EL SANTUARIO- ANTIOQUIA,  NO CERTIFICADOS EN EDUCACIÓN EN EDUCACION PARA LA VIGENCIA 2026-2",
+      "entity": "MUNICIPIO DE EL SANTUARIO ANTIOQUIA",
+      "department": "Antioquia",
+      "amount": 199336022,
+      "modality": "Selección abreviada subasta inversa",
+      "closingDate": "2026-10-22T00:00:00.000Z"
+    },
+    {
+      "id": "2f8a5778-031b-4bde-904c-784fc0a16ab2",
+      "title": "COMPRA DE ELEMENTOS Y COMPONENTES PARA PROVEER DE KIT ESCOLAR A ESTUDIANTES PERTENECIENTES A LAS INSTITUCIONES EDUCATIVAS OFICIALES DEL MUNICIPIO DE ENVIGADO- CALENDARIO ESCOLAR 2027",
+      "description": "COMPRA DE ELEMENTOS Y COMPONENTES PARA PROVEER DE KIT ESCOLAR A ESTUDIANTES PERTENECIENTES A LAS INSTITUCIONES EDUCATIVAS OFICIALES DEL MUNICIPIO DE ENVIGADO- CALENDARIO ESCOLAR 2027",
+      "entity": "MUNICIPIO DE ENVIGADO*",
+      "department": "Antioquia",
+      "amount": 801707566,
+      "modality": "Selección abreviada subasta inversa",
+      "closingDate": "2026-10-23T00:00:00.000Z"
+    },
+    {
+      "id": "42d27abb-aab1-42f8-954d-f3955e79deae",
+      "title": "SUMINISTRO DE MENAJE PARA LA OPERACIÓN DEL PROGRAMA DE ALIMENTACIÓN ESCOLAR (PAE) EN LOS ESTABLECIMIENTOS EDUCATIVOS OFICIALES DE LA ZONA RURAL Y URBANA DEL MUNICIPIO DE URIBIA; LA GUAJIRA (Presentaci",
+      "description": "SUMINISTRO DE MENAJE PARA LA OPERACIÓN DEL PROGRAMA DE ALIMENTACIÓN ESCOLAR (PAE) EN LOS ESTABLECIMIENTOS EDUCATIVOS OFICIALES DE LA ZONA RURAL Y URBANA DEL MUNICIPIO DE URIBIA, LA GUAJIRA",
+      "entity": "MUNICIPIO DE URIBIA",
+      "department": "La Guajira",
+      "amount": 2500000000,
+      "modality": "Selección abreviada subasta inversa",
+      "closingDate": "2026-10-23T00:00:00.000Z"
+    },
+    {
+      "id": "4cfa5e08-b180-4865-b42c-0e198600c846",
+      "title": "SUMINISTRO DE COMPLEMENTO ALIMENTARIO ALMUERZO MODALIDAD PREPARADA EN SITIO Y COMPLEMENTO ALIMENTARIO RACIÓN INDUSTRIALIZADA PARA LOS NIÑOS; NIÑAS Y ADOLESCENTES DEL MUNICIPIO DE RESTREPO META",
+      "description": "SUMINISTRO DE COMPLEMENTO ALIMENTARIO ALMUERZO MODALIDAD PREPARADA EN SITIO Y COMPLEMENTO ALIMENTARIO RACIÓN INDUSTRIALIZADA PARA LOS NIÑOS, NIÑAS Y ADOLESCENTES DEL MUNICIPIO DE RESTREPO META",
+      "entity": "ALCALDIA MUNICIPAL DE RESTREPO META",
+      "department": "Meta",
+      "amount": 87985260,
+      "modality": "Selección Abreviada de Menor Cuantía",
+      "closingDate": "2026-11-04T00:00:00.000Z"
+    },
+    {
+      "id": "a1b19382-25b5-441b-bf3d-dabbdeebbeb8",
+      "title": "SUMINISTRO DE MENAJE PARA LA OPERACIÓN DEL PROGRAMA DE ALIMENTACIÓN ESCOLAR (PAE) EN LOS ESTABLECIMIENTOS EDUCATIVOS OFICIALES DE LA ZONA RURAL Y URBANA DEL MUNICIPIO DE URIBIA; LA GUAJIRA",
+      "description": "SUMINISTRO DE MENAJE PARA LA OPERACIÓN DEL PROGRAMA DE ALIMENTACIÓN ESCOLAR (PAE) EN LOS ESTABLECIMIENTOS EDUCATIVOS OFICIALES DE LA ZONA RURAL Y URBANA DEL MUNICIPIO DE URIBIA, LA GUAJIRA",
+      "entity": "MUNICIPIO DE URIBIA",
+      "department": "La Guajira",
+      "amount": 2500000000,
+      "modality": "Selección abreviada subasta inversa",
+      "closingDate": "2026-10-23T00:00:00.000Z"
+    },
+    {
+      "id": "c35b22d2-dc4a-4eab-9e9f-1800afbc901e",
+      "title": "BRINDAR COMPLEMENTACION ALIMENTARIA DEL PROGRAMA DE ALIMENTACION ESCOLAR PAE PARA LOS NIÑOS NIÑAS Y ADOLESCENTES MATRICULADOS Y FOCALIZADOS EN EL SIMAT DEPARTAMENTO DE CALDAS EN AULA REGULAR Y/O JORNA",
+      "description": "BRINDAR COMPLEMENTACION ALIMENTARIA DEL PROGRAMA DE ALIMENTACION ESCOLAR PAE PARA LOS NIÑOS NIÑAS Y ADOLESCENTES MATRICULADOS Y FOCALIZADOS EN EL SIMAT DEPARTAMENTO DE CALDAS EN AULA REGULAR Y/O JORNADA UNICA",
+      "entity": "GOBERNACION DE CALDAS",
+      "department": "Caldas",
+      "amount": 8853080144,
+      "modality": "Licitación pública",
+      "closingDate": "2026-10-30T00:00:00.000Z"
+    },
+    {
+      "id": "c8e1a84b-712e-4219-a681-cd2857dcff3f",
+      "title": "PRESTACION DE SERVICIOS",
+      "description": "PRESTACION DEL SERVICIO PARA LA TOMA MUESTRAS DE AGUA Y ALIMENTOS PARA FORTALECER EL SISTEMA DE VIGILANCIA DE LA CALIDAD DEL AGUA DE LOS ACUEDUCTOS QUE REQUIERAN MUESTRAS ADICIONALES Y ACTUALIZACION DE MAPAS DE RIESGO Y DE LA CALIDAD DE LOS ALIMENTOS DE ACUERDO A LA COMPETENCIA DE LA SECRETARIA DE SALUD EN EL MUNICIPIO DE SOACHA SS261",
+      "entity": "MUNICIPIO DE SOACHA..",
+      "department": "Cundinamarca",
+      "amount": 150000000,
+      "modality": "Selección Abreviada de Menor Cuantía",
+      "closingDate": "2026-10-23T00:00:00.000Z"
+    },
+    {
+      "id": "ddeb76ed-4b73-46cc-8561-c520022eb232",
+      "title": "INTEGRAR ESFUERZOS PARA LA EJECUCIÓN DEL PROGRAMA DE ALIMENTACIÓN ESCOLAR - PAE; PARA LOS NIÑOS; NIÑAS Y ADOLESCENTES DE LA MATRÍCULA OFICIAL DEL MUNICIPIO DE EL SANTUARIO- ANTIOQUIA; NO CERTIFICADOS",
+      "description": "INTEGRAR ESFUERZOS PARA LA EJECUCIÓN DEL PROGRAMA DE ALIMENTACIÓN ESCOLAR - PAE, PARA LOS NIÑOS, NIÑAS Y ADOLESCENTES DE LA MATRÍCULA OFICIAL DE LOS MUNICIPIOS DE EL SANTUARIO- ANTIOQUIA,  NO CERTIFICADOS EN EDUCACIÓN EN EDUCACION PARA LA VIGENCIA 2026-2",
+      "entity": "MUNICIPIO DE EL SANTUARIO ANTIOQUIA",
+      "department": "Antioquia",
+      "amount": 199336022,
+      "modality": "Selección abreviada subasta inversa",
+      "closingDate": "2026-10-22T00:00:00.000Z"
+    },
+    {
+      "id": "de38a6ae-176b-48aa-bc26-01a4f00f9af8",
+      "title": "SUMINISTRO DE PAQUETES ALIMENTARIOS PARA LOS PERIODOS VACACIONALES DE LOS ESCOLARES PERTENECIENTES AL PROGRAMA DE ALIMENTACION ESCOLAR EN LAS INSTITUCIONES EDUCATIVAS OFICIALES DEL MUNICIPIO DE LA EST",
+      "description": "SUMINISTRO DE PAQUETES ALIMENTARIOS PARA LOS PERIODOS VACACIONALES DE LOS ESCOLARES PERTENECIENTES AL PROGRAMA DE ALIMENTACION ESCOLAR EN LAS INSTITUCIONES EDUCATIVAS OFICIALES DEL MUNICIPIO DE LA ESTRELLA VIGENCIA 2026. SEGUNDA ENTREGA",
+      "entity": "MUNICIPIO DE LA ESTRELLA",
+      "department": "Antioquia",
+      "amount": 378000000,
+      "modality": "Selección abreviada subasta inversa",
+      "closingDate": "2026-10-28T00:00:00.000Z"
+    },
+    {
+      "id": "e77fc42a-e3d3-493c-b8a8-168778b68fde",
+      "title": "INTERVENTORÍA TÉCNICA; ADMINISTRATIVA; JURÍDICA Y FINANCIERA AL FORTALECIMIENTO A LA IMPLEMENTACIÓN DEL PROGRAMA DE ALIMENTACIÓN ESCOLAR -PAE- DIRIGIDO A LOS NIÑOS; NIÑAS; ADOLESCENTES Y JÓVENES MATRI",
+      "description": "INTERVENTORÍA TÉCNICA, ADMINISTRATIVA, JURÍDICA Y FINANCIERA AL FORTALECIMIENTO A LA IMPLEMENTACIÓN DEL PROGRAMA DE ALIMENTACIÓN ESCOLAR PAE DIRIGIDO A LOS NIÑOS, NIÑAS, ADOLESCENTES Y JÓVENES MATRICULADOS EN LAS SEDES EDUCATIVAS OFICIALES PRIORIZADAS POR EL DEPARTAMENTO DE ARAUCA POBLACIONES MAYORITARIA Y NARP PROYECTO CON AUTORIZACIÓN DE VIGENCIAS FUTURAS ORDINARIAS  ORDENANZA No. 225 DE 2026",
+      "entity": "DEPARTAMENTO DEL ARAUCA",
+      "department": "Arauca",
+      "amount": 1445070101,
+      "modality": "Concurso de méritos abierto",
+      "closingDate": "2026-10-30T00:00:00.000Z"
+    },
+    {
+      "id": "f0f53969-2653-4d22-a9b8-658a24e239ff",
+      "title": "SOLICITUD DE COTIZACION PAE",
+      "description": "SUMINISTRO DE ALIMENTOS PARA LA OPERACIÓN DEL PROGRAMA DE ALIMENTACIÓN ESCOLAR CON LOS NIÑOS, NIÑAS Y ADOLESCENTES REGISTRADOS EN LA MATRÍCULA OFICIAL DEL MUNICIPIO DE PEREIRA DE CONFORMIDAD CON LOS LINEAMIENTOS TÉCNICO ADMINISTRATIVOS EXPEDIDOS POR LA UNIDAD ADMINISTRATIVA-ALIMENTOS PARA APRENDER (UApA) DEL MINISTERIO DE EDUCACIÓN NACIONAL, ASÍ COMO LA NORMATIVIDAD SANITARIA LEGAL VIGENTE",
+      "entity": "MUNICIPIO DE PEREIRA- OFICIAL",
+      "department": "Risaralda",
+      "amount": 0,
+      "modality": "Solicitud de información a los Proveedores",
+      "closingDate": "2026-10-20T00:00:00.000Z"
+    },
+    {
+      "id": "006d314d-2314-457f-8d98-ea3ba8a3629f",
+      "title": "RECESO PAE",
+      "description": "SUMINISTRO DE LA CANASTA ALIMENTARIA PARA ATENDER EL PROGRAMA DE ALIMENTACIÓN DURANTE EL RECESO ESCOLAR EN MUNICIPIO DE QUIBDO, PARA EL AÑO 2026.",
+      "entity": "ALCALDIA MUNICIPIO DE QUIBDO",
+      "department": "Chocó",
+      "amount": 3949626000,
+      "modality": "Selección abreviada subasta inversa",
+      "closingDate": "2026-11-05T00:00:00.000Z"
+    },
+    {
+      "id": "255fb533-e179-45f0-8a7d-1066357d1cc6",
+      "title": "PRESTACIÓN DEL SERVICIO DE TRANSPORTE ESCOLAR PARA ESTUDIANTES DE LAS INSTITUCIONES EDUCATIVAS OFICIALES DEL MUNICIPIO DE PEQUE; ANTIOQUIA; CON EL FIN DE GARANTIZAR EL ACCESO A LA EDUCACIÓN Y AUMENTAR",
+      "description": "PRESTACIÓN DEL SERVICIO DE TRANSPORTE ESCOLAR PARA ESTUDIANTES DE LAS INSTITUCIONES EDUCATIVAS OFICIALES DEL MUNICIPIO DE PEQUE, ANTIOQUIA, CON EL FIN DE GARANTIZAR EL ACCESO A LA EDUCACIÓN Y AUMENTAR LA PERMANENCIA ESCOLAR.",
+      "entity": "MUNICIPIO DE PEQUE",
+      "department": "Antioquia",
+      "amount": 100000000,
+      "modality": "Selección Abreviada de Menor Cuantía",
+      "closingDate": "2026-10-28T00:00:00.000Z"
+    },
+    {
+      "id": "2a521a60-38c3-4955-961f-ef708aa1846f",
+      "title": "GARANTIZAR EL ACCESO Y PERMANENCIA DE ESTUDIANTES EN ESTABLECIMIENTOS EDUCATIVOS OFICIALES DEL MUNICIPIO DE PUERTO LÓPEZ; A TRAVÉS DE LA CONTRATACIÓN DEL SERVICIO DE TRANSPORTE ESCOLAR DURANTE EL CALE",
+      "description": "GARANTIZAR EL ACCESO Y PERMANENCIA DE ESTUDIANTES EN ESTABLECIMIENTOS EDUCATIVOS OFICIALES DEL MUNICIPIO DE PUERTO LÓPEZ, A TRAVÉS DE LA CONTRATACIÓN DEL SERVICIO DE TRANSPORTE ESCOLAR DURANTE EL CALENDARIO ESCOLAR AÑO 2026",
+      "entity": "ALCALDIA MUNICIPIO DE PUERTO LOPEZ - META",
+      "department": "Meta",
+      "amount": 390125400,
+      "modality": "Selección Abreviada de Menor Cuantía",
+      "closingDate": "2026-10-23T00:00:00.000Z"
+    },
+    {
+      "id": "461c67a3-a8a7-459d-8da9-d434e465912b",
+      "title": "Prestación de servicios para la implementación del programa de transporte escolar para los estudiantes de la matrícula oficial del municipio de Titiribí - Antioquia; de las Sedes Educativas Benjamín C",
+      "description": "Prestación de servicios para la implementación del programa de transporte escolar para los estudiantes de la matrícula oficial del municipio de Titiribí - Antioquia, de las Sedes Educativas Benjamín Correa Álvarez y Santo Tomas de Aquino en el marco del programa de calidad educativa",
+      "entity": "ALCALDIA MUNICIPIO DE TITIRIBI++",
+      "department": "Antioquia",
+      "amount": 48982000,
+      "modality": "Mínima cuantía",
+      "closingDate": "2026-10-20T00:00:00.000Z"
+    },
+    {
+      "id": "4f547b9f-e607-4a11-a7de-38ab21f32219",
+      "title": "TRANSPORTE ESCOLAR",
+      "description": "SERVICIOS ORIENTADOS A FORTALECER LAS ACCIONES DEL PROGRAMA DE TRANSPORTE ESCOLAR PARA BRINDAR APOYO INTEGRAL EN EL CUMPLIMIENTO DE LOS CLASIFICADORES PROGRAMÁTICOS DE LA INVERSIÓN PÚBLICA CON ACCIONES ENCAMINADAS AL DESARROLLO Y EJECUCIÓN DEL PROYECTO: Prestación del servicio de transporte escolar para los estudiantes del área rural en el municipio de Antioquía ///BPIN 2026-000000-16470",
+      "entity": "MUNICIPIO DE YONDO",
+      "department": "Antioquia",
+      "amount": 1481737600,
+      "modality": "Selección abreviada subasta inversa",
+      "closingDate": "2026-10-27T00:00:00.000Z"
+    },
+    {
+      "id": "6860b12d-f59a-4236-be6e-151e4606df6f",
+      "title": "PAE CATALAURA (Presentación de oferta)",
+      "description": "SUMINISTRO DE ALIMENTACIÓN ESCOLAR A NIÑOS, NIÑAS, ADOLESCENTES Y JÓVENES DE INSTITUCIONES EDUCATIVAS OFICIALES DEL DEPARTAMENTO NORTE DE SANTANDER, DURANTE EL RECESO ESTUDIANTIL CORRESPONDIENTE AL MES DE DICIEMBRE DE LA VIGENCIA 2026, EN CUMPLIMIENTO  DE LA RESOLUCIÓN N° 121 DEL 18 DE FEBRERO DE 2026, ESPECÍFICAMENTE  EN SU ARTÍCULO 2 SOBRE LA ATENCIÓN DURANTE EL RECESO ESTUDIANTIL:  TENIENDO EN ",
+      "entity": "Gobernación Norte de Santander*",
+      "department": "Norte de Santander",
+      "amount": 8860068000,
+      "modality": "Licitación pública",
+      "closingDate": "2026-10-22T00:00:00.000Z"
+    },
+    {
+      "id": "c66d0689-d9d1-48c4-87a3-53e1354fcdf1",
+      "title": "PRESTACIÓN DEL SERVICIO DE TRANSPORTE ESCOLAR PARA ESTUDIANTES DE LAS INSTITUCIONES EDUCATIVAS OFICIALES DEL MUNICIPIO DE PEQUE; ANTIOQUIA; CON EL FIN DE GARANTIZAR EL ACCESO A LA EDUCACIÓN Y AUMENTAR",
+      "description": "PRESTACIÓN DEL SERVICIO DE TRANSPORTE ESCOLAR PARA ESTUDIANTES DE LAS INSTITUCIONES EDUCATIVAS OFICIALES DEL MUNICIPIO DE PEQUE, ANTIOQUIA, CON EL FIN DE GARANTIZAR EL ACCESO A LA EDUCACIÓN Y AUMENTAR LA PERMANENCIA ESCOLAR.",
+      "entity": "MUNICIPIO DE PEQUE",
+      "department": "Antioquia",
+      "amount": 100000000,
+      "modality": "Selección Abreviada de Menor Cuantía",
+      "closingDate": "2026-10-28T00:00:00.000Z"
+    },
+    {
+      "id": "2317a667-0d24-4843-bff6-65de50f8bc65",
+      "title": "Adquirir una solución de Gestión de Accesos Privilegiados (PAM) para la administración; control; monitoreo y auditoría de accesos privilegiados sobre la infraestructura tecnológica de la Secretaría",
+      "description": "Adquirir una solución de Gestión de Accesos Privilegiados (PAM) para la administración, control, monitoreo y auditoría de accesos privilegiados sobre la infraestructura tecnológica de la Secretaría Distrital de Cultura, Recreación y Deporte - SCRD.",
+      "entity": "SECRETARÍA DISTRITAL DE CULTURA, RECREACIÓN Y DEPORTE",
+      "department": "Bogotá D.C.",
+      "amount": 224339214,
+      "modality": "Selección abreviada subasta inversa",
+      "closingDate": "2026-10-26T00:00:00.000Z"
+    },
+    {
+      "id": "7b2ae88f-f22c-4927-adc4-f42eb1b12b41",
+      "title": "ADQUISICIÓN DE DOTACIÓN CONSISTENTE EN EQUIPOS TECNOLÓGICOS; ELEMENTOS DE OFICINA; PAPELERÍA; UTENSILIOS DE COCINA Y DEMÁS BIENES NECESARIOS PARA EL FORTALECIMIENTO OPERATIVO; FUNCIONAL Y DE ATENCIÓN",
+      "description": "ADQUISICIÓN DE DOTACIÓN CONSISTENTE EN EQUIPOS TECNOLÓGICOS, ELEMENTOS DE OFICINA, PAPELERÍA, UTENSILIOS DE COCINA Y DEMÁS BIENES NECESARIOS PARA EL FORTALECIMIENTO OPERATIVO, FUNCIONAL Y DE ATENCIÓN DEL CENTRO DE VIDA SENSORIAL Y EL BANCO DE LA FELICIDAD DEL MUNICIPIO DE SESQUILÉ, CUNDINAMARCA",
+      "entity": "ALCALDIA DE SESQUILE",
+      "department": "Cundinamarca",
+      "amount": 59355095,
+      "modality": "Selección abreviada subasta inversa",
+      "closingDate": "2026-10-28T00:00:00.000Z"
+    },
+    {
+      "id": "e4409aee-8636-4568-9ff0-e8bd33a16f77",
+      "title": "EQUIPOS LABORATORIO LACMA",
+      "description": "27768-La Institución está interesada en contratar mediante la modalidad de Subasta Inversa, para: Adquirir autoclave y equipos auxiliares, para el Laboratorio de Control de Calidad (LACMA) de la Facultad de Ciencias de la Salud de la Institución Universitaria Colegio Mayor de Antioquia.",
+      "entity": "INSTITUCIÓN UNIVERSITARIA COLEGIO MAYOR DE ANTIOQUIA",
+      "department": "Antioquia",
+      "amount": 201110000,
+      "modality": "Selección abreviada subasta inversa",
+      "closingDate": "2026-10-22T00:00:00.000Z"
+    },
+    {
+      "id": "60df7c73-7f8a-4720-b261-974374be470e",
+      "title": "Adquisición de pantallas inteligentes; scanners e impresoras para el fortalecimiento de la gestión  administrativa y operativa de la Agencia de Educación Postsecundaria de Medellín - SAPIENCIA (Presen",
+      "description": "Adquisición de pantallas inteligentes, scanners e impresoras para el fortalecimiento de la gestión administrativa y operativa de la Agencia de Educación Postsecundaria de Medellín - SAPIENCIA",
+      "entity": "AGENCIA DE EDUCACIÓN POSTSECUNDARIA DE MEDELLÍN -SAPIENCIA-",
+      "department": "Antioquia",
+      "amount": 77577866,
+      "modality": "Selección abreviada subasta inversa",
+      "closingDate": "2026-10-28T00:00:00.000Z"
+    },
+    {
+      "id": "6f9b2206-eb68-4c7f-9eb4-77aed7beedb0",
+      "title": "SUMINISTRO DE HERRAMIENTAS Y EQUIPOS DE MEDICIÓN PORTÁTILES DE VARIABLES PARA LA  FABRICA DE LICORES Y ALCOHOLES DE ANTIOQUIA EICE.",
+      "description": "SUMINISTRO DE HERRAMIENTAS Y EQUIPOS DE MEDICIÓN PORTÁTILES DE VARIABLES PARA LA FABRICA DE LICORES Y ALCOHOLES DE ANTIOQUIA EICE.",
+      "entity": "FABRICA DE LICORES Y ALCOHOLES DE ANTIOQUIA",
+      "department": "Antioquia",
+      "amount": 90043171,
+      "modality": "Contratación régimen especial (con ofertas)",
+      "closingDate": "2026-10-22T00:00:00.000Z"
+    },
+    {
+      "id": "683e4803-a44d-4648-8d5c-3a58fe498355",
+      "title": "APOYAR EL DESARROLLO DE JORNADAS PEDAGÓGICAS EN NORMATIVIDAD DE VERTIMIENTOS LÍQUIDOS; CALIDAD DE FUENTES SUPERFICIALES Y PROCESOS EDUCATIVOS EN EL MARCO DE LA OPERACIÓN Y MANTENIMIENTO DE PTAR; ASÍ C",
+      "description": "APOYAR EL DESARROLLO DE JORNADAS PEDAGÓGICAS EN NORMATIVIDAD DE VERTIMIENTOS LÍQUIDOS, CALIDAD DE FUENTES SUPERFICIALES Y PROCESOS EDUCATIVOS EN EL MARCO DE LA OPERACIÓN Y MANTENIMIENTO DE PTAR, ASÍ COMO DE ACCIONES DE EDUCACIÓN AMBIENTAL ORIENTADAS A LA EJECUCIÓN DE PROYECTOS DE SANEAMIENTO BÁSICO Y DESCONTAMINACIÓN HÍDRICA, MEDIANTE EL SUMINISTRO DE ALMUERZOS Y REFRIGERIOS PARA LOS PARTICIPANTES",
+      "entity": "CORPORACION AUTONOMA REGIONAL DEL CAUCA  12",
+      "department": "Cauca",
+      "amount": 5044000,
+      "modality": "Mínima cuantía",
+      "closingDate": "2026-10-21T00:00:00.000Z"
+    },
+    {
+      "id": "796436b2-09d9-4ba9-86ec-84bfbd02eed3",
+      "title": "5_406 Contratar la concesión de espacios físicos ubicados en el complejo central del Sena en Antioquia para la prestación de los servicios de cafetería-restaurante; fotocopiado-papelería y puesto para",
+      "description": "5_406 Contratar la concesión de espacios físicos ubicados en el complejo central del Sena en Antioquia para la prestación de los servicios de cafetería-restaurante, fotocopiado-papelería y puesto para café.",
+      "entity": "SENA REGIONAL ANTIOQUIA Grupo de Apoyo Administrativo Mixto",
+      "department": "Antioquia",
+      "amount": 0,
+      "modality": "Licitación pública",
+      "closingDate": "2026-11-18T00:00:00.000Z"
+    },
+    {
+      "id": "6a329f06-68dd-4ab7-b893-a9e6390b316b",
+      "title": "BONOS DE ALIMENTACION",
+      "description": "Contratar el suministro de bonos de alimentación para los aprendices de los programas Técnicos (EDTH), Tecnólogos, en el marco del convenio interadministrativo No. ATENEA-562-2025 y los aprendices beneficiarios en el marco del convenio interadministrativo No. ATENEA -536-2025, entre la Agencia Distrital para la Educación Superior, la Ciencia y la Tecnología ATENEA y el Servicio Nacional de Aprendi",
+      "entity": "SENA REGIONAL DISTRITO CAPITAL Grupo de Apoyo Administrativo Mixto CSF",
+      "department": "Bogotá D.C.",
+      "amount": 1155525000,
+      "modality": "Selección Abreviada de Menor Cuantía",
+      "closingDate": "2026-10-23T00:00:00.000Z"
+    },
+    {
+      "id": "ee26be83-7a32-49f2-b777-467b804e04b9",
+      "title": "PAPELERIA Y ELEMENTOS DE OFICINA",
+      "description": "BS 47 SUMINISTRO INTEGRAL DE PAPELERÍA, ÚTILES Y ELEMENTOS DE OFICINA, INCLUIDOS TÓNER; NECESARIOS PARA EL BUEN FUNCIONAMIENTO DEL INSTITUTO PARA LA ECONOMÍA SOCIAL - IPES",
+      "entity": "INSTITUTO PARA LA ECONOMIA SOCIAL- IPES",
+      "department": "Bogotá D.C.",
+      "amount": 140000000,
+      "modality": "Selección abreviada subasta inversa",
+      "closingDate": "2026-10-22T00:00:00.000Z"
+    },
+    {
+      "id": "bfc8e7b0-eacc-4a0f-bba0-b13b5e633b6c",
+      "title": "COMPRAVENTA PARA LA ADQUISICIÓN DE REACTIVOS; MEDIOS DE CULTIVO; KITS DE DIAGNÓSTICO; MATERIALES Y EQUIPO NECESARIOS PARA EL DESARROLLO DE LAS ACTIVIDADES DEL LABORATORIO DE SALUD PÚBLICA DEL TOLIMA",
+      "description": "CELEBRAR CONTRATO DE COMPRAVENTA PARA LA ADQUISICIÓN DE REACTIVOS, MEDIOS DE CULTIVO, KITS DE DIAGNÓSTICO, MATERIALES Y EQUIPO NECESARIOS PARA EL DESARROLLO DE LAS ACTIVIDADES DEL LABORATORIO DE SALUD PÚBLICA DEL TOLIMA, EN EL MARCO DEL PROYECTO  FORTALECIMIENTO A LA VIGILANCIA EPIDEMIOLÓGICA E IVC A ESTABLECIMIENTOS DE INTERÉS PARA LA GOBERNABILIDAD Y GOBERNANZA EN EL DEPARTAMENTO DEL TOLIMA",
+      "entity": "GOBIERNO DEPARTAMENTAL",
+      "department": "Tolima",
+      "amount": 772927362,
+      "modality": "Selección abreviada subasta inversa",
+      "closingDate": "2026-10-26T00:00:00.000Z"
+    },
+    {
+      "id": "82437f70-413c-4c63-8964-6c33e014a59a",
+      "title": "CONTRATAR LA CONSULTORÍA PARA REALIZAR LOS ESTUDIOS Y DISEÑOS TÉCNICOS PARA LA CONSTRUCCIÓN DE LA SEDE UNIDAD BÁSICA DE CHIQUINQUIRÁ -SECCIONAL BOYACÁ DEL INSTITUTO NACIONAL DE MEDICINA LEGAL",
+      "description": "CONTRATAR LA CONSULTORÍA PARA REALIZAR LOS ESTUDIOS Y DISEÑOS TÉCNICOS PARA LA CONSTRUCCIÓN DE LA SEDE UNIDAD BÁSICA DE CHIQUINQUIRÁ -SECCIONAL BOYACÁ DEL INSTITUTO NACIONAL DE MEDICINA LEGAL Y CIENCIAS FORENSES.",
+      "entity": "INSTITUTO NACIONAL DE MEDICINA LEGAL Y CIENCIAS FORENSES",
+      "department": "Bogotá D.C.",
+      "amount": 105456856,
+      "modality": "Concurso de méritos abierto",
+      "closingDate": "2026-11-05T00:00:00.000Z"
+    },
+    {
+      "id": "7b4cf9bc-5bc6-4642-94c9-fe97fd04d058",
+      "title": "ADQUISICIÓN DE ELEMENTOS DE PAPELERÍA",
+      "description": "ADQUISICIÓN DE ELEMENTOS DE PAPELERÍA, ÚTILES DE OFICINA, INSUMOS DE IMPRESIÓN Y ELEMENTOS DE ASEO Y CAFETERÍA NECESARIOS PARA EL NORMAL FUNCIONAMIENTO ADMINISTRATIVO DEL FONDO DE VIVIENDA DE INTERÉS SOCIAL Y REFORMA URBANA DE TIBASOSA - FOMVITI, VIGENCIA 2026",
+      "entity": "FONDO DE VIVIENDA DE INTERES SOCIAL Y REFORMA URBANA DE TIBASOSA - FOMVITI",
+      "department": "Boyacá",
+      "amount": 2415300,
+      "modality": "Mínima cuantía",
+      "closingDate": "2026-10-21T00:00:00.000Z"
+    },
+    {
+      "id": "cca34689-3e07-4445-851b-9feb15ed48e5",
+      "title": "Concurso de Meritos - Revisoria Fiscal",
+      "description": "DG-197- Consultoría para la prestación de servicios profesionales de revisoría fiscal y auditoría integral para el Fondo de Prestaciones Económicas, Cesantías y Pensiones -FONCEP.",
+      "entity": "FONDO DE PRESTACIONES ECONOMICAS CESANTIAS Y PENSIONES",
+      "department": "Bogotá D.C.",
+      "amount": 261164396,
+      "modality": "Concurso de méritos abierto",
+      "closingDate": "2026-11-05T00:00:00.000Z"
+    },
+    {
+      "id": "7738c30c-3f11-4e74-8a6e-cda65e7c2652",
+      "title": "ADQUIRIR MATERIALES; INSUMOS Y ELEMENTOS PARA EL FORTALECIMIENTO DE LOS PROYECTOS AMBIENTALES ESCOLARES - PRAE; EN EL MARCO DEL PROYECTO  FORTALECIMIENTO DE LOS PRAE EN ESTABLECIMIENTOS EDUCATIVOS OFI",
+      "description": "ADQUIRIR MATERIALES, INSUMOS Y ELEMENTOS PARA EL FORTALECIMIENTO DE LOS PROYECTOS AMBIENTALES ESCOLARES - PRAE, EN EL MARCO DEL PROYECTO  FORTALECIMIENTO DE LOS PRAE EN ESTABLECIMIENTOS EDUCATIVOS OFICIALES DEL DEPARTAMENTO DEL CAQUETÁ .",
+      "entity": "GOBERNACION DEL CAQUETA**",
+      "department": "Caquetá",
+      "amount": 1176283836,
+      "modality": "Selección abreviada subasta inversa",
+      "closingDate": "2026-10-27T00:00:00.000Z"
+    },
+    {
+      "id": "7f4d19c5-bfea-4741-b8f1-ab29105df907",
+      "title": "CONSULTORÍA PARA LA ACTUALIZACIÓN DEL PLAN DE GESTIÓN INTEGRAL DE RESIDUOS SÓLIDOS - PGIRS; PLAN DE SANEAMIENTO Y MANEJO DE VERTIMIENTOS - PSMV Y PROGRAMA DE USO EFICIENTE Y AHORRO DEL AGUA - PUEAA DE",
+      "description": "CONSULTORÍA PARA LA ACTUALIZACIÓN DEL PLAN DE GESTIÓN INTEGRAL DE RESIDUOS SÓLIDOS - PGIRS, PLAN DE SANEAMIENTO Y MANEJO DE VERTIMIENTOS - PSMV Y PROGRAMA DE USO EFICIENTE Y AHORRO DEL AGUA - PUEAA DEL MUNICIPIO DE CONTRATACIÓN, SANTANDER, CONFORME A LA NORMATIVIDAD VIGENTE",
+      "entity": "ALCALDIA MUNICIPAL CONTRATACION SANTANDER",
+      "department": "Santander",
+      "amount": 120000000,
+      "modality": "Concurso de méritos abierto",
+      "closingDate": "2026-10-23T00:00:00.000Z"
+    },
+    {
+      "id": "1a5d12cc-3ca1-4009-a511-ac4c86d050db",
+      "title": "MANTENIMIENTO DE EQUIPOS DE COCINA REFRIGERACIÓN Y EQUIPOS DE COMEDORES DE LA AGENCIA LOGISTICA DE LAS FUERZAS MILITARES  REGIONAL TOLIMA GRANDE (Presentación de oferta)",
+      "description": "MANTENIMIENTO DE EQUIPOS DE COCINA REFRIGERACIÓN Y EQUIPOS DE COMEDORES DE LA AGENCIA LOGISTICA DE LAS FUERZAS MILITARES  REGIONAL TOLIMA GRANDE",
+      "entity": "AGENCIA LOGISTICA DE LAS FUERZAS MILITARES",
+      "department": "Bogotá D.C.",
+      "amount": 134000000,
+      "modality": "Selección abreviada subasta inversa",
+      "closingDate": "2026-10-21T00:00:00.000Z"
+    },
+    {
+      "id": "580ea2eb-2a55-4d3f-820d-6e801bbf0213",
+      "title": "CONSULTORIA PARA LA REALIZACION DEL DIAGNOSTICO; EVALUACION Y PROPUESTA DE OPTIMIZACION DE LA INFRAESTRUCTURA Y EQUIPOS DE LA PLANTA DE TRATAMIENTO DE AGUA POTABLE DEL SUELO URBANO DEL MUNICIPIO DE PU",
+      "description": "CONSULTORIA PARA LA REALIZACION DEL DIAGNOSTICO, EVALUACION Y PROPUESTA DE OPTIMIZACION DE LA INFRAESTRUCTURA Y EQUIPOS DE LA PLANTA DE TRATAMIENTO DE AGUA POTABLE DEL SUELO URBANO DEL MUNICIPIO DE PUERTO SANTANDER, NORTE DE SANTANDER",
+      "entity": "ALCALDÍA MUNICIPAL DE PUERTO SANTANDER NORTE DE SANTANDER",
+      "department": "Norte de Santander",
+      "amount": 139825000,
+      "modality": "Concurso de méritos abierto",
+      "closingDate": "2026-10-28T00:00:00.000Z"
+    },
+    {
+      "id": "d0d070ad-ff9d-48c7-98b1-366428188988",
+      "title": "BONOS DE ALIMENTACION (Manifestación de interés (Menor Cuantía))",
+      "description": "Contratar el suministro de bonos de alimentación para los aprendices de los programas Técnicos (EDTH), Tecnólogos, en el marco del convenio interadministrativo No. ATENEA-562-2025 y los aprendices beneficiarios en el marco del convenio interadministrativo No. ATENEA -536-2025, entre la Agencia Distrital para la Educación Superior, la Ciencia y la Tecnología ATENEA y el Servicio Nacional de Aprendi",
+      "entity": "SENA REGIONAL DISTRITO CAPITAL Grupo de Apoyo Administrativo Mixto CSF",
+      "department": "Bogotá D.C.",
+      "amount": 1155525000,
+      "modality": "Selección Abreviada de Menor Cuantía",
+      "closingDate": "2026-10-23T00:00:00.000Z"
+    },
+    {
+      "id": "b588ee9c-583c-4a5a-8ef4-399eaea0f4b1",
+      "title": "CONTRATAR EL SUMINISTRO DE MATERIALES DE FORMACIÓN CONSISTENTES EN ALIMENTOS PERECEDEROS Y NO PERECEDEROS; LICORES; VINOS; APERITIVOS Y ELEMENTOS DE USO ÚNICO (DESECHABLES);  PARA LAS ACTIVIDADES DE A",
+      "description": "CONTRATAR EL SUMINISTRO DE MATERIALES DE FORMACIÓN CONSISTENTES EN ALIMENTOS PERECEDEROS Y NO PERECEDEROS, LICORES, VINOS, APERITIVOS Y ELEMENTOS DE USO ÚNICO (DESECHABLES),  PARA LAS ACTIVIDADES DE APRENDIZAJE DE LOS PROGRAMAS DE COCINA, MESA Y BAR, PANADERÍA Y PASTELERÍA, EN LOS NIVELES DE FORMACIÓN TITULADA Y PROGRAMAS ESPECIALES DEL CENTRO DE COMERCIO Y SERVICIOS DEL SENA REGIONAL BOLÍVAR.",
+      "entity": "SENA REGIONAL BOLIVAR Grupo de Apoyo Administrativo Mixto",
+      "department": "Bolívar",
+      "amount": 408702923,
+      "modality": "Selección abreviada subasta inversa",
+      "closingDate": "2026-10-28T00:00:00.000Z"
+    },
+    {
+      "id": "dd960904-9db4-4070-a939-cf12ea59666a",
+      "title": "CONTRATAR EL SUMINISTRO DE MATERIALES DE FORMACIÓN CONSISTENTES EN ALIMENTOS PERECEDEROS Y NO PERECEDEROS; LICORES; VINOS; APERITIVOS Y ELEMENTOS DE USO ÚNICO (DESECHABLES);  PARA LAS ACTIVIDADES DE A",
+      "description": "CONTRATAR EL SUMINISTRO DE MATERIALES DE FORMACIÓN CONSISTENTES EN ALIMENTOS PERECEDEROS Y NO PERECEDEROS, LICORES, VINOS, APERITIVOS Y ELEMENTOS DE USO ÚNICO (DESECHABLES),  PARA LAS ACTIVIDADES DE APRENDIZAJE DE LOS PROGRAMAS DE COCINA, MESA Y BAR, PANADERÍA Y PASTELERÍA, EN LOS NIVELES DE FORMACIÓN TITULADA Y PROGRAMAS ESPECIALES DEL CENTRO DE COMERCIO Y SERVICIOS DEL SENA REGIONAL BOLÍVAR.",
+      "entity": "SENA REGIONAL BOLIVAR Grupo de Apoyo Administrativo Mixto",
+      "department": "Bolívar",
+      "amount": 408702923,
+      "modality": "Selección abreviada subasta inversa",
+      "closingDate": "2026-10-28T00:00:00.000Z"
+    },
+    {
+      "id": "3bfb416b-d371-43ee-bdc9-1cab40c73983",
+      "title": "PRESTACIÓN DE SERVICIOS DE MANTENIMIENTO PREVENTIVO Y CORRECTIVO CON SUMINISTRO DE REPUESTOS Y MANO DE OBRA BAJO LA MODALIDAD DE PRECIOS UNITARIOS A MONTO AGOTABLE PARA EL BANCO DE MAQUINARIA Y VEHÍCU",
+      "description": "PRESTACIÓN DE SERVICIOS DE MANTENIMIENTO PREVENTIVO Y CORRECTIVO CON SUMINISTRO DE REPUESTOS Y MANO DE OBRA BAJO LA MODALIDAD DE PRECIOS UNITARIOS A MONTO AGOTABLE PARA EL BANCO DE MAQUINARIA Y VEHÍCULOS DEL MUNICIPIO DE MONIQUIRÁ BOYACÁ",
+      "entity": "ALCALDIA MUNICIPIO DE MONIQUIRA+",
+      "department": "Boyacá",
+      "amount": 211950000,
+      "modality": "Selección Abreviada de Menor Cuantía",
+      "closingDate": "2026-10-28T00:00:00.000Z"
+    },
+    {
+      "id": "1902cdc5-e84b-4d9b-8005-a82000a7fcde",
+      "title": "PRESTAR EL SERVICIO DE MANTENIMIENTO PREVENTIVO Y CORRECTIVO; INCLUIDAS AUTOPARTES Y MANO DE OBRA; PARA EL PARQUE AUTOMOTOR DEL INSTITUTO DE DESARROLLO URBANO",
+      "description": "PRESTAR EL SERVICIO DE MANTENIMIENTO PREVENTIVO Y CORRECTIVO, INCLUIDAS AUTOPARTES Y MANO DE OBRA, PARA EL PARQUE AUTOMOTOR DEL INSTITUTO DE DESARROLLO URBANO.",
+      "entity": "INSTITUTO DE DESARROLLO URBANO",
+      "department": "Bogotá D.C.",
+      "amount": 279380912,
+      "modality": "Selección Abreviada de Menor Cuantía",
+      "closingDate": "2026-11-05T00:00:00.000Z"
+    },
+    {
+      "id": "79f11a24-6623-4b46-a6ca-91e7c05e40e5",
+      "title": "PCM 08-2026",
+      "description": "REALIZAR LA INTERVENTORIA ADMNISTRATIVA, FINANCIERA, CONTABLE, LEGAL Y TECNICA AL PROYECTO  RECUPERACIÓN DE ÁREAS DEGRADADAS EN EL MUNICIPIO DE UNIÓN PANAMERICANA",
+      "entity": "CODECHOCO",
+      "department": "Chocó",
+      "amount": 288125584,
+      "modality": "Concurso de méritos abierto",
+      "closingDate": "2026-10-23T00:00:00.000Z"
+    },
+    {
+      "id": "9b472292-d1c5-45a5-9f19-fd4ff2db786d",
+      "title": "PRESTAR SERVICIOS PARA EJECUTAR ACCIONES COMPLEMENTARIAS EN SALUD DIRIGIDAS A PERSONAS CON DISCAPACIDAD Y SUSCUIDADORES Y CUIDADORAS EN LA LOCALIDAD DE SUBA",
+      "description": "PRESTAR SERVICIOS PARA EJECUTAR ACCIONES COMPLEMENTARIAS EN SALUD DIRIGIDAS A PERSONAS CON DISCAPACIDAD Y SUSCUIDADORES Y CUIDADORAS EN LA LOCALIDAD DE SUBA.",
+      "entity": "ALCALDÍA LOCAL DE SUBA",
+      "department": "Bogotá D.C.",
+      "amount": 1333800000,
+      "modality": "Licitación pública",
+      "closingDate": "2026-11-24T00:00:00.000Z"
+    },
+    {
+      "id": "1bc03f02-a1d5-4876-b7b8-dd41c742b250",
+      "title": "CONTRATAR EL SERVICIO DE CONECTIVIDAD SATELITAL PARA LA BRIGADA XIII",
+      "description": "CONTRATAR EL SERVICIO DE CONECTIVIDAD SATELITAL PARA LA BRIGADA XIII",
+      "entity": "SECRETARIA DISTRITAL DE SEGURIDAD, CONVIVENCIA Y JUSTICIA",
+      "department": "Bogotá D.C.",
+      "amount": 60234111,
+      "modality": "Mínima cuantía",
+      "closingDate": "2026-10-22T00:00:00.000Z"
+    },
+    {
+      "id": "4557192d-4a62-4906-831c-433e92fd8125",
+      "title": "EJECUCIÓN DE ESTUDIOS; ALQUILER DE MAQUINARIA Y SUMINISTROS DESTINADOS A LA ADECUACIÓN; MANTENIMIENTO Y MEJORAMIENTO DE LOS DIFERENTES PARQUES Y ZONAS RECREO-DEPORTIVAS QUE SE ENCUENTRAN BAJO LA RESPO",
+      "description": "EJECUCIÓN DE ESTUDIOS, ALQUILER DE MAQUINARIA Y SUMINISTROS DESTINADOS A LA ADECUACIÓN, MANTENIMIENTO Y MEJORAMIENTO DE LOS DIFERENTES PARQUES Y ZONAS RECREO-DEPORTIVAS QUE SE ENCUENTRAN BAJO LA RESPONSABILIDAD DEL INSTITUTO MUNICIPAL PARA LA RECREACIÓN Y EL DEPORTE IMRD DE CÚCUTA",
+      "entity": "INSTITUTO MUNICIPAL PARA LA RECREACION Y EL DEPORTE DE CUCUTA",
+      "department": "Norte de Santander",
+      "amount": 600000000,
+      "modality": "Licitación pública",
+      "closingDate": "2026-11-03T00:00:00.000Z"
+    },
+    {
+      "id": "9f4a2783-1d3c-44aa-bf4f-3393190b6d42",
+      "title": "INTERVENTORÍA TÉCNICA; ADMINISTRATIVA Y FINANCIERA PARA IMPLEMENTAR ESTUFAS ECOEFICIENTES FIJAS EN ÁREAS DE IMPORTANCIA ESTRATÉGICA; MEDIANTE LA EJECUCIÓN DEL PROGRAMA DE PAGOS POR SERVICIOS AMBIENTAL",
+      "description": "INTERVENTORÍA TÉCNICA, ADMINISTRATIVA Y FINANCIERA PARA IMPLEMENTAR ESTUFAS ECOEFICIENTES FIJAS EN ÁREAS DE IMPORTANCIA ESTRATÉGICA, MEDIANTE LA EJECUCIÓN DEL PROGRAMA DE PAGOS POR SERVICIOS AMBIENTALES (PSA), COMO ESTRATEGIA PARA LA MITIGACIÓN DEL CAMBIO CLIMÁTICO Y LA CONSERVACIÓN DE LOS RECURSOS NATURALES",
+      "entity": "ALCALDIA MUNICIPIO DE VILLAVICENCIO",
+      "department": "Meta",
+      "amount": 110000000,
+      "modality": "Mínima cuantía",
+      "closingDate": "2026-10-22T00:00:00.000Z"
+    },
+    {
+      "id": "ce6341c8-7307-4068-9641-ef929b5917c7",
+      "title": "ELEMENTOS PARA EL MONTAJE Y REALIZACIÓN DE MUSEOGRAFÍA",
+      "description": "Suministro e instalación de elementos para el montaje y realización de museografía para el programa de exposiciones del Archivo de Bogotá",
+      "entity": "SECRETARÍA GENERAL DE LA ALCALDÍA MAYOR DE BOGOTÁ",
+      "department": "Bogotá D.C.",
+      "amount": 70000000,
+      "modality": "Mínima cuantía",
+      "closingDate": "2026-10-26T00:00:00.000Z"
+    },
+    {
+      "id": "cb8b19a2-4303-4377-bae3-a167d18d5ffe",
+      "title": "Encargo fiduciario",
+      "description": "CONTRATAR UN ENCARGO FIDUCIARIO PARA LA ADMINISTRACIÓN Y DESEMBOLSO DE LOS RECURSOS ASIGNADOS A LOS PLANES DE NEGOCIO EN DESARROLLO DE LA RUTA DEL FONDO EMPRENDER Y LA ESTRATEGIA DE SERVICIOS DE EMPRENDIMIENTO, CONFORME A LOS LINEAMIENTOS Y NORMATIVAS ESTABLECIDAS POR EL FONDO EMPRENDER-SENA",
+      "entity": "SENA DIRECCION GENERAL",
+      "department": "Bogotá D.C.",
+      "amount": 805005000,
+      "modality": "Contratación régimen especial (con ofertas)",
+      "closingDate": "2026-10-22T00:00:00.000Z"
+    },
+    {
+      "id": "3bec503c-0635-4599-a529-c88a1e3c4822",
+      "title": "FGN-RCE-IPSE-0043-2026",
+      "description": "La Fiscalía General de la Nación - Subdirección Regional de Apoyo Central, requiere contratar el Servicio de Transporte de Carga por Vía Terrestre, en vehículo tipo grúa, para trasladar y dejar en custodia en los Patios Únicos, vehículos automotores, vehículos no motorizados y autopartes incautados que no se puedan desplazar por sus propios medios, y vehículos automotores y no motorizados decretad",
+      "entity": "FISCALÍA GENERAL DE LA NACIÓN REGIONAL CENTRAL",
+      "department": "Bogotá D.C.",
+      "amount": 912478200,
+      "modality": "Selección abreviada subasta inversa",
+      "closingDate": "2026-10-29T00:00:00.000Z"
+    },
+    {
+      "id": "e0bb1748-1d49-4da7-91a1-a13ff18a2fdc",
+      "title": "CONTRATAR LA ADQUISICIÓN DE MAQUINARIA Y EQUIPOS ESPECIALIZADOS; ASÍ COMO LOS SERVICIOS DE ASISTENCIA TÉCNICA ASOCIADOS; PARA LA DOTACIÓN Y EL FORTALECIMIENTO OPERATIVO DE LAS PLANTAS DE BENEFICIO",
+      "description": "CONTRATAR LA ADQUISICIÓN DE MAQUINARIA Y EQUIPOS ESPECIALIZADOS, ASÍ COMO LOS SERVICIOS DE ASISTENCIA TÉCNICA ASOCIADOS, PARA LA DOTACIÓN Y EL FORTALECIMIENTO OPERATIVO DE LAS PLANTAS DE BENEFICIO ANIMAL (PBA) PRIORIZADAS EN EL DEPARTAMENTO DE CUNDINAMARCA, INCLUIDAS EN EL PLAN DE RACIONALIZACIÓN",
+      "entity": "AGENCIA DE COMERCIALIZACIÓN Y DE COMPETITIVIDAD PARA EL DESARROLLO REGIONAL  ACODER",
+      "department": "Bogotá D.C.",
+      "amount": 2680000000,
+      "modality": "Licitación pública",
+      "closingDate": "2026-10-27T00:00:00.000Z"
+    },
+    {
+      "id": "7761349b-6319-44da-b026-49f96c5451c6",
+      "title": "OPTIMIZACION DEL SISTEMA DE TRATAMIENTO DE AGUA POTABLE DE LA VEREDA LA MOYA; MEDIANTE INTERVENCIONES INTEGRALES QUE INCLUYEN EL TRASLADO DE UNA PLANTA DE TRATAMIENTO DESDE EL SECTOR PARCELAS; LA EJEC",
+      "description": "",
+      "entity": "ALCALDÍA MUNICIPAL COTA",
+      "department": "Cundinamarca",
+      "amount": 375960770,
+      "modality": "Selección Abreviada de Menor Cuantía",
+      "closingDate": null
+    },
+    {
+      "id": "4dd771c5-4257-4f71-a269-973163078ea3",
+      "title": "ADQUISICION DE MENAJE Y ELEMENTOS PARA EL FORTALECIMIENTO DE LOS COMEDORES ESCOLARES DE LAS INSTITUCIONES EDUCATIVAS",
+      "description": "ADQUISICION DE MENAJE Y ELEMENTOS PARA EL FORTALECIMIENTO DE LOS COMEDORES ESCOLARES DE LAS INSTITUCIONES EDUCATIVAS LOS FUNDADORES, JARDÍN DE LAS PEÑAS, CENTRO EDUCATIVO RIO CAFRE (SEDE LA GUAJIRA - SEDE ONDAS DEL CAFRE Y VILLA LUCIA), RIO GUEJAR (SEDE LAS ROSAS Y LIBERTAD) RIO DUDA (SEDE AGUA BONITA, BRISAS DEL DUDA Y SAN ISIDRO), DONDE SE PRESTA EL SERVICO DEL PROGRAMA DE ALIMENTACION ESCOLAR -",
+      "entity": "MUNICIPIO DE MESETAS",
+      "department": "Meta",
+      "amount": 243674112,
+      "modality": "Selección abreviada subasta inversa",
+      "closingDate": "2026-10-27T00:00:00.000Z"
+    },
+    {
+      "id": "120b8542-b78c-403b-8553-982177c067a0",
+      "title": "PRESTACION DE SERVCIOS",
+      "description": "TRANSFORMACIÓN INTEGRAL HACIA UN DESTINO TURÍSTICO COMPETITIVO EN EL MUNICIPIO DE TESALIA, HUILA (COMPONENTE OBRA)",
+      "entity": "ASO-CIT",
+      "department": "Cesar",
+      "amount": 3881713004,
+      "modality": "Contratación régimen especial (con ofertas)",
+      "closingDate": "2026-10-23T00:00:00.000Z"
+    },
+    {
+      "id": "9e0d3e14-cbc5-4cc9-8a90-1ebd73d78e15",
+      "title": "OPTIMIZACIÓN Y PUESTA EN FUNCIONAMIENTO DEL SISTEMA DE LAGUNAS DE OXIDACIÓN DEL MUNICIPIO DE ASTREA; DEPARTAMENTO DEL CESAR (Manifestación de interés (Menor Cuantía))",
+      "description": "OPTIMIZACIÓN Y PUESTA EN FUNCIONAMIENTO DEL SISTEMA DE LAGUNAS DE OXIDACIÓN DEL MUNICIPIO DE ASTREA, DEPARTAMENTO DEL CESAR",
+      "entity": "MUNICIPIO DE ASTREA",
+      "department": "Cesar",
+      "amount": 323575238,
+      "modality": "Selección Abreviada de Menor Cuantía",
+      "closingDate": "2026-10-22T00:00:00.000Z"
+    },
+    {
+      "id": "6dad9c05-7df4-4aa4-b2cc-eea1e86f9735",
+      "title": "ADECUACIÓN Y MANTENIMIENTO DE LAS INSTALACIONES FÍSICAS DEL HOSPITAL SERAFIN MONTAÑA CUELLAR DEL MUNICIPIO DE SAN LUIS; DEPARTAMENTO DEL TOLIMA",
+      "description": "CONTRATAR LA ADECUACIÓN Y MANTENIMIENTO DE LAS INSTALACIONES FÍSICAS DEL HOSPITAL SERAFIN MONTAÑA CUELLAR DEL MUNICIPIO DE SAN LUIS, DEPARTAMENTO DEL TOLIMA",
+      "entity": "HOSPITAL SERAFIN MONTAÑA CUELLAR E.S.E.",
+      "department": "Tolima",
+      "amount": 1556804618,
+      "modality": "Contratación régimen especial (con ofertas)",
+      "closingDate": "2026-10-30T00:00:00.000Z"
+    },
+    {
+      "id": "f85b8791-b44e-4ae5-be8a-756f0863fe0c",
+      "title": "ADECUACIÓN Y NIVELACIÓN DE ÁREAS PEATONALES",
+      "description": "ADECUACIÓN Y NIVELACIÓN DE ÁREAS PEATONALES, CONSTRUCCIÓN DE PLACA DE CONCRETO E INSTALACIÓN DEL SISTEMA DE MANEJO Y EVACUACIÓN DE AGUAS LLUVIAS EN LA ZONA POSTERIOR AL ÁREA DE COORDINACIÓN DE LA INSTITUCIÓN EDUCATIVA CAMILO TORRES RESTREPO",
+      "entity": "INSTITUCION EDUCATIVA CAMILO TORRES RESTREPO",
+      "department": "Santander",
+      "amount": 65662825,
+      "modality": "Selección Abreviada de Menor Cuantía",
+      "closingDate": "2026-10-21T00:00:00.000Z"
+    },
+    {
+      "id": "03d23c06-6474-4be1-9107-beac8ee3adef",
+      "title": "PRESTACIÓN DE SERVICIOS PROFESIONALES DE MEDICOS ESPECIALISTAS PARA EL SERVICIO DE INFECTOLOGIA DEL HOSPITAL MILITAR CENTRAL. VF2027-2030",
+      "description": "PRESTACIÓN DE SERVICIOS PROFESIONALES DE MEDICOS ESPECIALISTAS PARA EL SERVICIO DE INFECTOLOGIA DEL HOSPITAL MILITAR CENTRAL. VF2027-2030",
+      "entity": "HOSPITAL MILITAR CENTRAL",
+      "department": "Bogotá D.C.",
+      "amount": 1910094600,
+      "modality": "Selección Abreviada de Menor Cuantía",
+      "closingDate": "2026-10-28T00:00:00.000Z"
+    },
+    {
+      "id": "54fb744c-331d-4aab-b6f6-31660a7204aa",
+      "title": "Contrato de Compraventa",
+      "description": "COMPRA DE ELEMENTOS HERRAMIENTAS E INSUMOS, PARA EL FORTALECIMIENTO DE PROYECTOS PRODUCTIVOS DEL AÑO 2026 CON DESTINO A LA POBLACION INDIGENA, AFRODESCENDIENTE Y CAMPESINA DEL MUNCIPIO DE MIRANDA, CAUCA",
+      "entity": "MUNICIPIO DE MIRANDA",
+      "department": "Cauca",
+      "amount": 40000000,
+      "modality": "Mínima cuantía",
+      "closingDate": "2026-10-22T00:00:00.000Z"
     }
   ]
 }

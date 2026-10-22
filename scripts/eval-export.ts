@@ -4,16 +4,14 @@ import { Pool } from 'pg';
 import { loadEnv } from '../src/config/env';
 import { Profile } from '../src/modules/profile/domain/entities/profile.entity';
 import {
+  asOpportunityId,
   asProfileId,
   asUserId,
-  OpportunityId,
 } from '../src/modules/shared/domain/typed-id';
 import { PostgresOpportunityRepository } from '../src/modules/opportunity/infrastructure/adapters/persistence/postgres-opportunity.repository';
 import { OllamaAdapter } from '../src/modules/recommendation/infrastructure/adapters/ollama/ollama.adapter';
-import {
-  MatchingService,
-  buildProfileQuery,
-} from '../src/modules/recommendation/domain/services/matching.service';
+import { buildProfileQuery } from '../src/modules/recommendation/domain/services/matching.service';
+import { buildProfileOrTsQuery } from '../src/modules/opportunity/domain/ports/search-index.port';
 import { Opportunity } from '../src/modules/opportunity/domain/entities/opportunity.entity';
 
 export interface EvalCandidate {
@@ -25,23 +23,6 @@ export interface EvalCandidate {
   amount: number;
   modality: string;
   closingDate: string | null;
-}
-
-const TOP_COUNT = 30;
-const RANDOM_COUNT = 30;
-
-function seededShuffle<T>(items: T[], seed: number): T[] {
-  const copy = [...items];
-  let state = seed >>> 0;
-  const nextRand = () => {
-    state = (state * 1664525 + 1013904223) >>> 0;
-    return state / 0x100000000;
-  };
-  for (let i = copy.length - 1; i > 0; i--) {
-    const j = Math.floor(nextRand() * (i + 1));
-    [copy[i], copy[j]] = [copy[j], copy[i]];
-  }
-  return copy;
 }
 
 function toEvalCandidate(opp: Opportunity): EvalCandidate {
@@ -66,6 +47,12 @@ async function main() {
   const env = loadEnv();
   const profilesPath = path.join(rootDir, 'eval', 'profiles.json');
   const candidatesOutPath = path.join(rootDir, 'eval', 'candidates.json');
+  const candidatesNewOutPath = path.join(
+    rootDir,
+    'eval',
+    'candidates-new.json',
+  );
+  const labelsPath = path.join(rootDir, 'eval', 'labels.json');
 
   const rawProfiles = JSON.parse(
     fs.readFileSync(profilesPath, 'utf8'),
@@ -90,6 +77,17 @@ async function main() {
     preferences: p.preferences,
   }));
 
+  const allLabels: Record<string, Record<string, number>> = fs.existsSync(
+    labelsPath,
+  )
+    ? JSON.parse(fs.readFileSync(labelsPath, 'utf8'))
+    : {};
+
+  let existingCandidates: Record<string, EvalCandidate[]> = {};
+  if (fs.existsSync(candidatesOutPath)) {
+    existingCandidates = JSON.parse(fs.readFileSync(candidatesOutPath, 'utf8'));
+  }
+
   const pool = new Pool({ connectionString: env.DATABASE_URL });
   try {
     const repo = new PostgresOpportunityRepository(pool);
@@ -100,94 +98,103 @@ async function main() {
       embedTimeoutMs: env.OLLAMA_EMBED_TIMEOUT_MS,
       chatTimeoutMs: env.OLLAMA_CHAT_TIMEOUT_MS,
     });
-    const matching = new MatchingService();
 
-    // Fetch actionable opportunities that have embeddings and descriptions
-    let { rows } = await pool.query<{ id: string }>(
-      `SELECT o.id
-       FROM opportunities o
-       JOIN opportunity_embeddings e ON e.opportunity_id = o.id
-       WHERE o.status IN ('Published', 'Amended')
-         AND (o.closing_date IS NULL OR o.closing_date >= NOW())
-         AND o.description <> ''
-       ORDER BY o.published_at DESC
-       LIMIT 1000`,
-    );
+    const candidatesNewOutput: Record<string, EvalCandidate[]> = {};
 
-    if (rows.length < TOP_COUNT + RANDOM_COUNT) {
-      const fallback = await pool.query<{ id: string }>(
-        `SELECT o.id
-         FROM opportunities o
-         JOIN opportunity_embeddings e ON e.opportunity_id = o.id
-         WHERE o.status IN ('Published', 'Amended')
-           AND (o.closing_date IS NULL OR o.closing_date >= NOW())
-         ORDER BY (o.description <> '') DESC, o.published_at DESC
-         LIMIT 1000`,
-      );
-      rows = fallback.rows;
-    }
+    for (const profile of profiles) {
+      const profileLabels = allLabels[profile.id] ?? {};
+      const labeledIds = Object.keys(profileLabels);
 
-    const loaded = await Promise.all(
-      rows.map((r) => repo.findById(r.id as OpportunityId)),
-    );
-    const actionable = loaded.filter((o): o is Opportunity => o !== null);
-
-    console.log(`actionable_pool=${actionable.length}`);
-
-    const output: Record<string, EvalCandidate[]> = {};
-
-    for (let idx = 0; idx < profiles.length; idx++) {
-      const profile = profiles[idx];
-      const [profileVec] = await ai.embed([buildProfileQuery(profile)]);
-      const sims = await pool.query<{ id: string; cos: number }>(
-        `SELECT opportunity_id AS id, 1 - (embedding <=> $1::vector) AS cos
-         FROM opportunity_embeddings
-         WHERE opportunity_id = ANY($2::text[])
-           AND embedding_model = $3`,
-        [`[${profileVec.join(',')}]`, actionable.map((c) => c.id), ai.model],
-      );
-      const cosById = new Map(sims.rows.map((r) => [r.id, Number(r.cos)]));
-
-      const scored: Array<{ opp: Opportunity; score: number }> = [];
-      for (const opp of actionable) {
-        const rawCos = cosById.get(opp.id);
-        const semantic =
-          rawCos !== undefined ? MatchingService.normalizeCosine(rawCos) : null;
-        const breakdown = await matching.computeBreakdown(
-          opp,
-          profile,
-          semantic,
+      // (a) Top 30 by full-text search using profile keywords (OR query)
+      const ftsQuery = buildProfileOrTsQuery(profile.preferences.keywords);
+      let ftsIds: string[] = [];
+      if (ftsQuery) {
+        const ftsRes = await pool.query<{ id: string }>(
+          `SELECT o.id
+           FROM opportunities o, to_tsquery('spanish', $1) AS q(tsq)
+           WHERE o.search_tsv @@ q.tsq
+             AND o.is_competitive = true
+             AND o.status IN ('Published', 'Amended')
+             AND (o.closing_date IS NULL OR o.closing_date >= NOW() - INTERVAL '7 days')
+           ORDER BY ts_rank_cd(o.search_tsv, q.tsq) DESC, o.id ASC
+           LIMIT 30;`,
+          [ftsQuery],
         );
-        scored.push({ opp, score: breakdown.combinedScore });
+        ftsIds = ftsRes.rows.map((r) => r.id);
       }
 
-      scored.sort(
-        (a, b) => b.score - a.score || a.opp.id.localeCompare(b.opp.id),
+      // (b) Top 30 by cosine similarity to the profile query vector
+      const [profileVec] = await ai.embed([buildProfileQuery(profile)]);
+      const vecRes = await pool.query<{ id: string }>(
+        `SELECT o.id
+         FROM opportunity_embeddings e
+         JOIN opportunities o ON o.id = e.opportunity_id
+         WHERE e.embedding_model = $1
+           AND o.is_competitive = true
+           AND o.status IN ('Published', 'Amended')
+           AND (o.closing_date IS NULL OR o.closing_date >= NOW() - INTERVAL '7 days')
+         ORDER BY e.embedding <=> $2::vector ASC, o.id ASC
+         LIMIT 30;`,
+        [ai.model, `[${profileVec.join(',')}]`],
+      );
+      const cosineIds = vecRes.rows.map((r) => r.id);
+
+      // (c) 20 random recommendable rows
+      const randomRes = await pool.query<{ id: string }>(
+        `SELECT o.id
+         FROM opportunities o
+         WHERE o.is_competitive = true
+           AND o.status IN ('Published', 'Amended')
+           AND (o.closing_date IS NULL OR o.closing_date >= NOW() - INTERVAL '7 days')
+         ORDER BY md5(o.id || $1)
+         LIMIT 20;`,
+        [profile.id],
+      );
+      const randomIds = randomRes.rows.map((r) => r.id);
+
+      // (d) Every id already present in eval/labels.json for that profile
+      const poolIds = Array.from(
+        new Set([...ftsIds, ...cosineIds, ...randomIds, ...labeledIds]),
       );
 
-      const top30 = scored.slice(0, TOP_COUNT).map((s) => s.opp);
-      const topIds = new Set(top30.map((o) => o.id));
-      const remaining = scored
-        .slice(TOP_COUNT)
-        .map((s) => s.opp)
-        .filter((o) => !topIds.has(o.id));
-      const random30 = seededShuffle(remaining, 20261017 + idx).slice(
-        0,
-        RANDOM_COUNT,
-      );
+      const profileCandidates = existingCandidates[profile.id] ?? [];
+      const currentMap = new Map(profileCandidates.map((c) => [c.id, c]));
 
-      const combined = [...top30, ...random30].map(toEvalCandidate);
-      output[profile.id] = combined;
+      const missingIds = poolIds.filter((id) => !currentMap.has(id));
+      for (const id of missingIds) {
+        const opp = await repo.findById(asOpportunityId(id));
+        if (opp) {
+          const cand = toEvalCandidate(opp);
+          currentMap.set(cand.id, cand);
+          profileCandidates.push(cand);
+        }
+      }
+
+      existingCandidates[profile.id] = profileCandidates;
+
+      const unlabeled = profileCandidates.filter(
+        (cand) => profileLabels[cand.id] === undefined,
+      );
+      candidatesNewOutput[profile.id] = unlabeled;
+
+      const poolSize = profileCandidates.length;
+      const labeledCount = poolSize - unlabeled.length;
+      const unlabeledCount = unlabeled.length;
 
       console.log(
-        `profile=${profile.id} top=${top30.length} random=${random30.length} total=${combined.length}`,
+        `profile=${profile.id}: pool=${poolSize}, labeled=${labeledCount}, unlabeled=${unlabeledCount}`,
       );
     }
 
     fs.mkdirSync(path.dirname(candidatesOutPath), { recursive: true });
     fs.writeFileSync(
       candidatesOutPath,
-      JSON.stringify(output, null, 2) + '\n',
+      JSON.stringify(existingCandidates, null, 2) + '\n',
+      'utf8',
+    );
+    fs.writeFileSync(
+      candidatesNewOutPath,
+      JSON.stringify(candidatesNewOutput, null, 2) + '\n',
       'utf8',
     );
   } finally {
