@@ -4,6 +4,7 @@ import {
   withOpportunityChange,
   withOpportunityAnalysis,
   buildIndexText,
+  isRecommendable,
   MAX_INDEX_DESCRIPTION_LENGTH,
 } from './opportunity.entity';
 import { createMoney } from '../value-objects/money.vo';
@@ -188,6 +189,90 @@ describe('Opportunity Entity', () => {
       expect(text).toBe(
         `Adquisición de licencias de software. ${expectedTruncated}. Entidad: Ministerio de Tecnologías de la Información. Tipo: Prestación de servicios.`,
       );
+    });
+  });
+
+  describe('isRecommendable', () => {
+    const fixedNow = new Date('2026-10-20T12:00:00.000Z');
+
+    it('returns false for direct contracting (non-competitive)', () => {
+      expect(
+        isRecommendable(
+          {
+            isCompetitive: false,
+            status: 'Published',
+            closingDate: new Date('2026-10-25T12:00:00.000Z'),
+          },
+          fixedNow,
+        ),
+      ).toBe(false);
+    });
+
+    it('returns false for awarded status', () => {
+      expect(
+        isRecommendable(
+          {
+            isCompetitive: true,
+            status: 'Awarded',
+            closingDate: new Date('2026-10-25T12:00:00.000Z'),
+          },
+          fixedNow,
+        ),
+      ).toBe(false);
+    });
+
+    it('returns false when closed 10 days ago', () => {
+      const tenDaysAgo = new Date('2026-10-10T12:00:00.000Z');
+      expect(
+        isRecommendable(
+          {
+            isCompetitive: true,
+            status: 'Published',
+            closingDate: tenDaysAgo,
+          },
+          fixedNow,
+        ),
+      ).toBe(false);
+    });
+
+    it('returns true for competitive opportunity with no closing date', () => {
+      expect(
+        isRecommendable(
+          {
+            isCompetitive: true,
+            status: 'Published',
+            closingDate: null,
+          },
+          fixedNow,
+        ),
+      ).toBe(true);
+    });
+
+    it('returns true when closed within 7 days (e.g. 2 days ago)', () => {
+      const twoDaysAgo = new Date('2026-10-18T12:00:00.000Z');
+      expect(
+        isRecommendable(
+          {
+            isCompetitive: true,
+            status: 'Published',
+            closingDate: twoDaysAgo,
+          },
+          fixedNow,
+        ),
+      ).toBe(true);
+    });
+
+    it('returns true for Amended status with future closing date', () => {
+      expect(
+        isRecommendable(
+          {
+            isCompetitive: true,
+            status: 'Amended',
+            closingDate: new Date('2026-10-25T12:00:00.000Z'),
+          },
+          fixedNow,
+        ),
+      ).toBe(true);
     });
   });
 });

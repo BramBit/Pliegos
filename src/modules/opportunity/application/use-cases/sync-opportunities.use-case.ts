@@ -18,6 +18,7 @@ import {
   createOpportunity,
   withOpportunityChange,
   Opportunity,
+  isRecommendable,
 } from '../../domain/entities/opportunity.entity';
 import { Change } from '../../domain/value-objects/opportunity.value-objects';
 import { createMoney } from '../../domain/value-objects/money.vo';
@@ -222,7 +223,13 @@ export class SyncOpportunitiesUseCase implements ISyncOpportunitiesUseCase {
       if (nextResult.done) break;
 
       try {
-        await this.processPage(nextResult.value, counters, seenInRun, onLastPublishedAt);
+        await this.processPage(
+          nextResult.value,
+          counters,
+          seenInRun,
+          onLastPublishedAt,
+          fetchOptions.now ?? new Date(),
+        );
       } catch (dbError) {
         const msg = dbError instanceof Error ? dbError.message : String(dbError);
         this.logger.error(`Database error while persisting SECOP page: ${msg}`);
@@ -238,6 +245,7 @@ export class SyncOpportunitiesUseCase implements ISyncOpportunitiesUseCase {
     counters: { created: number; updated: number; unchanged: number; skipped: number },
     seenInRun: Set<string>,
     onLastPublishedAt?: (date: Date) => void,
+    now: Date = new Date(),
   ): Promise<void> {
     const validItems: SourceOpportunity[] = [];
     for (const src of sourceOpportunities) {
@@ -314,7 +322,9 @@ export class SyncOpportunitiesUseCase implements ISyncOpportunitiesUseCase {
 
         if (newOppResult.ok) {
           toSave.push(newOppResult.value);
-          toEnqueue.push(newOppResult.value.id);
+          if (isRecommendable(newOppResult.value, now)) {
+            toEnqueue.push(newOppResult.value.id);
+          }
           pageCreated++;
         } else {
           pageSkipped++;
@@ -369,7 +379,7 @@ export class SyncOpportunitiesUseCase implements ISyncOpportunitiesUseCase {
           };
 
           toSave.push(updatedOpp);
-          if (shouldEnqueueAnalysis) {
+          if (shouldEnqueueAnalysis && isRecommendable(updatedOpp, now)) {
             toEnqueue.push(updatedOpp.id);
           }
           pageUpdated++;

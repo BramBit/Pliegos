@@ -151,3 +151,27 @@ export function buildIndexText(
   return `${lead}. Entidad: ${opportunity.contractingEntity.name}. Tipo: ${opportunity.contractType}.`;
 }
 
+const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+
+/**
+ * Pure domain function determining whether an opportunity is recommendable:
+ * isCompetitive AND status IN ('Published', 'Amended') AND (closingDate is null OR closingDate >= now - 7 days).
+ */
+export function isRecommendable(
+  opportunity: Pick<Opportunity, 'isCompetitive' | 'status' | 'closingDate'>,
+  now: Date = new Date(),
+): boolean {
+  if (!opportunity.isCompetitive) {
+    return false;
+  }
+  if (opportunity.status !== 'Published' && opportunity.status !== 'Amended') {
+    return false;
+  }
+  if (opportunity.closingDate === null) {
+    return true;
+  }
+  const threshold = new Date(now.getTime() - SEVEN_DAYS_MS);
+  return opportunity.closingDate.getTime() >= threshold.getTime();
+}
+
+

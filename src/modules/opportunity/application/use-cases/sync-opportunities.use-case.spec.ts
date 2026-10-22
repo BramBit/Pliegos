@@ -367,22 +367,45 @@ describe('SyncOpportunitiesUseCase', () => {
     await useCase.execute({});
     expect(fakeQueue.queuedOpportunityIds).toHaveLength(1);
 
-    // Status change alone -> does not enqueue
-    fakeSource.processes = [{ ...sourceSample, status: 'Closed', isOpenForSubmission: false }];
+    // Status change alone (still recommendable) -> does not enqueue
+    fakeSource.processes = [{ ...sourceSample, status: 'Amended' }];
     await useCase.execute({});
     expect(fakeQueue.queuedOpportunityIds).toHaveLength(1);
 
-    // Description change -> enqueues
+    // Description change on recommendable opportunity -> enqueues
     fakeSource.processes = [
       {
         ...sourceSample,
-        status: 'Closed',
-        isOpenForSubmission: false,
+        status: 'Amended',
         description: 'Descripción actualizada con nuevos servidores GPU',
       },
     ];
     await useCase.execute({});
     expect(fakeQueue.queuedOpportunityIds).toHaveLength(2);
+  });
+
+  it('does not enqueue analysis for non-recommendable opportunities', async () => {
+    // Non-competitive (direct contracting)
+    fakeSource.processes = [
+      {
+        ...sourceSample,
+        externalId: 'NON-REC-1',
+        isCompetitive: false,
+      },
+      {
+        ...sourceSample,
+        externalId: 'NON-REC-2',
+        status: 'Awarded',
+      },
+      {
+        ...sourceSample,
+        externalId: 'NON-REC-3',
+        closingDate: new Date('2020-01-01T00:00:00.000Z'),
+      },
+    ];
+    await useCase.execute({});
+    // None of these should be enqueued for analysis
+    expect(fakeQueue.queuedOpportunityIds).toHaveLength(0);
   });
 
   it('compares all 7 tracked fields and sets material: true only on closingDate, amount, description, and status', async () => {

@@ -124,6 +124,46 @@ async function main() {
     console.log(`rows in opportunity_embeddings: ${embeddings}`);
     const unknownStatus = await num("SELECT count(*) AS n FROM opportunities WHERE status = 'Unknown'");
     console.log(`status = 'Unknown': ${unknownStatus} (${pct(unknownStatus, total)})`);
+
+    section('9. Coverage of recommendable rows');
+    const cov = await pool.query<{
+      recommendable: string;
+      with_emb: string;
+      with_desc: string;
+      with_cat: string;
+      with_dept: string;
+      with_amount: string;
+      with_future_closing: string;
+    }>(`
+      WITH a AS (
+        SELECT o.*, (e.opportunity_id IS NOT NULL) AS has_emb
+        FROM opportunities o
+        LEFT JOIN opportunity_embeddings e ON e.opportunity_id = o.id
+        WHERE o.is_competitive
+          AND o.status IN ('Published', 'Amended')
+          AND (o.closing_date IS NULL OR o.closing_date >= now() - interval '7 days')
+      )
+      SELECT
+        count(*) AS recommendable,
+        count(*) FILTER (WHERE has_emb) AS with_emb,
+        count(*) FILTER (WHERE length(btrim(description)) > 0) AS with_desc,
+        count(*) FILTER (WHERE category_code IS NOT NULL AND upper(category_code) <> 'UNSPECIFIED'
+                          AND regexp_replace(category_code, '^V1\\.', '') !~ '^0+$') AS with_cat,
+        count(*) FILTER (WHERE department IS NOT NULL AND department NOT IN ('No Definido', 'No Aplica') AND btrim(department) <> '') AS with_dept,
+        count(*) FILTER (WHERE amount_known AND amount > 0) AS with_amount,
+        count(*) FILTER (WHERE closing_date >= now()) AS with_future_closing
+      FROM a;
+    `);
+
+    const r = cov.rows[0];
+    const recTotal = Number(r.recommendable);
+    console.log(`total recommendable: ${recTotal}`);
+    console.log(`with embedding: ${r.with_emb} (${pct(Number(r.with_emb), recTotal)})`);
+    console.log(`with description: ${r.with_desc} (${pct(Number(r.with_desc), recTotal)})`);
+    console.log(`with valid category: ${r.with_cat} (${pct(Number(r.with_cat), recTotal)})`);
+    console.log(`with department: ${r.with_dept} (${pct(Number(r.with_dept), recTotal)})`);
+    console.log(`with known amount: ${r.with_amount} (${pct(Number(r.with_amount), recTotal)})`);
+    console.log(`with future closing date: ${r.with_future_closing} (${pct(Number(r.with_future_closing), recTotal)})`);
   } finally {
     await pool.end();
   }
