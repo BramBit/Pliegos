@@ -84,9 +84,13 @@ export class GlobalExceptionFilter implements ExceptionFilter {
           ? exception
           : mapped.message;
 
-    this.logger.error(
-      `[requestId=${requestId}] ${req.method ?? 'HTTP'} ${req.originalUrl ?? req.url ?? ''} -> ${mapped.statusCode} ${mapped.error}: ${internalReason}`,
-    );
+    const logMessage = `[requestId=${requestId}] ${req.method ?? 'HTTP'} ${req.originalUrl ?? req.url ?? ''} -> ${mapped.statusCode} ${mapped.error}: ${internalReason}`;
+
+    if (mapped.statusCode >= 400 && mapped.statusCode < 500) {
+      this.logger.warn(logMessage);
+    } else {
+      this.logger.error(logMessage);
+    }
 
     res.status(mapped.statusCode).json(mapped);
   }

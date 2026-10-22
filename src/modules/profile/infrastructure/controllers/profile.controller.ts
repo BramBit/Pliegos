@@ -23,6 +23,7 @@ import { DomainErrorException } from '../../../shared/infrastructure/http/global
 import {
   ErrorEnvelopeDto,
   ProfileDto,
+  ProfilePageDto,
   toProfileDto,
 } from '../../../shared/infrastructure/http/response.dtos';
 import {
@@ -35,6 +36,13 @@ import {
 } from '../../../auth/infrastructure/security/current-user.decorator';
 
 import { ProfileAccessService } from '../../application/services/profile-access.service';
+
+export const listProfilesQuerySchema = z.object({
+  page: z.coerce.number().int().positive().default(1),
+  pageSize: z.coerce.number().int().positive().max(100).default(20),
+});
+
+export type ListProfilesQuery = z.infer<typeof listProfilesQuerySchema>;
 
 @ApiTags('Profiles')
 @Controller('profiles')
@@ -51,24 +59,40 @@ export class ProfileController {
   @ApiOperation({
     summary: 'Listar perfiles del contratista autenticado',
     description:
-      'Retorna todos los perfiles pertenecientes al usuario autenticado.',
+      'Retorna todos los perfiles pertenecientes al usuario autenticado de forma paginada.',
   })
+  @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
+  @ApiQuery({ name: 'pageSize', required: false, type: Number, example: 20 })
   @ApiResponse({
     status: HttpStatus.OK,
-    description: 'Lista de perfiles asociados al usuario autenticado',
-    type: [ProfileDto],
+    description: 'Página de perfiles asociados al usuario autenticado',
+    type: ProfilePageDto,
   })
-  async list(@CurrentUser() user: CurrentUserPayload): Promise<ProfileDto[]> {
+  async list(
+    @CurrentUser() user: CurrentUserPayload,
+    @Query(new ZodValidationPipe(listProfilesQuerySchema)) query?: ListProfilesQuery,
+  ): Promise<ProfilePageDto> {
+    const page = query?.page ?? 1;
+    const pageSize = query?.pageSize ?? 20;
+
     if (!this.getProfilesByOwnerUseCase) {
-      return [];
+      return { items: [], total: 0, page, pageSize };
     }
     const result = await this.getProfilesByOwnerUseCase.execute({
       ownerId: asUserId(user.sub),
     });
     if (!result.ok) {
-      return [];
+      return { items: [], total: 0, page, pageSize };
     }
-    return result.value.map((p) => toProfileDto(p));
+    const total = result.value.length;
+    const startIndex = (page - 1) * pageSize;
+    const slice = result.value.slice(startIndex, startIndex + pageSize);
+    return {
+      items: slice.map((p) => toProfileDto(p)),
+      total,
+      page,
+      pageSize,
+    };
   }
 
   @Get(':id')
@@ -116,14 +140,14 @@ export class ProfileController {
   }
 
   @Post()
-  @HttpCode(HttpStatus.OK)
+  @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
     summary: 'Crear perfil de contratista',
     description:
       'Crea un nuevo perfil con capacidades técnicas, preferencias territoriales canónicas de Colombia, rango de cuantía y preferencias de notificación. Encola automáticamente el job de cálculo de recomendaciones.',
   })
   @ApiResponse({
-    status: HttpStatus.OK,
+    status: HttpStatus.CREATED,
     description: 'Perfil guardado exitosamente y trabajo de recomendación encolado',
     type: ProfileDto,
   })

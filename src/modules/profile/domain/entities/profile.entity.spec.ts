@@ -158,5 +158,55 @@ describe('Profile Entity & Value Objects', () => {
         expect(invalid.error.fields).toContain('preferences');
       }
     });
+
+    it('validates deadlineAlertDays is an integer between 1 and 30', () => {
+      const preferences = createProfilePreferences({ keywords: ['test'] });
+      if (!preferences.ok) throw new Error('Prefs failed');
+
+      const tooSmall = createProfile({
+        id: asProfileId('profile-days-1'),
+        ownerId: asUserId('user-days-1'),
+        sector: 'Tecnología',
+        preferences: preferences.value,
+        deadlineAlertDays: 0,
+      });
+      expect(tooSmall.ok).toBe(false);
+
+      const tooLarge = createProfile({
+        id: asProfileId('profile-days-2'),
+        ownerId: asUserId('user-days-2'),
+        sector: 'Tecnología',
+        preferences: preferences.value,
+        deadlineAlertDays: 31,
+      });
+      expect(tooLarge.ok).toBe(false);
+
+      const nonInteger = createProfile({
+        id: asProfileId('profile-days-3'),
+        ownerId: asUserId('user-days-3'),
+        sector: 'Tecnología',
+        preferences: preferences.value,
+        deadlineAlertDays: 3.5,
+      });
+      expect(nonInteger.ok).toBe(false);
+
+      const validBoundaryMin = createProfile({
+        id: asProfileId('profile-days-4'),
+        ownerId: asUserId('user-days-4'),
+        sector: 'Tecnología',
+        preferences: preferences.value,
+        deadlineAlertDays: 1,
+      });
+      expect(validBoundaryMin.ok).toBe(true);
+
+      const validBoundaryMax = createProfile({
+        id: asProfileId('profile-days-5'),
+        ownerId: asUserId('user-days-5'),
+        sector: 'Tecnología',
+        preferences: preferences.value,
+        deadlineAlertDays: 30,
+      });
+      expect(validBoundaryMax.ok).toBe(true);
+    });
   });
 });

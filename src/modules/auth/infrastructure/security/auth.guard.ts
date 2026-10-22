@@ -33,12 +33,14 @@ export class AuthGuard implements CanActivate {
     const request = context.switchToHttp().getRequest<RequestLike>();
     const path = request.path || request.url || '';
 
+    const isAuthMe = path === '/auth/me' || path.startsWith('/auth/me');
     if (
-      isPublic ||
-      path.startsWith('/auth') ||
-      path.startsWith('/health') ||
-      path.startsWith('/reference') ||
-      path === '/api-json'
+      !isAuthMe &&
+      (isPublic ||
+        path.startsWith('/auth') ||
+        path.startsWith('/health') ||
+        path.startsWith('/reference') ||
+        path === '/api-json')
     ) {
       return true;
     }

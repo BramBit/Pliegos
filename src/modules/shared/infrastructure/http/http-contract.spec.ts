@@ -78,14 +78,16 @@ describe('HTTP Contract: RequestIdMiddleware, GlobalExceptionFilter & Response D
 
   describe('GlobalExceptionFilter', () => {
     let errorLogs: string[];
+    let warnLogs: string[];
     let filter: GlobalExceptionFilter;
 
     beforeEach(() => {
       errorLogs = [];
+      warnLogs = [];
       filter = new GlobalExceptionFilter({
         log: jest.fn(),
         error: jest.fn((msg: string) => errorLogs.push(msg)),
-        warn: jest.fn(),
+        warn: jest.fn((msg: string) => warnLogs.push(msg)),
         debug: jest.fn(),
         verbose: jest.fn(),
       });
@@ -146,7 +148,18 @@ describe('HTTP Contract: RequestIdMiddleware, GlobalExceptionFilter & Response D
         details: ['amountRange'],
         requestId: 'req-val-400',
       });
-      expect(errorLogs[0]).toContain('[requestId=req-val-400]');
+      expect(warnLogs[0]).toContain('[requestId=req-val-400]');
+    });
+
+    it('logs 4xx exceptions at WARN level and 5xx exceptions at ERROR level', () => {
+      runFilter(new DomainErrorException(createProfileNotFoundError(asProfileId('prof-warn'))), 'req-warn');
+      expect(warnLogs).toHaveLength(1);
+      expect(warnLogs[0]).toContain('404 ProfileNotFoundError');
+      expect(errorLogs).toHaveLength(0);
+
+      runFilter(new Error('Boom 500'), 'req-err');
+      expect(errorLogs).toHaveLength(1);
+      expect(errorLogs[0]).toContain('500 InternalServerError');
     });
 
     it('maps ProfileNotFoundError, OpportunityNotFoundError, and RecommendationNotFoundError to 404', () => {

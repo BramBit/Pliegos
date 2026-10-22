@@ -183,6 +183,7 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
       expect(response.body.paths).toHaveProperty('/auth/login');
       expect(response.body.paths).toHaveProperty('/auth/refresh');
       expect(response.body.paths).toHaveProperty('/auth/logout');
+      expect(response.body.paths).toHaveProperty('/auth/me');
 
       writeFileSync(
         resolve(process.cwd(), 'docs/openapi.json'),
@@ -377,7 +378,7 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
         .post('/profiles')
         .set('Authorization', `Bearer ${authToken}`)
         .send(profilePayload)
-        .expect(200);
+        .expect(201);
 
       expect(response.body.id).toBeDefined();
       createdProfileId = response.body.id;
@@ -459,15 +460,43 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
       expect(response.body.statusCode).toBe(400);
     });
 
+    it('POST /profiles rejects deadlineAlertDays outside 1..30 with 400', async () => {
+      const payloadMin = {
+        sector: 'Tecnología',
+        deadlineAlertDays: 0,
+        preferences: { keywords: ['software'], departments: [] },
+      };
+      await request(app.getHttpServer())
+        .post('/profiles')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send(payloadMin)
+        .expect(400);
+
+      const payloadMax = {
+        sector: 'Tecnología',
+        deadlineAlertDays: 31,
+        preferences: { keywords: ['software'], departments: [] },
+      };
+      await request(app.getHttpServer())
+        .post('/profiles')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send(payloadMax)
+        .expect(400);
+    });
+
     it('GET /profiles returns profiles for the authenticated user', async () => {
       const response = await request(app.getHttpServer())
         .get('/profiles')
         .set('Authorization', `Bearer ${authToken}`)
         .expect(200);
 
-      expect(Array.isArray(response.body)).toBe(true);
-      expect(response.body.length).toBeGreaterThanOrEqual(1);
-      expect(response.body.some((p: any) => p.id === createdProfileId)).toBe(true);
+      expect(response.body).toHaveProperty('items');
+      expect(response.body).toHaveProperty('total');
+      expect(response.body).toHaveProperty('page', 1);
+      expect(response.body).toHaveProperty('pageSize', 20);
+      expect(Array.isArray(response.body.items)).toBe(true);
+      expect(response.body.items.length).toBeGreaterThanOrEqual(1);
+      expect(response.body.items.some((p: any) => p.id === createdProfileId)).toBe(true);
     });
 
     it('GET /profiles/:id returns profile detail for existing profile and 404 for unknown', async () => {
@@ -575,7 +604,7 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
             departments: ['Cundinamarca'],
           },
         })
-        .expect(200);
+        .expect(201);
 
       const profileId = createResponse.body.id;
 
@@ -1081,6 +1110,21 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
         .expect(401);
     });
 
+    it('GET /auth/me returns 401 without token and 200 with user data when authenticated', async () => {
+      await request(app.getHttpServer())
+        .get('/auth/me')
+        .expect(401);
+
+      const meRes = await request(app.getHttpServer())
+        .get('/auth/me')
+        .set('Authorization', `Bearer ${authAccessToken}`)
+        .expect(200);
+
+      expect(meRes.body).toHaveProperty('id', registeredUserId);
+      expect(meRes.body).toHaveProperty('email', testUser.email);
+      expect(meRes.body).toHaveProperty('role', 'user');
+    });
+
     it('Global AuthGuard enforces authentication on protected routes and permits public routes', async () => {
       // 1. Missing authorization header gives 401
       const unauthRes = await request(app.getHttpServer())
@@ -1175,7 +1219,7 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
             departments: ['Cundinamarca'],
           },
         })
-        .expect(200);
+        .expect(201);
       profileAId = createProfA.body.id;
 
       // Seed recommendation for Profile A and oppIsoId
@@ -1339,14 +1383,16 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
         .get('/profiles')
         .set('Authorization', `Bearer ${tokenUserA}`)
         .expect(200);
-      expect(resA.body).toHaveLength(1);
-      expect(resA.body[0].id).toBe(profileAId);
+      expect(resA.body.items).toHaveLength(1);
+      expect(resA.body.items[0].id).toBe(profileAId);
+      expect(resA.body.total).toBe(1);
 
       const resB = await request(app.getHttpServer())
         .get('/profiles')
         .set('Authorization', `Bearer ${tokenUserB}`)
         .expect(200);
-      expect(resB.body).toHaveLength(0);
+      expect(resB.body.items).toHaveLength(0);
+      expect(resB.body.total).toBe(0);
     });
 
     it('Enforces MAX_PROFILES_PER_USER: 5 profiles succeed, 6th is rejected with 400', async () => {
@@ -1368,7 +1414,7 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
               departments: ['Antioquia'],
             },
           })
-          .expect(200);
+          .expect(201);
       }
 
       // 6th profile creation attempt should fail with 400 (ValidationError)
@@ -1399,7 +1445,8 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
         .get('/profiles')
         .set('Authorization', `Bearer ${tokenUserB}`)
         .expect(200);
-      expect(listB.body).toHaveLength(5);
+      expect(listB.body.items).toHaveLength(5);
+      expect(listB.body.total).toBe(5);
     });
   });
 

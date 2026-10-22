@@ -65,11 +65,11 @@ export const createProfile = (props: CreateProfileProps): Result<Profile, Valida
   }
 
   const deadlineDays = props.deadlineAlertDays ?? 3;
-  if (!Number.isInteger(deadlineDays) || deadlineDays < 1) {
+  if (!Number.isInteger(deadlineDays) || deadlineDays < 1 || deadlineDays > 30) {
     return err(
       createValidationError(
         ['deadlineAlertDays'],
-        'deadlineAlertDays must be an integer greater than or equal to 1',
+        'deadlineAlertDays must be an integer between 1 and 30',
       ),
     );
   }

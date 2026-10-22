@@ -1,6 +1,39 @@
 {
   "openapi": "3.0.0",
   "paths": {
+    "/auth/me": {
+      "get": {
+        "description": "Retorna el identificador, correo y rol del usuario actualmente autenticado.",
+        "operationId": "AuthController_me",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Información del usuario autenticado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CurrentUserResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token inválido o usuario no encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelopeDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Obtener información del usuario autenticado",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
     "/auth/register": {
       "post": {
         "description": "Crea una nueva cuenta de usuario con correo electrónico y contraseña (mínimo 10 caracteres).",
@@ -402,19 +435,35 @@
     },
     "/profiles": {
       "get": {
-        "description": "Retorna todos los perfiles pertenecientes al usuario autenticado.",
+        "description": "Retorna todos los perfiles pertenecientes al usuario autenticado de forma paginada.",
         "operationId": "ProfileController_list",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": 1,
+              "type": "number"
+            }
+          }
+        ],
         "responses": {
           "200": {
-            "description": "Lista de perfiles asociados al usuario autenticado",
+            "description": "Página de perfiles asociados al usuario autenticado",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ProfileDto"
-                  }
+                  "$ref": "#/components/schemas/ProfilePageDto"
                 }
               }
             }
@@ -440,7 +489,7 @@
           }
         },
         "responses": {
-          "200": {
+          "201": {
             "description": "Perfil guardado exitosamente y trabajo de recomendación encolado",
             "content": {
               "application/json": {
@@ -1345,6 +1394,64 @@
       }
     },
     "schemas": {
+      "CurrentUserResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "00000000-0000-0000-0000-000000000001"
+          },
+          "email": {
+            "type": "string",
+            "example": "usuario@empresa.com"
+          },
+          "role": {
+            "type": "string",
+            "example": "user",
+            "enum": [
+              "user",
+              "admin"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "role"
+        ]
+      },
+      "ErrorEnvelopeDto": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "example": 400
+          },
+          "error": {
+            "type": "string",
+            "example": "ValidationError"
+          },
+          "message": {
+            "type": "string",
+            "example": "Validation failed"
+          },
+          "details": {
+            "type": "object",
+            "description": "Optional structured details about the error",
+            "nullable": true
+          },
+          "requestId": {
+            "type": "string",
+            "example": "c42d8e41-29a4-4f6a-9870-8d65e32b5011"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message",
+          "requestId"
+        ]
+      },
       "RegisterDto": {
         "type": "object",
         "properties": {
@@ -1378,38 +1485,6 @@
         "required": [
           "id",
           "email"
-        ]
-      },
-      "ErrorEnvelopeDto": {
-        "type": "object",
-        "properties": {
-          "statusCode": {
-            "type": "number",
-            "example": 400
-          },
-          "error": {
-            "type": "string",
-            "example": "ValidationError"
-          },
-          "message": {
-            "type": "string",
-            "example": "Validation failed"
-          },
-          "details": {
-            "type": "object",
-            "description": "Optional structured details about the error",
-            "nullable": true
-          },
-          "requestId": {
-            "type": "string",
-            "example": "c42d8e41-29a4-4f6a-9870-8d65e32b5011"
-          }
-        },
-        "required": [
-          "statusCode",
-          "error",
-          "message",
-          "requestId"
         ]
       },
       "LoginDto": {
@@ -2252,6 +2327,35 @@
           "sector",
           "capabilities",
           "preferences"
+        ]
+      },
+      "ProfilePageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProfileDto"
+            }
+          },
+          "total": {
+            "type": "number",
+            "example": 42
+          },
+          "page": {
+            "type": "number",
+            "example": 1
+          },
+          "pageSize": {
+            "type": "number",
+            "example": 20
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "pageSize"
         ]
       },
       "ConfigureProfileDto": {

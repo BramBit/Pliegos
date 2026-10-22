@@ -44,7 +44,7 @@ export const configureProfileSchema = z.object({
   name: z.string().trim().min(1).optional().nullable(),
   contactEmail: z.string().trim().email().optional().nullable(),
   alertsEnabled: z.boolean().default(true),
-  deadlineAlertDays: z.number().int().min(1).default(3),
+  deadlineAlertDays: z.number().int().min(1).max(30).default(3),
   sector: z.string().min(1),
   capabilities: z.array(capabilitySchema).default([]),
   preferences: profilePreferencesSchema,

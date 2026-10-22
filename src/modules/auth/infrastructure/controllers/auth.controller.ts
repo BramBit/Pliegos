@@ -1,10 +1,13 @@
 import {
   Controller,
+  Get,
   Post,
   Body,
   Req,
   HttpCode,
   HttpStatus,
+  Inject,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { RegisterUseCase } from '../../application/use-cases/register.use-case';
@@ -12,6 +15,15 @@ import { LoginUseCase } from '../../application/use-cases/login.use-case';
 import { RefreshTokenUseCase } from '../../application/use-cases/refresh-token.use-case';
 import { LogoutUseCase } from '../../application/use-cases/logout.use-case';
 import { Public } from '../security/public.decorator';
+import {
+  CurrentUser,
+  CurrentUserPayload,
+} from '../security/current-user.decorator';
+import {
+  USER_REPOSITORY_PORT,
+  UserRepositoryPort,
+} from '../../domain/ports/user.repository.port';
+import { asUserId } from '../../../shared/domain/typed-id';
 
 interface RequestLike {
   ip?: string;
@@ -32,6 +44,7 @@ import {
   LogoutDto,
   LogoutResponseDto,
   logoutSchema,
+  CurrentUserResponseDto,
 } from './dtos/auth.dtos';
 
 import { Throttle } from '@nestjs/throttler';
@@ -45,7 +58,40 @@ export class AuthController {
     private readonly loginUseCase: LoginUseCase,
     private readonly refreshTokenUseCase: RefreshTokenUseCase,
     private readonly logoutUseCase: LogoutUseCase,
+    @Inject(USER_REPOSITORY_PORT)
+    private readonly userRepository?: UserRepositoryPort,
   ) {}
+
+  @Get('me')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Obtener información del usuario autenticado',
+    description: 'Retorna el identificador, correo y rol del usuario actualmente autenticado.',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Información del usuario autenticado',
+    type: CurrentUserResponseDto,
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Token inválido o usuario no encontrado',
+    type: ErrorEnvelopeDto,
+  })
+  async me(@CurrentUser() user: CurrentUserPayload): Promise<CurrentUserResponseDto> {
+    if (!this.userRepository) {
+      return { id: user.sub, email: '', role: user.role };
+    }
+    const found = await this.userRepository.findById(asUserId(user.sub));
+    if (!found) {
+      throw new UnauthorizedException('User not found');
+    }
+    return {
+      id: found.id,
+      email: found.email,
+      role: found.role,
+    };
+  }
 
   @Public()
   @Post('register')

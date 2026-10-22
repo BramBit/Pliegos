@@ -76,3 +76,14 @@ export class LogoutResponseDto {
   @ApiProperty({ example: 'Logged out successfully' })
   message!: string;
 }
+
+export class CurrentUserResponseDto {
+  @ApiProperty({ example: '00000000-0000-0000-0000-000000000001' })
+  id!: string;
+
+  @ApiProperty({ example: 'usuario@empresa.com' })
+  email!: string;
+
+  @ApiProperty({ example: 'user', enum: ['user', 'admin'] })
+  role!: string;
+}

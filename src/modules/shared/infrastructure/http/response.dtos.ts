@@ -375,6 +375,11 @@ export class OpportunitySummaryPageDto extends Page<OpportunitySummary> {
   declare items: OpportunitySummary[];
 }
 
+export class ProfilePageDto extends Page<ProfileDto> {
+  @ApiProperty({ type: [ProfileDto] })
+  declare items: ProfileDto[];
+}
+
 export class RecommendationPageDto extends Page<RecommendationDto> {
   @ApiProperty({ type: [RecommendationDto] })
   declare items: RecommendationDto[];
