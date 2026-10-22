@@ -9,8 +9,10 @@ import { ProfileRepositoryPort } from '../../../profile/domain/ports/profile.rep
 import { OpportunityRepositoryPort } from '../../../opportunity/domain/ports/opportunity.repository.port';
 import { SearchIndexPort } from '../../../opportunity/domain/ports/search-index.port';
 import { AnalysisQueuePort } from '../../../opportunity/domain/ports/analysis-queue.port';
-import { Opportunity } from '../../../opportunity/domain/entities/opportunity.entity';
-import { hasGeneratedSummary } from '../../../opportunity/infrastructure/jobs/analyze-opportunity.job';
+import {
+  Opportunity,
+  hasGeneratedSummary,
+} from '../../../opportunity/domain/entities/opportunity.entity';
 import {
   RecommendationRepositoryPort,
   RecommendationRun,

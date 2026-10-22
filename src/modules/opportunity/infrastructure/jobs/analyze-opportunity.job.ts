@@ -28,6 +28,7 @@ import {
 } from '../../domain/ports/search-index.port';
 import {
   Opportunity,
+  hasGeneratedSummary,
   withOpportunityAnalysis,
 } from '../../domain/entities/opportunity.entity';
 import {
@@ -61,21 +62,7 @@ export function computeAnalysisContentHash(
   return createHash('sha256').update(payload, 'utf8').digest('hex');
 }
 
-export function hasGeneratedSummary(
-  analysis: Analysis | null | undefined,
-): boolean {
-  if (!analysis) return false;
-  if (
-    analysis.summaryStatus === 'ready' ||
-    analysis.summaryStatus === 'fallback'
-  ) {
-    return true;
-  }
-  if (!analysis.summaryStatus && Boolean(analysis.summary?.trim())) {
-    return true;
-  }
-  return false;
-}
+export { hasGeneratedSummary };
 
 @Processor(ANALYSIS_QUEUE_NAME, {
   concurrency: 2,

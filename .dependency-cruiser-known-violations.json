@@ -89,17 +89,6 @@
   },
   {
     "type": "dependency",
-    "from": "src/modules/opportunity/application/use-cases/get-opportunity-by-id.use-case.ts",
-    "to": "src/modules/opportunity/infrastructure/jobs/analyze-opportunity.job.ts",
-    "unresolvedTo": "../../infrastructure/jobs/analyze-opportunity.job",
-    "dependencyTypes": ["local", "import"],
-    "rule": {
-      "severity": "error",
-      "name": "application-not-to-infrastructure"
-    }
-  },
-  {
-    "type": "dependency",
     "from": "src/modules/profile/application/services/profile-access.service.spec.ts",
     "to": "src/modules/shared/infrastructure/http/global-exception.filter.ts",
     "unresolvedTo": "../../../shared/infrastructure/http/global-exception.filter",
@@ -112,67 +101,12 @@
   {
     "type": "dependency",
     "from": "src/modules/profile/application/services/profile-access.service.ts",
-    "to": "src/modules/auth/infrastructure/security/current-user.decorator.ts",
-    "unresolvedTo": "../../../auth/infrastructure/security/current-user.decorator",
-    "dependencyTypes": ["local", "import"],
-    "rule": {
-      "severity": "error",
-      "name": "application-not-to-infrastructure"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "src/modules/profile/application/services/profile-access.service.ts",
     "to": "src/modules/shared/infrastructure/http/global-exception.filter.ts",
     "unresolvedTo": "../../../shared/infrastructure/http/global-exception.filter",
     "dependencyTypes": ["local", "import"],
     "rule": {
       "severity": "error",
       "name": "application-not-to-infrastructure"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "src/modules/recommendation/application/use-cases/refresh-recommendations.use-case.ts",
-    "to": "src/modules/opportunity/infrastructure/jobs/analyze-opportunity.job.ts",
-    "unresolvedTo": "../../../opportunity/infrastructure/jobs/analyze-opportunity.job",
-    "dependencyTypes": ["local", "import"],
-    "rule": {
-      "severity": "error",
-      "name": "application-not-to-infrastructure"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "src/modules/admin/domain/ports/admin-queue.port.ts",
-    "to": "src/modules/opportunity/infrastructure/controllers/dtos/sync-opportunities.dto.ts",
-    "unresolvedTo": "../../../opportunity/infrastructure/controllers/dtos/sync-opportunities.dto",
-    "dependencyTypes": ["local", "import"],
-    "rule": {
-      "severity": "error",
-      "name": "domain-not-to-infrastructure"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "src/modules/profile/domain/value-objects/profile.value-objects.ts",
-    "to": "src/modules/opportunity/infrastructure/adapters/secop/normalizers.ts",
-    "unresolvedTo": "../../../opportunity/infrastructure/adapters/secop/normalizers",
-    "dependencyTypes": ["local", "import"],
-    "rule": {
-      "severity": "error",
-      "name": "domain-not-to-infrastructure"
-    }
-  },
-  {
-    "type": "dependency",
-    "from": "src/modules/recommendation/domain/services/matching.service.ts",
-    "to": "src/modules/opportunity/infrastructure/adapters/secop/normalizers.ts",
-    "unresolvedTo": "../../../opportunity/infrastructure/adapters/secop/normalizers",
-    "dependencyTypes": ["local", "import"],
-    "rule": {
-      "severity": "error",
-      "name": "domain-not-to-infrastructure"
     }
   },
   {

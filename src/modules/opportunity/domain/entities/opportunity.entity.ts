@@ -196,3 +196,22 @@ export function isRecommendable(
   const threshold = new Date(now.getTime() - SEVEN_DAYS_MS);
   return opportunity.closingDate.getTime() >= threshold.getTime();
 }
+
+/**
+ * Determines whether an opportunity's analysis has a terminal or generated summary.
+ */
+export function hasGeneratedSummary(
+  analysis: Analysis | null | undefined,
+): boolean {
+  if (!analysis) return false;
+  if (
+    analysis.summaryStatus === 'ready' ||
+    analysis.summaryStatus === 'fallback'
+  ) {
+    return true;
+  }
+  if (!analysis.summaryStatus && Boolean(analysis.summary?.trim())) {
+    return true;
+  }
+  return false;
+}

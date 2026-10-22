@@ -1,7 +1,10 @@
-import { SyncOpportunitiesDto } from '../../../opportunity/infrastructure/controllers/dtos/sync-opportunities.dto';
-
 export const ADMIN_QUEUE_PORT = Symbol('ADMIN_QUEUE_PORT');
 export const ADMIN_TASKS_QUEUE_NAME = 'admin-tasks';
+
+export interface EnqueueSyncOptions {
+  readonly since?: string;
+  readonly maxRecords?: number;
+}
 
 export type JobStatusType =
   'waiting' | 'active' | 'completed' | 'failed' | 'delayed' | 'unknown';
@@ -16,7 +19,7 @@ export interface JobStatusDto {
 }
 
 export interface AdminQueuePort {
-  enqueueSync(body?: SyncOpportunitiesDto): Promise<{ jobId: string }>;
+  enqueueSync(body?: EnqueueSyncOptions): Promise<{ jobId: string }>;
   enqueueAlertsRun(): Promise<{ jobId: string }>;
   enqueueRecommendationsRefresh(): Promise<{ jobId: string }>;
   getJobStatus(jobId: string): Promise<JobStatusDto | null>;

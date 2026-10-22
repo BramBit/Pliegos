@@ -3,7 +3,7 @@ import {
   ValidationError,
   createValidationError,
 } from '../../../shared/domain/errors';
-import { normalizeUnspsc } from '../../../opportunity/infrastructure/adapters/secop/normalizers';
+import { normalizeUnspsc } from '../../../opportunity/domain/value-objects/opportunity.value-objects';
 import { canonicalizeDepartment } from './colombian-departments';
 
 export interface AmountRange {

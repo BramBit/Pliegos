@@ -8,13 +8,13 @@ import { OpportunityRepositoryPort } from '../../domain/ports/opportunity.reposi
 import { AnalysisQueuePort } from '../../domain/ports/analysis-queue.port';
 import {
   Opportunity,
+  hasGeneratedSummary,
   withOpportunityAnalysis,
 } from '../../domain/entities/opportunity.entity';
 import {
   Analysis,
   SummaryStatus,
 } from '../../domain/value-objects/opportunity.value-objects';
-import { hasGeneratedSummary } from '../../infrastructure/jobs/analyze-opportunity.job';
 
 export interface GetOpportunityByIdOutput {
   readonly opportunity: Opportunity;

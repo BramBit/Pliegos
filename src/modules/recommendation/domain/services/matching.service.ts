@@ -14,7 +14,7 @@ import {
   RecommendationId,
   asRecommendationId,
 } from '../../../shared/domain/typed-id';
-import { normalizeUnspsc } from '../../../opportunity/infrastructure/adapters/secop/normalizers';
+import { normalizeUnspsc } from '../../../opportunity/domain/value-objects/opportunity.value-objects';
 import { canonicalizeDepartment } from '../../../shared/domain/colombian-departments';
 
 export { cosine, buildProfileQuery };

@@ -26,22 +26,7 @@ export function nullIfPlaceholder(
   return PLACEHOLDERS.has(trimmed.toLowerCase()) ? null : trimmed;
 }
 
-/**
- * Normalizes a UNSPSC category code: strips the 'V1.' prefix. Returns null for
- * absent values, 'UNSPECIFIED' and all-zero codes such as '00000000'.
- */
-export function normalizeUnspsc(
-  value: string | null | undefined,
-): string | null {
-  if (value === undefined || value === null) return null;
-  const trimmed = value.trim();
-  if (trimmed === '') return null;
-
-  const code = trimmed.replace(/^v1\./i, '');
-  if (code === '' || code.toUpperCase() === 'UNSPECIFIED') return null;
-  if (/^0+$/.test(code)) return null;
-  return code;
-}
+export { normalizeUnspsc } from '../../../domain/value-objects/opportunity.value-objects';
 
 /**
  * Whether a procurement modality is open to competing offers. Anything that
