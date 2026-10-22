@@ -7,6 +7,10 @@ import {
 import { OpportunityRepositoryPort } from '../../domain/ports/opportunity.repository.port';
 import { SearchIndexPort } from '../../domain/ports/search-index.port';
 import { EmbedderPort } from '../../../recommendation/domain/ports/ai-provider.port';
+import {
+  evaluateCriteria,
+  Criteria,
+} from '../../domain/services/criteria-evaluator';
 
 export const DEFAULT_OPPORTUNITY_SEARCH_LIMIT = 20;
 
@@ -66,20 +70,9 @@ export class SearchOpportunitiesUseCase implements ISearchOpportunitiesUseCase {
           mode: 'user',
         },
         {
-          onlyCompetitive: filters.onlyCompetitive,
-          onlyOpen: filters.onlyOpen,
-          actionable: filters.actionableOnly,
-          department: filters.department,
-          categoryCode: filters.categoryCode,
-          contractType: filters.contractType,
-          modality: filters.modality,
-          status: filters.status,
-          closingAfter: filters.closingAfter,
-          closingBefore: filters.closingBefore,
-          amountMin: filters.amountMin,
-          amountMax: filters.amountMax,
+          hardExclusionsOnly: true,
         },
-        1000,
+        300,
       );
 
       const loaded: Opportunity[] = [];
@@ -90,48 +83,96 @@ export class SearchOpportunitiesUseCase implements ISearchOpportunitiesUseCase {
         }
       }
 
+      const criteria: Criteria = {
+        amountMin: filters.amountMin,
+        amountMax: filters.amountMax,
+        departments:
+          filters.departments ??
+          (filters.department ? [filters.department] : undefined),
+        categoryPrefixes:
+          filters.categoryPrefixes ??
+          (filters.categoryPrefix
+            ? [filters.categoryPrefix]
+            : filters.categoryCode
+              ? [filters.categoryCode]
+              : undefined),
+        closingAfter: filters.closingAfter,
+        closingBefore: filters.closingBefore,
+      };
+
+      const evaluated: Opportunity[] = loaded.map((opp) => {
+        const evalResult = evaluateCriteria(opp, criteria);
+        const statusConfidence: 'confirmed' | 'unconfirmed' =
+          opp.status === 'Unknown' ? 'unconfirmed' : 'confirmed';
+        return {
+          ...opp,
+          matchTier: evalResult.tier,
+          missingCriteria: evalResult.missing,
+          statusConfidence,
+        };
+      });
+
+      const tier1Count = evaluated.filter((o) => o.matchTier === 1).length;
+      const tier2Count = evaluated.filter((o) => o.matchTier === 2).length;
+      const tier3Count = evaluated.filter((o) => o.matchTier === 3).length;
+
+      const filteredCandidates = filters.includeMismatches
+        ? evaluated
+        : evaluated.filter((o) => o.matchTier !== 3);
+
       const order = filters.order ?? 'desc';
       const sortField = filters.sort ?? 'relevance';
+      const initialIndex = new Map(
+        filteredCandidates.map((opp, idx) => [opp.id, idx]),
+      );
 
-      if (sortField === 'relevance') {
-        if (order === 'asc') {
-          loaded.reverse();
+      filteredCandidates.sort((a, b) => {
+        const tierA = a.matchTier ?? 1;
+        const tierB = b.matchTier ?? 1;
+        if (tierA !== tierB) {
+          return tierA - tierB;
         }
-      } else if (sortField === 'publishedAt') {
-        loaded.sort((a, b) => {
+
+        if (sortField === 'relevance') {
+          const idxA = initialIndex.get(a.id) ?? 0;
+          const idxB = initialIndex.get(b.id) ?? 0;
+          return order === 'asc' ? idxB - idxA : idxA - idxB;
+        } else if (sortField === 'publishedAt') {
           const timeA = a.publishedAt.getTime();
           const timeB = b.publishedAt.getTime();
           return order === 'asc' ? timeA - timeB : timeB - timeA;
-        });
-      } else if (sortField === 'closingDate') {
-        loaded.sort((a, b) => {
+        } else if (sortField === 'closingDate') {
           if (!a.closingDate && !b.closingDate) return 0;
           if (!a.closingDate) return 1;
           if (!b.closingDate) return -1;
           const timeA = a.closingDate.getTime();
           const timeB = b.closingDate.getTime();
           return order === 'asc' ? timeA - timeB : timeB - timeA;
-        });
-      } else if (sortField === 'amount') {
-        loaded.sort((a, b) => {
+        } else if (sortField === 'amount') {
           const amtA = a.amount?.amount ?? null;
           const amtB = b.amount?.amount ?? null;
           if (amtA === null && amtB === null) return 0;
           if (amtA === null) return 1;
           if (amtB === null) return -1;
           return order === 'asc' ? amtA - amtB : amtB - amtA;
-        });
-      }
+        }
+        return 0;
+      });
 
-      const total = loaded.length;
+      const total = filteredCandidates.length;
       const offset = (page - 1) * pageSize;
-      const items = loaded.slice(offset, offset + pageSize);
+      const items = filteredCandidates.slice(offset, offset + pageSize);
 
       return ok({
         items,
         total,
         page,
         pageSize,
+        tierCounts: {
+          1: tier1Count,
+          2: tier2Count,
+          3: filters.includeMismatches ? tier3Count : 0,
+        },
       });
     }
 

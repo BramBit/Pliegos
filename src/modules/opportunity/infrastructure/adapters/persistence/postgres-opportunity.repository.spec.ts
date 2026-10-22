@@ -296,7 +296,7 @@ describe('PostgresOpportunityRepository (Real Test Database)', () => {
         originalUrl: 'https://secop.gov.co/p1',
       },
       publishedAt: new Date('2026-03-01T10:00:00.000Z'),
-      closingDate: new Date('2026-04-01T17:00:00.000Z'),
+      closingDate: new Date('2028-04-01T17:00:00.000Z'),
       amount: { amount: 100_000_000, currency: 'COP' },
       isCompetitive: true,
       status: 'Published',
@@ -312,7 +312,7 @@ describe('PostgresOpportunityRepository (Real Test Database)', () => {
         originalUrl: 'https://secop.gov.co/p2',
       },
       publishedAt: new Date('2026-03-05T10:00:00.000Z'),
-      closingDate: new Date('2026-04-10T17:00:00.000Z'),
+      closingDate: new Date('2028-04-10T17:00:00.000Z'),
       amount: { amount: 300_000_000, currency: 'COP' },
       isCompetitive: true,
       status: 'Published',
@@ -328,16 +328,33 @@ describe('PostgresOpportunityRepository (Real Test Database)', () => {
         originalUrl: 'https://secop.gov.co/p3',
       },
       publishedAt: new Date('2026-03-10T10:00:00.000Z'),
-      closingDate: new Date('2026-03-15T17:00:00.000Z'),
+      closingDate: new Date('2028-03-15T17:00:00.000Z'),
       amount: { amount: 50_000_000, currency: 'COP' },
+      isCompetitive: true,
+      status: 'Published',
+      procurementModality: 'Contratación régimen especial (con ofertas)',
+    });
+
+    const oppNonCompetitive = createSampleOpportunity({
+      id: asOpportunityId('opp-paged-4'),
+      source: {
+        sourceName: 'SECOP',
+        externalId: 'EXT-P-4',
+        humanReference: 'REF-P-4',
+        originalUrl: 'https://secop.gov.co/p4',
+      },
+      publishedAt: new Date('2026-03-12T10:00:00.000Z'),
+      closingDate: new Date('2028-03-20T17:00:00.000Z'),
+      amount: { amount: 10_000_000, currency: 'COP' },
       isCompetitive: false,
-      status: 'Closed',
+      status: 'Published',
       procurementModality: 'Contratación directa',
     });
 
     await repo.save(oppA);
     await repo.save(oppB);
     await repo.save(oppC);
+    await repo.save(oppNonCompetitive);
 
     // Test pagination
     const page1 = await repo.findPaged({
@@ -376,7 +393,7 @@ describe('PostgresOpportunityRepository (Real Test Database)', () => {
 
     // Test filter onlyCompetitive
     const competitiveOnly = await repo.findPaged({ onlyCompetitive: true });
-    expect(competitiveOnly.total).toBe(2);
+    expect(competitiveOnly.total).toBe(3);
     expect(competitiveOnly.items.every((it) => it.isCompetitive)).toBe(true);
 
     // Test filter modality

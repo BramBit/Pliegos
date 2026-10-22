@@ -6,7 +6,10 @@ export type SortOrder = 'asc' | 'desc';
 
 export interface OpportunityFilters {
   readonly categoryCode?: string;
+  readonly categoryPrefix?: string;
+  readonly categoryPrefixes?: readonly string[];
   readonly department?: string;
+  readonly departments?: readonly string[];
   readonly contractType?: string;
   readonly modality?: string;
   readonly status?: OpportunityStatus;
@@ -18,12 +21,14 @@ export interface OpportunityFilters {
   readonly onlyOpen?: boolean;
   /** Only processes still open to bidders: status Published/Amended and not past closing date. */
   readonly actionableOnly?: boolean;
+  readonly includeMismatches?: boolean;
   readonly sort?: OpportunitySortField;
   readonly order?: SortOrder;
   readonly page?: number;
   readonly pageSize?: number;
   /** Max rows returned (default 100, capped at 1000). */
   readonly limit?: number;
+  readonly now?: Date;
 }
 
 export interface PagedOpportunitiesResult {
@@ -31,4 +36,5 @@ export interface PagedOpportunitiesResult {
   readonly total: number;
   readonly page: number;
   readonly pageSize: number;
+  readonly tierCounts?: { 1: number; 2: number; 3: number };
 }

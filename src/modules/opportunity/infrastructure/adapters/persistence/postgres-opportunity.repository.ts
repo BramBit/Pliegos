@@ -17,7 +17,10 @@ import {
   Analysis,
   OpportunityStatus,
 } from '../../../domain/value-objects/opportunity.value-objects';
-import { canonicalizeDepartment } from '../../../../shared/domain/colombian-departments';
+import {
+  canonicalizeDepartment,
+  getDepartmentSearchTerms,
+} from '../../../../shared/domain/colombian-departments';
 
 export class OpportunityLockBusyError extends Error {
   constructor(public readonly opportunityId: OpportunityId) {
@@ -388,7 +391,157 @@ export class PostgresOpportunityRepository implements OpportunityRepositoryPort 
     const offset = (page - 1) * pageSize;
 
     const params: unknown[] = [];
-    const where = this.buildWhereClauses(filters, params);
+    let nowExpr = 'NOW()';
+    if (filters.now instanceof Date && !isNaN(filters.now.getTime())) {
+      params.push(filters.now);
+      nowExpr = `$${params.length}::timestamptz`;
+    }
+
+    // Step 2: HARD exclusions, always applied
+    const where: string[] = [
+      `is_competitive = TRUE`,
+      `(status IN ('Published', 'Amended') OR (status = 'Unknown' AND (closing_date >= ${nowExpr} OR published_at >= ${nowExpr} - INTERVAL '30 days')))`,
+      `(closing_date IS NULL OR closing_date >= ${nowExpr})`,
+    ];
+
+    if (filters.contractType && filters.contractType.trim() !== '') {
+      params.push(filters.contractType.trim());
+      where.push(`contract_type = $${params.length}`);
+    }
+
+    if (filters.modality && filters.modality.trim() !== '') {
+      params.push(filters.modality.trim());
+      where.push(`LOWER(procurement_modality) = LOWER($${params.length})`);
+    }
+
+    if (filters.status && filters.status.trim() !== '') {
+      params.push(filters.status.trim());
+      where.push(`status = $${params.length}`);
+    }
+
+    // Step 3: User criteria (P8.1 in SQL)
+    const mismatches: string[] = [];
+    const unknowns: string[] = [];
+    const missingElements: string[] = [];
+
+    // Criterion A: amount
+    if (filters.amountMin !== undefined || filters.amountMax !== undefined) {
+      unknowns.push('(amount_known = false)');
+      missingElements.push("CASE WHEN amount_known = false THEN 'amount' END");
+      const amountConds: string[] = [];
+      if (
+        typeof filters.amountMin === 'number' &&
+        Number.isFinite(filters.amountMin)
+      ) {
+        params.push(filters.amountMin);
+        amountConds.push(`amount < $${params.length}`);
+      }
+      if (
+        typeof filters.amountMax === 'number' &&
+        Number.isFinite(filters.amountMax)
+      ) {
+        params.push(filters.amountMax);
+        amountConds.push(`amount > $${params.length}`);
+      }
+      if (amountConds.length > 0) {
+        mismatches.push(
+          `(amount_known = true AND (${amountConds.join(' OR ')}))`,
+        );
+      }
+    }
+
+    // Criterion B: department
+    const rawDepts =
+      filters.departments ?? (filters.department ? [filters.department] : []);
+    const deptTerms = new Set<string>();
+    for (const d of rawDepts) {
+      if (!d || d.trim() === '') continue;
+      const terms = getDepartmentSearchTerms(d);
+      for (const t of terms) deptTerms.add(t);
+    }
+    if (deptTerms.size > 0) {
+      params.push(Array.from(deptTerms));
+      const deptIdx = params.length;
+      const deptUnknown = `(department IS NULL OR btrim(department) = '')`;
+      const deptMatchCond = `(lower(department) = ANY($${deptIdx}::text[]) OR replace(translate(lower(department), 'áéíóúÁÉÍÓÚ', 'aeiouaeiou'), '.', '') = ANY($${deptIdx}::text[]))`;
+      const deptMismatch = `(department IS NOT NULL AND btrim(department) != '' AND NOT ${deptMatchCond})`;
+      unknowns.push(deptUnknown);
+      mismatches.push(deptMismatch);
+      missingElements.push(`CASE WHEN ${deptUnknown} THEN 'department' END`);
+    }
+
+    // Criterion C: category
+    const rawPrefixes =
+      filters.categoryPrefixes ??
+      (filters.categoryPrefix
+        ? [filters.categoryPrefix]
+        : filters.categoryCode
+          ? [filters.categoryCode]
+          : []);
+    const cleanPrefixes = rawPrefixes
+      .map((p) => p.trim().replace(/^v1\./i, ''))
+      .filter((p) => p.length > 0);
+
+    if (cleanPrefixes.length > 0) {
+      const catUnknown = `(category_code IS NULL OR btrim(category_code) = '' OR upper(category_code) = 'UNSPECIFIED' OR category_code ~ '^0+$')`;
+      unknowns.push(catUnknown);
+      missingElements.push(`CASE WHEN ${catUnknown} THEN 'category' END`);
+
+      const likeConds: string[] = [];
+      for (const p of cleanPrefixes) {
+        params.push(`${p}%`);
+        likeConds.push(
+          `regexp_replace(category_code, '^V1\\.', '', 'i') LIKE $${params.length}`,
+        );
+      }
+      const catMismatch = `(category_code IS NOT NULL AND btrim(category_code) != '' AND upper(category_code) != 'UNSPECIFIED' AND category_code !~ '^0+$' AND NOT (${likeConds.join(' OR ')}))`;
+      mismatches.push(catMismatch);
+    }
+
+    // Criterion D: closing
+    const closingConds: string[] = [];
+    if (
+      filters.closingAfter instanceof Date &&
+      !isNaN(filters.closingAfter.getTime())
+    ) {
+      params.push(filters.closingAfter);
+      closingConds.push(`closing_date < $${params.length}`);
+    }
+    if (
+      filters.closingBefore instanceof Date &&
+      !isNaN(filters.closingBefore.getTime())
+    ) {
+      params.push(filters.closingBefore);
+      closingConds.push(`closing_date > $${params.length}`);
+    }
+    if (closingConds.length > 0) {
+      const closingUnknown = `(closing_date IS NULL)`;
+      unknowns.push(closingUnknown);
+      missingElements.push(`CASE WHEN ${closingUnknown} THEN 'closing' END`);
+      const closingMismatch = `(closing_date IS NOT NULL AND (${closingConds.join(' OR ')}))`;
+      mismatches.push(closingMismatch);
+    }
+
+    // Tier expressions
+    let tierSql = '1';
+    let missingSql = "'{}'::text[]";
+    let anyMismatch: string | null = null;
+
+    if (mismatches.length > 0 || unknowns.length > 0) {
+      anyMismatch =
+        mismatches.length > 0 ? `(${mismatches.join(' OR ')})` : 'FALSE';
+      const anyUnknown =
+        unknowns.length > 0 ? `(${unknowns.join(' OR ')})` : 'FALSE';
+      tierSql = `(CASE WHEN ${anyMismatch} THEN 3 WHEN ${anyUnknown} THEN 2 ELSE 1 END)`;
+      if (missingElements.length > 0) {
+        missingSql = `ARRAY_REMOVE(ARRAY[${missingElements.join(', ')}], NULL)`;
+      }
+    }
+
+    if (anyMismatch && !filters.includeMismatches) {
+      where.push(`NOT (${anyMismatch})`);
+    }
+
     const whereSql = where.length > 0 ? `WHERE ${where.join(' AND ')}` : '';
     const orderBy = this.buildOrderBySql(filters);
 
@@ -397,31 +550,80 @@ export class PostgresOpportunityRepository implements OpportunityRepositoryPort 
     const offsetIdx = params.length;
 
     const query = `
-      SELECT *, COUNT(*) OVER() AS total_count
+      SELECT 
+        *,
+        ${tierSql} AS match_tier,
+        ${missingSql} AS missing_criteria,
+        CASE WHEN status = 'Unknown' THEN 'unconfirmed' ELSE 'confirmed' END AS status_confidence,
+        COUNT(*) OVER() AS total_count,
+        COUNT(*) FILTER (WHERE (${tierSql}) = 1) OVER() AS tier_1_count,
+        COUNT(*) FILTER (WHERE (${tierSql}) = 2) OVER() AS tier_2_count,
+        COUNT(*) FILTER (WHERE (${tierSql}) = 3) OVER() AS tier_3_count
       FROM opportunities
       ${whereSql}
-      ORDER BY ${orderBy}
+      ORDER BY match_tier ASC, ${orderBy}
       LIMIT $${limitIdx} OFFSET $${offsetIdx};
     `;
 
-    const res: QueryResult<OpportunityRow & { total_count: string | number }> =
-      await this.pool.query(query, params);
+    const res: QueryResult<
+      OpportunityRow & {
+        match_tier: number | string;
+        missing_criteria: string[] | null;
+        status_confidence: string;
+        total_count: string | number;
+        tier_1_count: string | number;
+        tier_2_count: string | number;
+        tier_3_count: string | number;
+      }
+    > = await this.pool.query(query, params);
 
     let total = res.rows.length > 0 ? Number(res.rows[0].total_count) : 0;
+    let tier1Count = res.rows.length > 0 ? Number(res.rows[0].tier_1_count) : 0;
+    let tier2Count = res.rows.length > 0 ? Number(res.rows[0].tier_2_count) : 0;
+    let tier3Count = res.rows.length > 0 ? Number(res.rows[0].tier_3_count) : 0;
+
     if (res.rows.length === 0 && offset > 0) {
       const countParams = params.slice(0, params.length - 2);
-      const countRes = await this.pool.query<{ total_count: string | number }>(
-        `SELECT COUNT(*) AS total_count FROM opportunities ${whereSql};`,
+      const countRes = await this.pool.query<{
+        total_count: string | number;
+        tier_1_count: string | number;
+        tier_2_count: string | number;
+        tier_3_count: string | number;
+      }>(
+        `SELECT 
+           COUNT(*) AS total_count,
+           COUNT(*) FILTER (WHERE (${tierSql}) = 1) AS tier_1_count,
+           COUNT(*) FILTER (WHERE (${tierSql}) = 2) AS tier_2_count,
+           COUNT(*) FILTER (WHERE (${tierSql}) = 3) AS tier_3_count
+         FROM opportunities ${whereSql};`,
         countParams,
       );
-      total = Number(countRes.rows[0]?.total_count ?? 0);
+      if (countRes.rows.length > 0) {
+        total = Number(countRes.rows[0].total_count);
+        tier1Count = Number(countRes.rows[0].tier_1_count);
+        tier2Count = Number(countRes.rows[0].tier_2_count);
+        tier3Count = Number(countRes.rows[0].tier_3_count);
+      }
     }
 
     return {
-      items: res.rows.map((row) => this.mapRowToEntity(row)),
+      items: res.rows.map((row) => ({
+        ...this.mapRowToEntity(row),
+        matchTier: Number(row.match_tier) as 1 | 2 | 3,
+        missingCriteria: (row.missing_criteria ?? []) as Array<
+          'amount' | 'department' | 'category' | 'closing'
+        >,
+        statusConfidence: (row.status_confidence ?? 'confirmed') as
+          'confirmed' | 'unconfirmed',
+      })),
       total,
       page,
       pageSize,
+      tierCounts: {
+        1: tier1Count,
+        2: tier2Count,
+        3: tier3Count,
+      },
     };
   }
 

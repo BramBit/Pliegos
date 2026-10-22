@@ -35,6 +35,11 @@ export interface Opportunity {
   readonly source: SourceReference;
   readonly analysis: Analysis | null;
   readonly changeHistory: Change[];
+  readonly matchTier?: 1 | 2 | 3;
+  readonly missingCriteria?: Array<
+    'amount' | 'department' | 'category' | 'closing'
+  >;
+  readonly statusConfidence?: 'confirmed' | 'unconfirmed';
 }
 
 export interface CreateOpportunityProps {

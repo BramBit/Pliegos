@@ -50,6 +50,9 @@ export const listOpportunitiesQuerySchema = z
       .preprocess(booleanPreprocessor, z.boolean())
       .default(true),
     onlyOpen: z.preprocess(booleanPreprocessor, z.boolean()).default(true),
+    includeMismatches: z
+      .preprocess(booleanPreprocessor, z.boolean())
+      .default(false),
     sort: z
       .enum(['publishedAt', 'closingDate', 'amount', 'relevance'])
       .optional(),
@@ -168,6 +171,13 @@ export class ListOpportunitiesQueryDto {
     default: true,
   })
   onlyOpen?: boolean;
+
+  @ApiPropertyOptional({
+    description:
+      'Incluir oportunidades que no cumplen con los criterios (Nivel 3). Por defecto false.',
+    default: false,
+  })
+  includeMismatches?: boolean;
 
   @ApiPropertyOptional({
     enum: ['publishedAt', 'closingDate', 'amount', 'relevance'],

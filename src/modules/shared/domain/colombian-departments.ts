@@ -81,3 +81,22 @@ export function canonicalizeDepartment(
   const key = normalizeForMatching(input);
   return CANONICAL_MAP.get(key) ?? null;
 }
+
+export function getDepartmentSearchTerms(input: string): string[] {
+  if (!input || typeof input !== 'string') return [];
+  const canonical = canonicalizeDepartment(input);
+  const terms = new Set<string>();
+  terms.add(input.trim().toLowerCase());
+  terms.add(normalizeForMatching(input));
+  if (canonical) {
+    terms.add(canonical.toLowerCase());
+    terms.add(normalizeForMatching(canonical));
+    for (const [alias, mapped] of CANONICAL_MAP.entries()) {
+      if (mapped === canonical) {
+        terms.add(alias);
+        terms.add(mapped.toLowerCase());
+      }
+    }
+  }
+  return Array.from(terms);
+}

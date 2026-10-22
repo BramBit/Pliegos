@@ -14,6 +14,7 @@ export interface CandidateRetrievalFilters {
   readonly onlyCompetitive?: boolean;
   readonly onlyOpen?: boolean;
   readonly actionable?: boolean;
+  readonly hardExclusionsOnly?: boolean;
   readonly department?: string;
   readonly categoryCode?: string;
   readonly contractType?: string;

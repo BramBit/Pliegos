@@ -179,6 +179,20 @@ export class OpportunitySummary {
     example: 'ready',
   })
   summaryStatus!: SummaryStatus;
+
+  @ApiProperty({ enum: [1, 2, 3], example: 1 })
+  matchTier!: 1 | 2 | 3;
+
+  @ApiProperty({
+    type: [String],
+    example: ['amount'],
+    description:
+      "Criteria that could not be verified ('amount', 'department', 'category', 'closing')",
+  })
+  missingCriteria!: Array<'amount' | 'department' | 'category' | 'closing'>;
+
+  @ApiProperty({ enum: ['confirmed', 'unconfirmed'], example: 'confirmed' })
+  statusConfidence!: 'confirmed' | 'unconfirmed';
 }
 
 export class RequirementDto {
@@ -430,9 +444,23 @@ export class Page<T> {
   pageSize!: number;
 }
 
+export class TierCountsDto {
+  @ApiProperty({ example: 12 })
+  1!: number;
+
+  @ApiProperty({ example: 5 })
+  2!: number;
+
+  @ApiProperty({ example: 0 })
+  3!: number;
+}
+
 export class OpportunitySummaryPageDto extends Page<OpportunitySummary> {
   @ApiProperty({ type: [OpportunitySummary] })
   declare items: OpportunitySummary[];
+
+  @ApiProperty({ type: TierCountsDto })
+  tierCounts!: TierCountsDto;
 }
 
 export class ProfilePageDto extends Page<ProfileDto> {
@@ -643,6 +671,11 @@ export function toOpportunitySummaryDto(
   now: Date = new Date(),
 ): OpportunitySummary {
   const summaryStatus = deriveSummaryStatus(opportunity);
+  const statusConfidence: 'confirmed' | 'unconfirmed' =
+    opportunity.statusConfidence ??
+    (opportunity.status === 'Unknown' ? 'unconfirmed' : 'confirmed');
+  const matchTier: 1 | 2 | 3 = opportunity.matchTier ?? 1;
+  const missingCriteria = opportunity.missingCriteria ?? [];
   return {
     id: opportunity.id,
     title: opportunity.title,
@@ -687,6 +720,9 @@ export function toOpportunitySummaryDto(
     },
     sourceUrl: opportunity.source.originalUrl,
     summaryStatus,
+    matchTier,
+    missingCriteria,
+    statusConfidence,
   };
 }
 

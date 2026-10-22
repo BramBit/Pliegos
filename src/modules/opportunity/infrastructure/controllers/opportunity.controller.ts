@@ -47,9 +47,9 @@ export class OpportunityController {
 
   @Get()
   @ApiOperation({
-    summary: 'Listado paginado de oportunidades con búsqueda y filtros',
+    summary: 'Listado paginado de oportunidades con niveles y filtros',
     description:
-      'Retorna una página de oportunidades (OpportunitySummary). Soporta búsqueda híbrida semántica y por texto completo cuando se provee el parámetro `q` (ordenado por relevancia por defecto), o consulta filtrada directa sobre PostgreSQL con paginación real `COUNT(*) OVER()`.',
+      'Retorna una página de oportunidades con niveles de coincidencia (matchTier 1, 2 o 3). Con parámetro `q`, toma hasta 300 candidatos del recuperador híbrido (solo exclusiones duras), los evalúa y pagina en memoria; los resultados más allá de 300 no son alcanzables. Sin `q`, consulta directamente sobre PostgreSQL aplicando los criterios en tres estados y ordenando por nivel.',
   })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -70,6 +70,7 @@ export class OpportunityController {
       q: query.q,
       filters: {
         categoryCode: query.categoryPrefix,
+        categoryPrefix: query.categoryPrefix,
         department: query.department
           ? (canonicalizeDepartment(query.department) ?? query.department)
           : undefined,
@@ -81,6 +82,7 @@ export class OpportunityController {
         closingBefore: query.closingBefore,
         onlyCompetitive: query.onlyCompetitive,
         onlyOpen: query.onlyOpen,
+        includeMismatches: query.includeMismatches,
         sort: query.sort,
         order: query.order,
         page: query.page,
@@ -97,6 +99,11 @@ export class OpportunityController {
       total: result.value.total,
       page: result.value.page,
       pageSize: result.value.pageSize,
+      tierCounts: result.value.tierCounts ?? {
+        1: result.value.total,
+        2: 0,
+        3: 0,
+      },
     };
   }
 

@@ -224,7 +224,7 @@ describe('SearchOpportunitiesUseCase', () => {
     expect(searchIndex.lastQuery?.vector).toHaveLength(768);
   });
 
-  it('passes structured filters alongside hybrid query', async () => {
+  it('passes hard exclusions to retriever and evaluates structured criteria in memory', async () => {
     searchIndex.returnIds = [asOpportunityId('opp-1')];
 
     const filters: OpportunityFilters = { categoryCode: 'V1.43230000' };
@@ -235,8 +235,11 @@ describe('SearchOpportunitiesUseCase', () => {
 
     expect(result.ok).toBe(true);
     expect(searchIndex.lastFilters).toEqual(
-      expect.objectContaining({ categoryCode: 'V1.43230000' }),
+      expect.objectContaining({ hardExclusionsOnly: true }),
     );
+    if (result.ok) {
+      expect(result.value[0].matchTier).toBe(1);
+    }
   });
 
   it('executes paginated search without query using repository findPaged', async () => {

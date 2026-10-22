@@ -256,6 +256,14 @@ Accept: application/json
 
 ###
 
+# Filtered structured list including tier 3 mismatches
+# @name listOpportunitiesWithMismatches
+GET {{baseUrl}}/opportunities?department=Antioquia&minAmount=20000000&maxAmount=300000000&includeMismatches=true&page=1&pageSize=10&sort=publishedAt&order=desc
+Authorization: Bearer {{userToken}}
+Accept: application/json
+
+###
+
 # Retrieves detailed information for a single opportunity
 # @name getOpportunityDetail
 GET {{baseUrl}}/opportunities/{{opportunityId}}

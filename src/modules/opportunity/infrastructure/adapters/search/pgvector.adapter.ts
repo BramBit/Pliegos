@@ -342,6 +342,15 @@ export class PgVectorAdapter implements SearchIndexPort {
   ): string[] {
     const clauses: string[] = [];
 
+    if (filters.hardExclusionsOnly) {
+      clauses.push(
+        `o.is_competitive = TRUE`,
+        `(o.status IN ('Published', 'Amended') OR (o.status = 'Unknown' AND (o.closing_date >= NOW() OR o.published_at >= NOW() - INTERVAL '30 days')))`,
+        `(o.closing_date IS NULL OR o.closing_date >= NOW())`,
+      );
+      return clauses;
+    }
+
     if (filters.actionable) {
       clauses.push(
         `o.status IN ('Published', 'Amended')`,

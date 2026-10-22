@@ -208,7 +208,7 @@
     },
     "/opportunities": {
       "get": {
-        "description": "Retorna una página de oportunidades (OpportunitySummary). Soporta búsqueda híbrida semántica y por texto completo cuando se provee el parámetro `q` (ordenado por relevancia por defecto), o consulta filtrada directa sobre PostgreSQL con paginación real `COUNT(*) OVER()`.",
+        "description": "Retorna una página de oportunidades con niveles de coincidencia (matchTier 1, 2 o 3). Con parámetro `q`, toma hasta 300 candidatos del recuperador híbrido (solo exclusiones duras), los evalúa y pagina en memoria; los resultados más allá de 300 no son alcanzables. Sin `q`, consulta directamente sobre PostgreSQL aplicando los criterios en tres estados y ordenando por nivel.",
         "operationId": "OpportunityController_list",
         "parameters": [],
         "responses": {
@@ -233,7 +233,7 @@
             }
           }
         },
-        "summary": "Listado paginado de oportunidades con búsqueda y filtros",
+        "summary": "Listado paginado de oportunidades con niveles y filtros",
         "tags": [
           "Opportunities"
         ]
@@ -1743,6 +1743,33 @@
               "unavailable"
             ],
             "example": "ready"
+          },
+          "matchTier": {
+            "type": "number",
+            "enum": [
+              1,
+              2,
+              3
+            ],
+            "example": 1
+          },
+          "missingCriteria": {
+            "example": [
+              "amount"
+            ],
+            "description": "Criteria that could not be verified ('amount', 'department', 'category', 'closing')",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "statusConfidence": {
+            "type": "string",
+            "enum": [
+              "confirmed",
+              "unconfirmed"
+            ],
+            "example": "confirmed"
           }
         },
         "required": [
@@ -1769,7 +1796,32 @@
           "status",
           "source",
           "sourceUrl",
-          "summaryStatus"
+          "summaryStatus",
+          "matchTier",
+          "missingCriteria",
+          "statusConfidence"
+        ]
+      },
+      "TierCountsDto": {
+        "type": "object",
+        "properties": {
+          "1": {
+            "type": "number",
+            "example": 12
+          },
+          "2": {
+            "type": "number",
+            "example": 5
+          },
+          "3": {
+            "type": "number",
+            "example": 0
+          }
+        },
+        "required": [
+          "1",
+          "2",
+          "3"
         ]
       },
       "OpportunitySummaryPageDto": {
@@ -1792,13 +1844,17 @@
           "pageSize": {
             "type": "number",
             "example": 20
+          },
+          "tierCounts": {
+            "$ref": "#/components/schemas/TierCountsDto"
           }
         },
         "required": [
           "items",
           "total",
           "page",
-          "pageSize"
+          "pageSize",
+          "tierCounts"
         ]
       },
       "RequirementDto": {
@@ -2011,6 +2067,33 @@
             ],
             "example": "ready"
           },
+          "matchTier": {
+            "type": "number",
+            "enum": [
+              1,
+              2,
+              3
+            ],
+            "example": 1
+          },
+          "missingCriteria": {
+            "example": [
+              "amount"
+            ],
+            "description": "Criteria that could not be verified ('amount', 'department', 'category', 'closing')",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "statusConfidence": {
+            "type": "string",
+            "enum": [
+              "confirmed",
+              "unconfirmed"
+            ],
+            "example": "confirmed"
+          },
           "summary": {
             "type": "string",
             "nullable": true,
@@ -2057,6 +2140,9 @@
           "source",
           "sourceUrl",
           "summaryStatus",
+          "matchTier",
+          "missingCriteria",
+          "statusConfidence",
           "summary",
           "analysis",
           "changeHistory"
