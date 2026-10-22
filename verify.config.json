@@ -1,0 +1,8 @@
+{
+  "minRecommendableRows": 1000,
+  "minDescriptionPct": 95,
+  "minEmbeddingPct": 95,
+  "minKnownDepartmentPct": 85,
+  "minKnownAmountPct": 90,
+  "maxUnknownStatusPct": 1
+}

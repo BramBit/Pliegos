@@ -28,7 +28,8 @@
     "lint:fix": "eslint . --fix",
     "format:check": "prettier --check .",
     "check:arch": "depcruise src --config .dependency-cruiser.js --ignore-known",
-    "check:arch:all": "depcruise src --config .dependency-cruiser.js --no-ignore-known"
+    "check:arch:all": "depcruise src --config .dependency-cruiser.js --no-ignore-known",
+    "verify": "tsc && node dist/scripts/verify.js"
   },
   "packageManager": "pnpm@12.4.2",
   "keywords": [],
