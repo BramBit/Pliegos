@@ -11,6 +11,7 @@ import {
   PagedOpportunitiesResult,
 } from '../../../domain/value-objects/opportunity-filters';
 import { Analysis, OpportunityStatus } from '../../../domain/value-objects/opportunity.value-objects';
+import { canonicalizeDepartment } from '../../../../shared/domain/colombian-departments';
 
 export class OpportunityLockBusyError extends Error {
   constructor(public readonly opportunityId: OpportunityId) {
@@ -27,6 +28,7 @@ export interface OpportunityRow {
   contracting_entity_tax_id: string;
   city: string | null;
   department: string | null;
+  department_raw?: string | null;
   amount: string | number;
   amount_known: boolean;
   currency: string;
@@ -49,13 +51,13 @@ export interface OpportunityRow {
 
 const UPSERT_OPPORTUNITY_SQL = `
   INSERT INTO opportunities (
-    id, title, description, contracting_entity_name, contracting_entity_tax_id, city, department,
+    id, title, description, contracting_entity_name, contracting_entity_tax_id, city, department, department_raw,
     amount, amount_known, currency, contract_type, procurement_modality, is_competitive, category_code,
     published_at, last_published_at, closing_date, is_open_for_submission, status,
     source_name, source_external_id, source_human_reference, source_original_url,
     analysis, change_history, updated_at
   ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, CURRENT_TIMESTAMP
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, CURRENT_TIMESTAMP
   )
   ON CONFLICT (id) DO UPDATE SET
     title = EXCLUDED.title,
@@ -64,6 +66,7 @@ const UPSERT_OPPORTUNITY_SQL = `
     contracting_entity_tax_id = EXCLUDED.contracting_entity_tax_id,
     city = EXCLUDED.city,
     department = EXCLUDED.department,
+    department_raw = COALESCE(EXCLUDED.department_raw, opportunities.department_raw),
     amount = EXCLUDED.amount,
     amount_known = EXCLUDED.amount_known,
     currency = EXCLUDED.currency,
@@ -148,6 +151,7 @@ export class PostgresOpportunityRepository implements OpportunityRepositoryPort 
       opportunity.contractingEntity.taxId,
       opportunity.location.city,
       opportunity.location.department,
+      opportunity.location.departmentRaw ?? opportunity.location.department,
       opportunity.amount.amount,
       opportunity.amountKnown,
       opportunity.amount.currency,
@@ -249,7 +253,8 @@ export class PostgresOpportunityRepository implements OpportunityRepositoryPort 
     }
 
     if (filters.department && filters.department.trim() !== '') {
-      params.push(filters.department.trim());
+      const canonical = canonicalizeDepartment(filters.department.trim());
+      params.push(canonical ?? filters.department.trim());
       where.push(`department = $${params.length}`);
     }
 
@@ -393,6 +398,7 @@ export class PostgresOpportunityRepository implements OpportunityRepositoryPort 
       location: {
         city: row.city,
         department: row.department,
+        departmentRaw: row.department_raw ?? row.department,
       },
       amount: {
         amount: parseFloat(row.amount.toString()),

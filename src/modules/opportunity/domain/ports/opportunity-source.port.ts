@@ -9,6 +9,7 @@ export interface SourceOpportunity {
   readonly entityTaxId: string;
   readonly city: string | null;
   readonly department: string | null;
+  readonly departmentRaw?: string | null;
   readonly amount: number | null;
   readonly contractType: string;
   readonly procurementModality: string;

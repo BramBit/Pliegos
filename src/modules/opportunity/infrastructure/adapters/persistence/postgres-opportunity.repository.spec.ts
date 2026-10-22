@@ -37,6 +37,7 @@ describe('PostgresOpportunityRepository (Real Test Database)', () => {
     location: {
       city: 'Medellin',
       department: 'Antioquia',
+      departmentRaw: 'Antioquia',
     },
     amount: {
       amount: 150_000_000,
@@ -229,8 +230,22 @@ describe('PostgresOpportunityRepository (Real Test Database)', () => {
       amount: { amount: 500_000_000, currency: 'COP' },
     });
 
+    const opp3 = createSampleOpportunity({
+      id: asOpportunityId('opp-3'),
+      source: {
+        sourceName: 'SECOP',
+        externalId: 'EXT-3',
+        humanReference: 'REF-3',
+        originalUrl: 'https://secop.gov.co/3',
+      },
+      categoryCode: '80111600',
+      location: { city: 'Bogota', department: 'Bogotá D.C.', departmentRaw: 'Bogotá D.C.' },
+      amount: { amount: 700_000_000, currency: 'COP' },
+    });
+
     await repo.save(opp1);
     await repo.save(opp2);
+    await repo.save(opp3);
 
     const filteredByCategory = await repo.findByFilters({ categoryCode: 'V1.43' });
     expect(filteredByCategory).toHaveLength(1);
@@ -239,6 +254,10 @@ describe('PostgresOpportunityRepository (Real Test Database)', () => {
     const filteredByDept = await repo.findByFilters({ department: 'Antioquia' });
     expect(filteredByDept).toHaveLength(1);
     expect(filteredByDept[0].id).toBe('opp-1');
+
+    const filteredByBogota = await repo.findByFilters({ department: 'bogota' });
+    expect(filteredByBogota).toHaveLength(1);
+    expect(filteredByBogota[0].id).toBe('opp-3');
 
     const filteredByAmount = await repo.findByFilters({
       amountMin: 200_000_000,

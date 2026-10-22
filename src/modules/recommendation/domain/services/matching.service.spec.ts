@@ -383,6 +383,45 @@ describe('MatchingService', () => {
       const breakdown = await service.computeBreakdown(opportunity, profile, 0);
       expect(breakdown.locationMatch).toBe(0.0);
     });
+
+    it('matches Bogotá profile vs "Distrito Capital de Bogotá" giving 1.0 location match', async () => {
+      const opportunity = createTestOpportunity({
+        location: { city: 'Bogotá', department: 'Distrito Capital de Bogotá' },
+      });
+      const profile = createTestProfile({
+        preferences: {
+          categoryCodes: [],
+          keywords: [],
+          amountRange: null,
+          departments: ['Bogotá D.C.'],
+        },
+      });
+
+      const breakdown = await service.computeBreakdown(opportunity, profile, null);
+      expect(breakdown.locationMatch).toBe(1.0);
+      expect(breakdown.combinedScore).toBe(1.0);
+    });
+
+    it('matches San Andrés profile vs "Archipiélago de San Andrés, Providencia y Santa Catalina" giving 1.0', async () => {
+      const opportunity = createTestOpportunity({
+        location: {
+          city: 'San Andrés',
+          department: 'Archipiélago de San Andrés, Providencia y Santa Catalina',
+        },
+      });
+      const profile = createTestProfile({
+        preferences: {
+          categoryCodes: [],
+          keywords: [],
+          amountRange: null,
+          departments: ['San Andrés y Providencia'],
+        },
+      });
+
+      const breakdown = await service.computeBreakdown(opportunity, profile, null);
+      expect(breakdown.locationMatch).toBe(1.0);
+      expect(breakdown.combinedScore).toBe(1.0);
+    });
   });
 
   describe('Unavailable Factors Renormalization & Combined Formula', () => {
@@ -526,7 +565,7 @@ describe('MatchingService', () => {
       );
     });
 
-    it('returns 0.0 location match when opportunity department is null and profile specifies departments', async () => {
+    it('treats location factor as unavailable when opportunity department is null', async () => {
       const opportunity = createTestOpportunity({
         location: { city: null, department: null },
       });
@@ -542,6 +581,7 @@ describe('MatchingService', () => {
 
       const breakdown = await service.computeBreakdown(opportunity, profile, 0);
       expect(breakdown.locationMatch).toBe(0.0);
+      expect(breakdown.unavailableFactors).toContain('La oportunidad no declara departamento');
     });
 
     it('handles null semanticSimilarity by excluding semantic weight and renormalizing available factors', async () => {

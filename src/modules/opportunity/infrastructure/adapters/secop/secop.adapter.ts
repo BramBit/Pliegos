@@ -20,6 +20,7 @@ import {
   nullIfPlaceholder,
   parseAmount,
 } from './normalizers';
+import { canonicalizeDepartment } from '../../../../shared/domain/colombian-departments';
 
 export interface RawSecopProcess {
   readonly id_del_proceso: string;
@@ -253,6 +254,10 @@ export class SecopAdapter implements OpportunitySourcePort {
     const externalId = (raw.id_del_proceso ?? '').trim();
     const humanReference = nullIfPlaceholder(raw.referencia_del_proceso) ?? externalId;
 
+    const rawDept = nullIfPlaceholder(raw.departamento_entidad);
+    const canonicalDept = rawDept ? canonicalizeDepartment(rawDept) : null;
+    const department = canonicalDept ?? rawDept;
+
     return {
       externalId,
       humanReference,
@@ -261,7 +266,8 @@ export class SecopAdapter implements OpportunitySourcePort {
       entityName: (raw.entidad ?? '').trim(),
       entityTaxId: nullIfPlaceholder(raw.nit_entidad) ?? '',
       city: nullIfPlaceholder(raw.ciudad_entidad),
-      department: nullIfPlaceholder(raw.departamento_entidad),
+      department,
+      departmentRaw: rawDept,
       amount,
       contractType: nullIfPlaceholder(raw.tipo_de_contrato) ?? 'Otros',
       procurementModality: nullIfPlaceholder(raw.modalidad_de_contratacion) ?? 'Otros',
@@ -313,6 +319,8 @@ export class SecopAdapter implements OpportunitySourcePort {
       : this.mapStatus(raw.estado_del_procedimiento, raw.estado_resumen);
     const isOpenForSubmission = SecopAdapter.computeIsOpenForSubmission(status, closingDate, now);
     const externalId = (raw.id_del_proceso ?? '').trim();
+    const rawDept = nullIfPlaceholder(raw.departamento_entidad);
+    const canonicalDept = rawDept ? canonicalizeDepartment(rawDept) : null;
 
     return createOpportunity({
       id: id ?? asOpportunityId(randomUUID()),
@@ -323,8 +331,11 @@ export class SecopAdapter implements OpportunitySourcePort {
         taxId: nullIfPlaceholder(raw.nit_entidad) ?? '',
       },
       location: {
-        city: nullIfPlaceholder(raw.ciudad_entidad),
-        department: nullIfPlaceholder(raw.departamento_entidad),
+        city: sourceOpp ? sourceOpp.city : nullIfPlaceholder(raw.ciudad_entidad),
+        department: sourceOpp
+          ? sourceOpp.department
+          : (canonicalDept ?? rawDept),
+        departmentRaw: sourceOpp ? (sourceOpp.departmentRaw ?? rawDept) : rawDept,
       },
       amount,
       amountKnown: validAmount !== null,

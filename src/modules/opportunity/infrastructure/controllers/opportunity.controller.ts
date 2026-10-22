@@ -15,6 +15,7 @@ import { SyncOpportunitiesUseCase } from '../../application/use-cases/sync-oppor
 import { SearchOpportunitiesUseCase } from '../../application/use-cases/search-opportunities.use-case';
 import { GetOpportunityByIdUseCase } from '../../application/use-cases/get-opportunity-by-id.use-case';
 import { ZodValidationPipe } from '../../../shared/infrastructure/http/zod-validation.pipe';
+import { canonicalizeDepartment } from '../../../shared/domain/colombian-departments';
 import { DomainErrorException } from '../../../shared/infrastructure/http/global-exception.filter';
 import {
   ErrorEnvelopeDto,
@@ -68,7 +69,9 @@ export class OpportunityController {
       q: query.q,
       filters: {
         categoryCode: query.categoryPrefix,
-        department: query.department,
+        department: query.department
+          ? canonicalizeDepartment(query.department) ?? query.department
+          : undefined,
         amountMin: query.minAmount,
         amountMax: query.maxAmount,
         status: query.status,

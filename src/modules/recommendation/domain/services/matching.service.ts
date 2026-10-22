@@ -9,6 +9,7 @@ import {
 } from '../../../opportunity/domain/value-objects/opportunity.value-objects';
 import { RecommendationId, asRecommendationId } from '../../../shared/domain/typed-id';
 import { normalizeUnspsc } from '../../../opportunity/infrastructure/adapters/secop/normalizers';
+import { canonicalizeDepartment } from '../../../shared/domain/colombian-departments';
 
 export { cosine, buildProfileQuery };
 
@@ -178,12 +179,15 @@ export class MatchingService {
     const preferredDepartments = (profile.preferences.departments ?? []).filter(
       (d) => d.trim().length > 0,
     );
-    const locationAvailable = preferredDepartments.length > 0;
+    const oppDept = opportunity.location.department;
+    const oppHasDept = oppDept !== null && oppDept.trim().length > 0;
+    const profileHasDept = preferredDepartments.length > 0;
+    const locationAvailable = oppHasDept && profileHasDept;
     let locationMatch = 0;
 
     if (locationAvailable) {
       locationMatch = this.computeLocationMatch(
-        opportunity.location.department,
+        oppDept,
         preferredDepartments,
       );
       weightedSum += this.weights.locationMatch * locationMatch;
@@ -197,7 +201,12 @@ export class MatchingService {
         });
       }
     } else {
-      unavailableFactors.push('El perfil no declara departamentos de interés');
+      if (!oppHasDept) {
+        unavailableFactors.push('La oportunidad no declara departamento');
+      }
+      if (!profileHasDept) {
+        unavailableFactors.push('El perfil no declara departamentos de interés');
+      }
     }
 
     const rawScore = totalAvailableWeight > 0 ? weightedSum / totalAvailableWeight : 0;
@@ -334,10 +343,14 @@ export class MatchingService {
       return 0.0;
     }
 
-    const normOppDept = opportunityDepartment.trim().toLowerCase();
-    const hasMatch = preferredDepartments.some(
-      (dept) => dept.trim().toLowerCase() === normOppDept,
-    );
+    const canonicalOpp = canonicalizeDepartment(opportunityDepartment);
+    const normOppDept = canonicalOpp ?? opportunityDepartment.trim().toLowerCase();
+
+    const hasMatch = preferredDepartments.some((dept) => {
+      const canonicalPref = canonicalizeDepartment(dept);
+      const normPref = canonicalPref ?? dept.trim().toLowerCase();
+      return normPref === normOppDept;
+    });
 
     return hasMatch ? 1.0 : 0.0;
   }

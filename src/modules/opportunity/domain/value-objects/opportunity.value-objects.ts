@@ -5,6 +5,7 @@ export * from './opportunity-filters';
 export interface Location {
   readonly city: string | null;
   readonly department: string | null;
+  readonly departmentRaw?: string | null;
 }
 
 export interface ContractingEntity {

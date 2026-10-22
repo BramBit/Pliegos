@@ -268,10 +268,11 @@ describe('SecopAdapter', () => {
         name: 'COLEGIO GABRIEL BETANCOURT MEJIA I.E.D',
         taxId: '900143276',
       });
-      // Placeholder city 'No Definido' becomes null
+      // Placeholder city 'No Definido' becomes null, department canonicalized
       expect(opp.location).toEqual({
         city: null,
-        department: 'Distrito Capital de Bogotá',
+        department: 'Bogotá D.C.',
+        departmentRaw: 'Distrito Capital de Bogotá',
       });
       expect(opp.amount).toEqual({
         amount: 5500000,
