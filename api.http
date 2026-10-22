@@ -1,77 +1,115 @@
 ### ==============================================================================
 ### Pliegos — API REST Client Collection (Phase 1 MVP)
 ### File: api.http (VS Code REST Client extension)
-### Description: Comprehensive manual testing and verification suite for every
-###              endpoint in Pliegos, including realistic Colombian SECOP II
-###              payloads, structured & semantic search, contractor profiles,
-###              explainable recommendations, feedback, watches, and auth.
+### Description: Complete end-to-end verification flow for Pliegos backend.
 ###
-### Execution Order:
-###   1. Docs: GET /reference and GET /api-json (Public)
-###   2. Auth: POST /auth/register, POST /auth/login, POST /auth/refresh, POST /auth/logout (Public)
-###   3. Admin: POST /admin/sync, POST /admin/alerts/run, POST /admin/recommendations/refresh, GET /admin/jobs/:id (Admin role)
-###   4. Opportunities: GET /opportunities and GET /opportunities/:id (Protected)
-###   5. Profiles: POST /profiles (configureProfileTech, configureProfileCivilInfra) (Protected)
-###   6. Recommendations Feed: GET /profiles/:id/recommendations (Protected)
-###   7. Recommendation Feedback & Undo: POST/DELETE /recommendations/:id/feedback (Protected)
-###   8. Watchlist & Profile Summary: POST/DELETE /profiles/:id/watches/:opportunityId, GET /profiles/:id/watches, GET /profiles/:id/summary (Protected)
-###   9. Alerts: POST /alerts/review-follow-up (Protected)
-###  10. Negative cases: invalid body (400), unknown profileId (404), unauthenticated (401)
+### Flow Order:
+###   1. Public & Documentation: GET /health/live, GET /health/ready, GET /api-json, GET /reference
+###   2. Auth: POST /auth/register, POST /auth/login, GET /auth/me, POST /auth/refresh, POST /auth/logout
+###   3. Profiles: POST /profiles (201), GET /profiles (Page), GET /profiles/:id, PUT /profiles/:id
+###   4. Opportunities: GET /opportunities, GET /opportunities/:id
+###   5. Recommendations Feed: GET /profiles/:id/recommendations
+###   6. Feedback & Watch Sync: POST /recommendations/:id/feedback, DELETE /recommendations/:id/feedback
+###   7. Watchlist & Summary: POST/DELETE /profiles/:id/watches/:oppId, GET /profiles/:id/watches, GET /profiles/:id/summary
+###   8. Alert Inbox: GET /profiles/:id/alerts, POST /alerts/:id/read, POST /profiles/:id/alerts/read-all
+###   9. Admin Operations: POST /admin/sync, POST /admin/alerts/run, POST /admin/recommendations/refresh, GET /admin/jobs/:id, GET /admin/metrics, GET /admin/pipeline
+###  10. Security & Edge Cases: 401 Unauthorized, 403 Forbidden, 400 Bad Request, 404 Not Found
 ### ==============================================================================
 
-### Variables for request chaining
+### Environment Variables
 @baseUrl = http://localhost:3000
-@accessToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.dummy
-@refreshToken = 550e8400-e29b-41d4-a716-446655440000
+@userEmail = contratista.demo@pliegos.co
+@userPassword = ContraseñaSegura2026!
+@adminEmail = admin@pliegos.co
+@adminPassword = AdminPassword2026!
+@userToken = dummy-user-token
+@adminToken = dummy-admin-token
+@refreshToken = dummy-refresh-token
 @profileId = d9b2d63d-a232-4d2c-8cb4-e5e6b72a44f1
 @opportunityId = 9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d
 @recommendationId = 3bfc62c2-5918-426b-a908-660eb2e5a662
+@alertId = 123e4567-e89b-12d3-a456-426614174000
+@jobId = 550e8400-e29b-41d4-a716-446655440000
 
 ### ==============================================================================
-### 1. API Documentation & OpenAPI Specification (Public)
+### 1. Public & Documentation Surfaces
 ### ==============================================================================
 
-# Validates OpenAPI 3.0 specification generation from NestJS decorators
+# Liveness probe
+# @name healthLive
+GET {{baseUrl}}/health/live
+Accept: application/json
+
+###
+
+# Readiness probe (evaluates PostgreSQL, Redis, and Ollama)
+# @name healthReady
+GET {{baseUrl}}/health/ready
+Accept: application/json
+
+###
+
+# OpenAPI 3.0 specification in JSON
 # @name getOpenApiSpec
 GET {{baseUrl}}/api-json
 Accept: application/json
 
 ###
 
-# Validates Scalar interactive documentation UI mounted on the server
+# Scalar interactive documentation UI
 # @name getScalarDocs
 GET {{baseUrl}}/reference
 Accept: text/html
 
 ### ==============================================================================
-### 2. User Authentication & Session Management (Public)
+### 2. User Authentication & Session Management
 ### ==============================================================================
 
-# Registers a new user account with email and password (minimum 10 characters)
+# Registers a new user account (returns 201 Created)
 # @name registerUser
 POST {{baseUrl}}/auth/register
 Content-Type: application/json
 
 {
-  "email": "contratista.colombia@techinnovations.com",
-  "password": "SecurePassword2026!"
+  "email": "{{userEmail}}",
+  "password": "{{userPassword}}"
 }
 
 ###
 
-# Logs in an existing user and returns accessToken (15m) and refreshToken (7d)
+# Logs in an existing user (returns accessToken and refreshToken)
 # @name loginUser
 POST {{baseUrl}}/auth/login
 Content-Type: application/json
 
 {
-  "email": "contratista.colombia@techinnovations.com",
-  "password": "SecurePassword2026!"
+  "email": "{{userEmail}}",
+  "password": "{{userPassword}}"
 }
 
 ###
 
-# Refreshes access token with single-use token rotation (old refresh token is revoked)
+# Logs in as administrator
+# @name loginAdmin
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{adminEmail}}",
+  "password": "{{adminPassword}}"
+}
+
+###
+
+# Current authenticated user details
+# @name getCurrentUser
+GET {{baseUrl}}/auth/me
+Authorization: Bearer {{userToken}}
+Accept: application/json
+
+###
+
+# Rotates tokens using refresh token
 # @name refreshToken
 POST {{baseUrl}}/auth/refresh
 Content-Type: application/json
@@ -82,7 +120,7 @@ Content-Type: application/json
 
 ###
 
-# Logs out and revokes the provided refresh token
+# Logs out and revokes refresh token
 # @name logoutUser
 POST {{baseUrl}}/auth/logout
 Content-Type: application/json
@@ -92,141 +130,42 @@ Content-Type: application/json
 }
 
 ### ==============================================================================
-### 3. Admin Operations (Sync, Alerts & Recommendations)
+### 3. Contractor Profiles Management
 ### ==============================================================================
 
-# Validates enqueuing ingestion from SECOP II / Socrata API (requires role admin).
-# Answers HTTP 202 Accepted with { jobId }.
-# @name adminSyncWithDate
-POST {{baseUrl}}/admin/sync
-Authorization: Bearer {{accessToken}}
-Content-Type: application/json
-
-{
-  "since": "2026-01-01T00:00:00.000Z"
-}
-
-###
-
-# Validates enqueuing full synchronization (requires role admin).
-# Answers HTTP 202 Accepted with { jobId }.
-# @name adminSyncFull
-POST {{baseUrl}}/admin/sync
-Authorization: Bearer {{accessToken}}
-Content-Type: application/json
-
-{}
-
-###
-
-# Validates enqueuing alerts follow-up review (requires role admin).
-# Answers HTTP 202 Accepted with { jobId }.
-# @name adminAlertsRun
-POST {{baseUrl}}/admin/alerts/run
-Authorization: Bearer {{accessToken}}
-Content-Type: application/json
-
-{}
-
-###
-
-# Validates enqueuing recommendation refresh across all profiles (requires role admin).
-# Answers HTTP 202 Accepted with { jobId }.
-# @name adminRecommendationsRefresh
-POST {{baseUrl}}/admin/recommendations/refresh
-Authorization: Bearer {{accessToken}}
-Content-Type: application/json
-
-{}
-
-###
-
-# Validates querying background job status by UUID (requires role admin).
-# @name adminGetJobStatus
-GET {{baseUrl}}/admin/jobs/{{jobId}}
-Authorization: Bearer {{accessToken}}
-Accept: application/json
-
-### ==============================================================================
-### 4. Opportunities List & Detail (Paginated, Hybrid & Structured)
-### ==============================================================================
-
-# Validates hybrid search combining natural language semantic query with structured
-# filters (UNSPSC prefix, department, and budget range) using pgvector and RRF.
-# @name listOpportunitiesHybrid
-GET {{baseUrl}}/opportunities?q=Desarrollo+de+software+a+la+medida&categoryPrefix=V1.8011&department=Cundinamarca&minAmount=50000000&maxAmount=500000000&pageSize=10
-Authorization: Bearer {{accessToken}}
-Accept: application/json
-
-###
-
-# Validates free-text semantic query with relevance sort and custom pagination
-# @name listOpportunitiesSemantic
-GET {{baseUrl}}/opportunities?q=Mantenimiento+preventivo+y+correctivo&pageSize=5&sort=relevance&order=desc
-Authorization: Bearer {{accessToken}}
-Accept: application/json
-
-###
-
-# Validates relational filtered query with COUNT(*) OVER() pagination and sort by published date
-# @name listOpportunitiesStructuredOnly
-GET {{baseUrl}}/opportunities?categoryPrefix=V1.8111&department=Antioquia&minAmount=20000000&maxAmount=300000000&page=1&pageSize=10&sort=publishedAt&order=desc
-Authorization: Bearer {{accessToken}}
-Accept: application/json
-
-###
-
-# Validates opportunity detail retrieval with lazy LLM summary enqueuing
-# @name getOpportunityDetail
-GET {{baseUrl}}/opportunities/{{opportunityId}}
-Authorization: Bearer {{accessToken}}
-Accept: application/json
-
-### ==============================================================================
-### 5. Contractor Profiles Management (CRUD)
-### ==============================================================================
-
-# Validates contractor profile creation with an explicit UUID (@profileId),
-# registering name, contactEmail, alertsEnabled, deadlineAlertDays, IT/Software capabilities,
-# budget bounds, and UNSPSC category preferences for subsequent recommendation matching.
-# @name configureProfileTech
+# Creates a contractor profile (returns 201 Created and enqueues recommendation refresh)
+# @name createProfile
 POST {{baseUrl}}/profiles
-Authorization: Bearer {{accessToken}}
+Authorization: Bearer {{userToken}}
 Content-Type: application/json
 
 {
   "profileId": "{{profileId}}",
-  "ownerId": "usr-tech-innovations-01",
-  "name": "Tech Innovations SAS",
-  "contactEmail": "licitaciones@techinnovations.com",
+  "name": "Tech & AI Solutions SAS",
+  "contactEmail": "licitaciones@techsolutions.com",
   "alertsEnabled": true,
   "deadlineAlertDays": 3,
-  "sector": "Tecnologías de la Información y Desarrollo de Software",
+  "sector": "Tecnología y Desarrollo de Software",
   "capabilities": [
     {
-      "name": "Desarrollo de Software Fullstack y Arquitectura Cloud",
+      "name": "Desarrollo de Software en la Nube",
       "yearsOfExperience": 7
     },
     {
-      "name": "Inteligencia Artificial y Modelos de Lenguaje",
-      "yearsOfExperience": 3
-    },
-    {
-      "name": "Ciberseguridad y Auditoría de Sistemas",
-      "yearsOfExperience": 5
+      "name": "Inteligencia Artificial y Procesamiento de Lenguaje Natural",
+      "yearsOfExperience": 4
     }
   ],
   "preferences": {
     "categoryCodes": [
-      "V1.81111500",
-      "V1.80111600",
-      "V1.43230000"
+      "81111500",
+      "80111600",
+      "43230000"
     ],
     "keywords": [
       "software",
-      "inteligencia artificial",
       "cloud",
-      "interoperabilidad",
+      "inteligencia artificial",
       "datos"
     ],
     "amountRange": {
@@ -243,48 +182,48 @@ Content-Type: application/json
 
 ###
 
-# Validates listing profiles for current authenticated user
-# @name getProfiles
-GET {{baseUrl}}/profiles
-Authorization: Bearer {{accessToken}}
+# Lists all profiles for the authenticated user as a paginated Page<ProfileDto>
+# @name listProfiles
+GET {{baseUrl}}/profiles?page=1&pageSize=20
+Authorization: Bearer {{userToken}}
 Accept: application/json
 
 ###
 
-# Validates retrieving a single profile by ID
+# Retrieves a single profile by ID
 # @name getProfileById
 GET {{baseUrl}}/profiles/{{profileId}}
-Authorization: Bearer {{accessToken}}
+Authorization: Bearer {{userToken}}
 Accept: application/json
 
 ###
 
-# Validates replacing an existing contractor profile by ID
-# @name replaceProfile
+# Updates/replaces an existing contractor profile
+# @name updateProfile
 PUT {{baseUrl}}/profiles/{{profileId}}
-Authorization: Bearer {{accessToken}}
+Authorization: Bearer {{userToken}}
 Content-Type: application/json
 
 {
-  "ownerId": "usr-tech-innovations-01",
-  "name": "Tech Innovations Colombia SAS",
-  "contactEmail": "proyectos@techinnovations.com",
+  "name": "Tech & AI Solutions Colombia SAS",
+  "contactEmail": "contacto@techsolutions.com",
   "alertsEnabled": true,
   "deadlineAlertDays": 5,
-  "sector": "Tecnologías de la Información y Desarrollo Cloud",
+  "sector": "Tecnología, Cloud e Inteligencia Artificial",
   "capabilities": [
     {
-      "name": "Desarrollo de Software Fullstack y Cloud",
+      "name": "Arquitectura de Software y Soluciones Cloud",
       "yearsOfExperience": 8
     }
   ],
   "preferences": {
     "categoryCodes": [
-      "V1.81111500"
+      "81111500"
     ],
     "keywords": [
       "cloud",
-      "software"
+      "software",
+      "machine learning"
     ],
     "amountRange": {
       "min": 100000000,
@@ -297,91 +236,58 @@ Content-Type: application/json
   }
 }
 
+### ==============================================================================
+### 4. Opportunities Search & Detail
+### ==============================================================================
+
+# Hybrid candidate search combining semantic query with structured filters
+# @name searchOpportunitiesHybrid
+GET {{baseUrl}}/opportunities?q=Desarrollo+de+software+e+inteligencia+artificial&department=Bogota&minAmount=50000000&maxAmount=500000000&pageSize=10&sort=relevance&order=desc
+Authorization: Bearer {{userToken}}
+Accept: application/json
+
 ###
 
-# Validates profile creation with a server-generated UUID and distinct preferences
-# (Civil Engineering / Infrastructure contractor, higher budget bracket, regional scope).
-# @name configureProfileCivilInfra
-POST {{baseUrl}}/profiles
-Authorization: Bearer {{accessToken}}
-Content-Type: application/json
+# Filtered structured list with pagination and ordering by published date
+# @name listOpportunitiesStructured
+GET {{baseUrl}}/opportunities?department=Antioquia&minAmount=20000000&maxAmount=300000000&page=1&pageSize=10&sort=publishedAt&order=desc
+Authorization: Bearer {{userToken}}
+Accept: application/json
 
-{
-  "ownerId": "usr-infra-colombia-02",
-  "name": "Consorcio Infraestructura Andina",
-  "contactEmail": "licitaciones@infraandina.com",
-  "alertsEnabled": true,
-  "deadlineAlertDays": 3,
-  "sector": "Infraestructura, Construcción y Obras Civiles",
-  "capabilities": [
-    {
-      "name": "Interventoría Técnica, Administrativa y Financiera de Obras",
-      "yearsOfExperience": 10
-    },
-    {
-      "name": "Construcción y Mantenimiento de Malla Vial Urbana y Rural",
-      "yearsOfExperience": 8
-    },
-    {
-      "name": "Estudios de Suelos, Topografía y Geotecnia",
-      "yearsOfExperience": 6
-    }
-  ],
-  "preferences": {
-    "categoryCodes": [
-      "V1.72141000",
-      "V1.81101500",
-      "V1.72121100"
-    ],
-    "keywords": [
-      "interventoría",
-      "mantenimiento vial",
-      "pavimentación",
-      "obras civiles",
-      "puentes"
-    ],
-    "amountRange": {
-      "min": 150000000,
-      "max": 1500000000
-    },
-    "departments": [
-      "Santander",
-      "Boyacá",
-      "Cundinamarca",
-      "Tolima"
-    ]
-  }
-}
+###
+
+# Retrieves detailed information for a single opportunity
+# @name getOpportunityDetail
+GET {{baseUrl}}/opportunities/{{opportunityId}}
+Authorization: Bearer {{userToken}}
+Accept: application/json
 
 ### ==============================================================================
-### 6. Recommendation Feed (Filtered, Paginated, Single SQL Join)
+### 5. Recommendations Feed
 ### ==============================================================================
 
-# Validates retrieving paginated recommendation feed for a contractor profile,
-# filtering by feedback state ('new', 'participate', 'discard', 'all'), optional minScore,
-# and returning opportunity summaries with match explanations and run metadata in a single query.
+# Retrieves paginated new recommendations for the profile with match breakdown
 # @name getRecommendationsFeedNew
 GET {{baseUrl}}/profiles/{{profileId}}/recommendations?state=new&pageSize=10
-Authorization: Bearer {{accessToken}}
+Authorization: Bearer {{userToken}}
 Accept: application/json
 
 ###
 
-# Validates retrieving all recommendations for the profile with minScore threshold
+# Retrieves all recommendations meeting minimum affinity score
 # @name getRecommendationsFeedAll
 GET {{baseUrl}}/profiles/{{profileId}}/recommendations?state=all&minScore=0.7&page=1&pageSize=20
-Authorization: Bearer {{accessToken}}
+Authorization: Bearer {{userToken}}
 Accept: application/json
 
 ### ==============================================================================
-### 7. Recommendation Feedback & Undo (Atomic Watch Synchronization)
+### 6. Recommendation Feedback & Watchlist Synchronization
 ### ==============================================================================
 
-# Validates recording user decision ('Participate') on a specific recommendation,
-# which updates recommendation feedback and atomically adds the opportunity to watchlist.
-# @name registerFeedbackParticipate
+# Records "Participate" decision and atomically adds opportunity to watchlist
+# @name feedbackParticipate
 POST {{baseUrl}}/recommendations/{{recommendationId}}/feedback
-Authorization: Bearer {{accessToken}}
+Authorization: Bearer {{userToken}}
 Content-Type: application/json
 
 {
@@ -390,20 +296,18 @@ Content-Type: application/json
 
 ###
 
-# Validates undoing recommendation feedback (DELETE), resetting feedback to null
-# and removing the opportunity from watchlist if previously marked Participate.
+# Undoes previous feedback decision and resets recommendation status
 # @name undoFeedback
 DELETE {{baseUrl}}/recommendations/{{recommendationId}}/feedback
-Authorization: Bearer {{accessToken}}
+Authorization: Bearer {{userToken}}
 Accept: application/json
 
 ###
 
-# Validates recording a rejection decision ('Discard'), which removes the opportunity
-# from watchlist if present and records the discard decision.
-# @name registerFeedbackDiscard
+# Records "Discard" decision and removes opportunity from watchlist
+# @name feedbackDiscard
 POST {{baseUrl}}/recommendations/{{recommendationId}}/feedback
-Authorization: Bearer {{accessToken}}
+Authorization: Bearer {{userToken}}
 Content-Type: application/json
 
 {
@@ -411,92 +315,161 @@ Content-Type: application/json
 }
 
 ### ==============================================================================
-### 8. Watchlist & Profile Summary
+### 7. Watchlist & Profile Summary
 ### ==============================================================================
 
-# Validates manually adding an opportunity to the contractor profile's watchlist
-# @name addOpportunityToWatchlist
+# Manually adds an opportunity to the profile's watchlist
+# @name addWatch
 POST {{baseUrl}}/profiles/{{profileId}}/watches/{{opportunityId}}
-Authorization: Bearer {{accessToken}}
+Authorization: Bearer {{userToken}}
 Accept: application/json
 
 ###
 
-# Validates retrieving paginated watchlist with opportunity details and last 10 changes
-# @name getWatchedOpportunities
+# Retrieves paginated list of watched opportunities with material change history
+# @name listWatches
 GET {{baseUrl}}/profiles/{{profileId}}/watches?page=1&pageSize=10
-Authorization: Bearer {{accessToken}}
+Authorization: Bearer {{userToken}}
 Accept: application/json
 
 ###
 
-# Validates profile summary metrics for UI dashboards (new recommendations, watching,
-# closing soon within 7 days, unread alerts)
+# Profile summary counts (new recommendations, watching, closing soon, unread alerts)
 # @name getProfileSummary
 GET {{baseUrl}}/profiles/{{profileId}}/summary
-Authorization: Bearer {{accessToken}}
+Authorization: Bearer {{userToken}}
 Accept: application/json
 
 ###
 
-# Validates removing an opportunity from the contractor profile's watchlist
-# @name removeOpportunityFromWatchlist
+# Removes opportunity from the profile's watchlist
+# @name removeWatch
 DELETE {{baseUrl}}/profiles/{{profileId}}/watches/{{opportunityId}}
-Authorization: Bearer {{accessToken}}
+Authorization: Bearer {{userToken}}
 Accept: application/json
 
+### ==============================================================================
+### 8. Alert Inbox Management
+### ==============================================================================
+
+# Retrieves paginated alerts for the profile (unread only)
+# @name getProfileAlerts
+GET {{baseUrl}}/profiles/{{profileId}}/alerts?unread=true&page=1&pageSize=20
+Authorization: Bearer {{userToken}}
+Accept: application/json
+
+###
+
+# Marks a single alert as read
+# @name markAlertRead
+POST {{baseUrl}}/alerts/{{alertId}}/read
+Authorization: Bearer {{userToken}}
+Accept: application/json
+
+###
+
+# Marks all unread alerts for the profile as read
+# @name markAllAlertsRead
+POST {{baseUrl}}/profiles/{{profileId}}/alerts/read-all
+Authorization: Bearer {{userToken}}
+Accept: application/json
 
 ### ==============================================================================
-### 10. Negative Test Cases & Security Errors (Expect 400 / 401 / 404)
+### 9. Admin Operations (Admin Role Only)
 ### ==============================================================================
 
-# Validates global AuthGuard: unauthenticated request to protected endpoint (Expect HTTP 401 Unauthorized)
-# @name negativeUnauthenticatedRequest
+# Enqueues SECOP II incremental sync job (returns 202 Accepted)
+# @name adminSync
+POST {{baseUrl}}/admin/sync
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "since": "2026-10-01T00:00:00.000Z"
+}
+
+###
+
+# Enqueues alerts follow-up delivery job (returns 202 Accepted)
+# @name adminAlertsRun
+POST {{baseUrl}}/admin/alerts/run
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{}
+
+###
+
+# Enqueues recommendations recalculation for all profiles (returns 202 Accepted)
+# @name adminRecommendationsRefresh
+POST {{baseUrl}}/admin/recommendations/refresh
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{}
+
+###
+
+# Queries BullMQ background job execution status
+# @name adminGetJobStatus
+GET {{baseUrl}}/admin/jobs/{{jobId}}
+Authorization: Bearer {{adminToken}}
+Accept: application/json
+
+###
+
+# In-memory AI metrics report (Ollama latency, call counts, p50 and p95)
+# @name adminMetrics
+GET {{baseUrl}}/admin/metrics
+Authorization: Bearer {{adminToken}}
+Accept: application/json
+
+###
+
+# Historical log of the last 20 cron and pipeline runs
+# @name adminPipeline
+GET {{baseUrl}}/admin/pipeline
+Authorization: Bearer {{adminToken}}
+Accept: application/json
+
+### ==============================================================================
+### 10. Security & Error Handling Verification
+### ==============================================================================
+
+# Unauthenticated request to protected endpoint (Expect 401 Unauthorized)
+# @name testUnauthenticated
 GET {{baseUrl}}/opportunities
 Accept: application/json
 
 ###
 
-# Validates input validation error handling (Expect HTTP 400 Bad Request):
-# minAmount cannot exceed maxAmount in budget preferences.
-# @name negativeProfileInvalidAmountRange
+# Non-admin user accessing admin endpoint (Expect 403 Forbidden)
+# @name testForbiddenAdmin
+GET {{baseUrl}}/admin/pipeline
+Authorization: Bearer {{userToken}}
+Accept: application/json
+
+###
+
+# Invalid deadlineAlertDays outside [1..30] (Expect 400 Bad Request)
+# @name testInvalidDeadlineAlertDays
 POST {{baseUrl}}/profiles
-Authorization: Bearer {{accessToken}}
+Authorization: Bearer {{userToken}}
 Content-Type: application/json
 
 {
-  "ownerId": "usr-test-invalid",
-  "sector": "Servicios de Software",
-  "capabilities": [],
+  "sector": "Tecnología",
+  "deadlineAlertDays": 0,
   "preferences": {
-    "categoryCodes": ["V1.81111500"],
     "keywords": ["software"],
-    "amountRange": {
-      "min": 500000000,
-      "max": 100000000
-    },
     "departments": []
   }
 }
 
 ###
 
-# Validates non-existent profile error handling (Expect HTTP 404 Not Found):
-# Looking up recommendation feed for a non-registered profile ID.
-# @name negativeRecommendationsUnknownProfile
-GET {{baseUrl}}/profiles/00000000-0000-0000-0000-000000000000/recommendations
-Authorization: Bearer {{accessToken}}
+# Non-existent resource ID (Expect 404 Not Found)
+# @name testNotFoundProfile
+GET {{baseUrl}}/profiles/00000000-0000-0000-0000-000000000000
+Authorization: Bearer {{userToken}}
 Accept: application/json
-
-###
-
-# Validates feedback domain enum validation (Expect HTTP 400 Bad Request):
-# Decision must strictly be 'Participate' or 'Discard'.
-# @name negativeFeedbackInvalidDecision
-POST {{baseUrl}}/recommendations/{{recommendationId}}/feedback
-Authorization: Bearer {{accessToken}}
-Content-Type: application/json
-
-{
-  "decision": "MaybeLater"
-}
