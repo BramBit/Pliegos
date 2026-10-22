@@ -17,6 +17,7 @@
     "eval:run": "tsc && node dist/scripts/eval-run.js",
     "reindex": "tsc && node dist/scripts/reindex.js",
     "backfill:departments": "tsc && node dist/scripts/backfill-departments.js",
+    "resync:unknown": "tsc && node dist/scripts/resync-unknown.js",
     "test": "CI=true NODE_OPTIONS=--experimental-vm-modules jest",
     "test:watch": "NODE_OPTIONS=--experimental-vm-modules jest --watch",
     "test:cov": "CI=true NODE_OPTIONS=--experimental-vm-modules jest --coverage",

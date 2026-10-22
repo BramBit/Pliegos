@@ -579,7 +579,9 @@ export function toOpportunitySummaryDto(
     lastPublishedAt: (opportunity.lastPublishedAt ?? opportunity.publishedAt).toISOString(),
     closingDate: opportunity.closingDate ? opportunity.closingDate.toISOString() : null,
     daysToClose: computeDaysToClose(opportunity.closingDate, now),
-    isOpenForSubmission: opportunity.isOpenForSubmission,
+    isOpenForSubmission:
+      (opportunity.status === 'Published' || opportunity.status === 'Amended') &&
+      (opportunity.closingDate === null || opportunity.closingDate.getTime() >= now.getTime()),
     status: opportunity.status,
     source: {
       sourceName: opportunity.source.sourceName,

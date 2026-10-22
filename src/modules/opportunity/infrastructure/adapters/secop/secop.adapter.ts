@@ -204,6 +204,25 @@ export class SecopAdapter implements OpportunitySourcePort {
     throw lastError ?? new Error('Failed to fetch from SECOP endpoint');
   }
 
+  async fetchRawByIds(ids: string[]): Promise<RawSecopProcess[]> {
+    if (ids.length === 0) return [];
+    const formattedIds = ids.map((id) => `'${id.replace(/'/g, "''")}'`).join(',');
+    const url = new URL(this.endpointUrl);
+    url.searchParams.set('$where', `id_del_proceso in (${formattedIds})`);
+    url.searchParams.set('$limit', String(ids.length));
+
+    const headers: Record<string, string> = { Accept: 'application/json' };
+    if (this.appToken) {
+      headers['X-App-Token'] = this.appToken;
+    }
+
+    const response = await this.fetchFn(url.toString(), { method: 'GET', headers });
+    if (!response.ok) {
+      throw new Error(`Failed to fetch from SECOP: HTTP ${response.status}`);
+    }
+    return (await response.json()) as RawSecopProcess[];
+  }
+
   /**
    * Maps a RawSecopProcess to a normalized SourceOpportunity.
    * Returns null if `fecha_de_publicacion_del` is absent or invalid (never invents `new Date()`).
@@ -278,6 +297,7 @@ export class SecopAdapter implements OpportunitySourcePort {
       closingDate,
       isOpenForSubmission,
       status,
+      sourceStatus: raw.estado_del_procedimiento ? raw.estado_del_procedimiento.trim() : null,
       originalUrl,
     };
   }
@@ -348,6 +368,11 @@ export class SecopAdapter implements OpportunitySourcePort {
       closingDate,
       isOpenForSubmission,
       status,
+      sourceStatus: sourceOpp
+        ? (sourceOpp.sourceStatus ?? null)
+        : raw.estado_del_procedimiento
+          ? raw.estado_del_procedimiento.trim()
+          : null,
       source: {
         sourceName: 'SECOP',
         externalId,

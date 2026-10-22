@@ -28,6 +28,7 @@ export interface Opportunity {
   readonly closingDate: Date | null;
   readonly isOpenForSubmission: boolean;
   readonly status: OpportunityStatus;
+  readonly sourceStatus?: string | null;
   readonly source: SourceReference;
   readonly analysis: Analysis | null;
   readonly changeHistory: Change[];
@@ -50,6 +51,7 @@ export interface CreateOpportunityProps {
   readonly closingDate?: Date | null;
   readonly isOpenForSubmission: boolean;
   readonly status: OpportunityStatus;
+  readonly sourceStatus?: string | null;
   readonly source: SourceReference;
   readonly analysis?: Analysis | null;
   readonly changeHistory?: Change[];
@@ -102,6 +104,7 @@ export const createOpportunity = (
     closingDate: props.closingDate ?? null,
     isOpenForSubmission: props.isOpenForSubmission,
     status: props.status,
+    sourceStatus: props.sourceStatus ?? null,
     source: props.source,
     analysis: props.analysis ?? null,
     changeHistory: props.changeHistory ?? [],

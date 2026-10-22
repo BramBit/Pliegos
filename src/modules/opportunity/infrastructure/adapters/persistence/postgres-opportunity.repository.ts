@@ -41,6 +41,7 @@ export interface OpportunityRow {
   closing_date: Date | null;
   is_open_for_submission: boolean;
   status: string;
+  source_status?: string | null;
   source_name: string;
   source_external_id: string;
   source_human_reference: string;
@@ -53,11 +54,11 @@ const UPSERT_OPPORTUNITY_SQL = `
   INSERT INTO opportunities (
     id, title, description, contracting_entity_name, contracting_entity_tax_id, city, department, department_raw,
     amount, amount_known, currency, contract_type, procurement_modality, is_competitive, category_code,
-    published_at, last_published_at, closing_date, is_open_for_submission, status,
+    published_at, last_published_at, closing_date, is_open_for_submission, status, source_status,
     source_name, source_external_id, source_human_reference, source_original_url,
     analysis, change_history, updated_at
   ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, CURRENT_TIMESTAMP
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, CURRENT_TIMESTAMP
   )
   ON CONFLICT (id) DO UPDATE SET
     title = EXCLUDED.title,
@@ -79,6 +80,7 @@ const UPSERT_OPPORTUNITY_SQL = `
     closing_date = EXCLUDED.closing_date,
     is_open_for_submission = EXCLUDED.is_open_for_submission,
     status = EXCLUDED.status,
+    source_status = COALESCE(EXCLUDED.source_status, opportunities.source_status),
     source_name = EXCLUDED.source_name,
     source_external_id = EXCLUDED.source_external_id,
     source_human_reference = EXCLUDED.source_human_reference,
@@ -164,6 +166,7 @@ export class PostgresOpportunityRepository implements OpportunityRepositoryPort 
       opportunity.closingDate,
       opportunity.isOpenForSubmission,
       opportunity.status,
+      opportunity.sourceStatus ?? null,
       opportunity.source.sourceName,
       opportunity.source.externalId,
       opportunity.source.humanReference,
@@ -412,8 +415,11 @@ export class PostgresOpportunityRepository implements OpportunityRepositoryPort 
       publishedAt,
       lastPublishedAt: row.last_published_at ? new Date(row.last_published_at) : publishedAt,
       closingDate: row.closing_date ? new Date(row.closing_date) : null,
-      isOpenForSubmission: row.is_open_for_submission,
+      isOpenForSubmission:
+        (row.status === 'Published' || row.status === 'Amended') &&
+        (row.closing_date === null || new Date(row.closing_date).getTime() >= Date.now()),
       status: row.status as OpportunityStatus,
+      sourceStatus: row.source_status ?? null,
       source: {
         sourceName: 'SECOP',
         externalId: row.source_external_id,

@@ -303,6 +303,7 @@ export class SyncOpportunitiesUseCase implements ISyncOpportunitiesUseCase {
           closingDate: src.closingDate,
           isOpenForSubmission: src.isOpenForSubmission,
           status: src.status,
+          sourceStatus: src.sourceStatus ?? null,
           source: {
             sourceName: 'SECOP',
             externalId: src.externalId,
@@ -362,6 +363,7 @@ export class SyncOpportunitiesUseCase implements ISyncOpportunitiesUseCase {
             categoryCode: src.categoryCode,
             lastPublishedAt: src.lastPublishedAt,
             status: src.status !== 'Unknown' ? src.status : existing.status,
+            sourceStatus: src.sourceStatus ?? existing.sourceStatus ?? null,
             closingDate: src.closingDate,
             isOpenForSubmission: src.isOpenForSubmission,
           };

@@ -20,6 +20,7 @@ export interface SourceOpportunity {
   readonly closingDate: Date | null;
   readonly isOpenForSubmission: boolean;
   readonly status: OpportunityStatus;
+  readonly sourceStatus?: string | null;
   readonly originalUrl: string;
 }
 
