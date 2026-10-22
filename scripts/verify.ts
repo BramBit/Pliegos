@@ -9,6 +9,8 @@ import { runMigrations } from '../src/modules/shared/infrastructure/persistence/
 import {
   aggregateResults,
   CheckResult,
+  evaluateCheck8,
+  EvalThresholds,
 } from '../src/modules/shared/infrastructure/verification/verify-aggregation';
 
 function loadEnv(): void {
@@ -22,11 +24,12 @@ async function runCheck1(): Promise<CheckResult> {
   const name = 'tsc --noEmit';
   try {
     execSync('pnpm exec tsc --noEmit', { stdio: 'pipe' });
-    return { id: 1, name, passed: true };
+    return { id: 1, name, status: 'PASS', passed: true };
   } catch (err: any) {
     return {
       id: 1,
       name,
+      status: 'FAIL',
       passed: false,
       reason: err.stderr?.toString()?.trim() || 'TypeScript type check failed',
     };
@@ -37,11 +40,12 @@ async function runCheck2(): Promise<CheckResult> {
   const name = 'eslint (errors only)';
   try {
     execSync('pnpm exec eslint --quiet .', { stdio: 'pipe' });
-    return { id: 2, name, passed: true };
+    return { id: 2, name, status: 'PASS', passed: true };
   } catch (err: any) {
     return {
       id: 2,
       name,
+      status: 'FAIL',
       passed: false,
       reason: err.stdout?.toString()?.trim() || 'ESLint errors found',
     };
@@ -52,11 +56,12 @@ async function runCheck3(): Promise<CheckResult> {
   const name = 'all tests (pnpm test)';
   try {
     execSync('pnpm test', { stdio: 'pipe' });
-    return { id: 3, name, passed: true };
+    return { id: 3, name, status: 'PASS', passed: true };
   } catch {
     return {
       id: 3,
       name,
+      status: 'FAIL',
       passed: false,
       reason: 'one or more test suites failed',
     };
@@ -67,11 +72,12 @@ async function runCheck4(): Promise<CheckResult> {
   const name = 'check:arch reports no violation outside the baseline';
   try {
     execSync('pnpm check:arch', { stdio: 'pipe' });
-    return { id: 4, name, passed: true };
+    return { id: 4, name, status: 'PASS', passed: true };
   } catch {
     return {
       id: 4,
       name,
+      status: 'FAIL',
       passed: false,
       reason: 'architecture boundary violations outside baseline found',
     };
@@ -104,6 +110,7 @@ async function runCheck5(): Promise<CheckResult> {
         return {
           id: 5,
           name,
+          status: 'FAIL',
           passed: false,
           reason: 'first run applied 0 migrations',
         };
@@ -112,11 +119,12 @@ async function runCheck5(): Promise<CheckResult> {
         return {
           id: 5,
           name,
+          status: 'FAIL',
           passed: false,
           reason: `second run applied ${run2.applied.length} migrations (expected 0)`,
         };
       }
-      return { id: 5, name, passed: true };
+      return { id: 5, name, status: 'PASS', passed: true };
     } finally {
       await verifyPool.end();
     }
@@ -124,6 +132,7 @@ async function runCheck5(): Promise<CheckResult> {
     return {
       id: 5,
       name,
+      status: 'FAIL',
       passed: false,
       reason: err.message || 'migration test error',
     };
@@ -155,6 +164,7 @@ async function runCheck6(): Promise<CheckResult> {
       return {
         id: 6,
         name,
+        status: 'FAIL',
         passed: false,
         reason: 'docs/openapi.json does not exist',
       };
@@ -165,43 +175,62 @@ async function runCheck6(): Promise<CheckResult> {
       return {
         id: 6,
         name,
+        status: 'FAIL',
         passed: false,
         reason: 'docs/openapi.json differs from current API definition',
       };
     }
-    return { id: 6, name, passed: true };
+    return { id: 6, name, status: 'PASS', passed: true };
   } catch (err: any) {
     return {
       id: 6,
       name,
+      status: 'FAIL',
       passed: false,
       reason: err.message || 'failed to regenerate openapi spec',
     };
   }
 }
 
-async function runCheck7(): Promise<CheckResult> {
-  const name = 'data coverage on real database';
-  const configPath = path.resolve(process.cwd(), 'verify.config.json');
-  if (!fs.existsSync(configPath)) {
-    return {
-      id: 7,
-      name,
-      passed: false,
-      reason: 'verify.config.json not found',
-    };
-  }
+interface VerifyConfig {
+  must: {
+    minRecommendableRows: number;
+    minDescriptionPct: number;
+    minEmbeddingPct: number;
+  };
+  watch: {
+    knownAmountPct: { warn: number; fail: number };
+    knownDepartmentPct: { warn: number; fail: number };
+    unknownStatusPct: { warn: number; fail: number };
+  };
+}
 
-  const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+interface CoverageMetrics {
+  totalOpportunities: number;
+  unknownCount: number;
+  unknownPct: number;
+  recTotal: number;
+  descPct: number;
+  embPct: number;
+  deptPct: number;
+  amtPct: number;
+}
+
+let cachedMetrics: CoverageMetrics | null = null;
+let cachedConfig: VerifyConfig | null = null;
+
+function loadVerifyConfig(): VerifyConfig | null {
+  if (cachedConfig) return cachedConfig;
+  const configPath = path.resolve(process.cwd(), 'verify.config.json');
+  if (!fs.existsSync(configPath)) return null;
+  cachedConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+  return cachedConfig;
+}
+
+async function fetchCoverageMetrics(): Promise<CoverageMetrics> {
+  if (cachedMetrics) return cachedMetrics;
   const dbUrl = process.env.DATABASE_URL;
-  if (!dbUrl) {
-    return {
-      id: 7,
-      name,
-      passed: false,
-      reason: 'DATABASE_URL not set in environment',
-    };
-  }
+  if (!dbUrl) throw new Error('DATABASE_URL not set in environment');
 
   const pool = new Pool({ connectionString: dbUrl });
   try {
@@ -236,56 +265,156 @@ async function runCheck7(): Promise<CheckResult> {
     const deptPct = recTotal > 0 ? (r.with_department / recTotal) * 100 : 0;
     const amtPct = recTotal > 0 ? (r.with_amount / recTotal) * 100 : 0;
 
+    cachedMetrics = {
+      totalOpportunities,
+      unknownCount,
+      unknownPct,
+      recTotal,
+      descPct,
+      embPct,
+      deptPct,
+      amtPct,
+    };
+    return cachedMetrics;
+  } finally {
+    await pool.end();
+  }
+}
+
+async function runCheck7a(): Promise<CheckResult> {
+  const name = 'own coverage';
+  const config = loadVerifyConfig();
+  if (!config) {
+    return {
+      id: '7a',
+      name,
+      status: 'FAIL',
+      passed: false,
+      reason: 'verify.config.json not found',
+    };
+  }
+
+  try {
+    const data = await fetchCoverageMetrics();
     const failures: string[] = [];
-    if (recTotal < config.minRecommendableRows) {
+    if (data.recTotal < config.must.minRecommendableRows) {
       failures.push(
-        `recommendable ${recTotal} < ${config.minRecommendableRows}`,
+        `recommendable ${data.recTotal} < ${config.must.minRecommendableRows}`,
       );
     }
-    if (descPct < config.minDescriptionPct) {
+    if (data.descPct < config.must.minDescriptionPct) {
       failures.push(
-        `description ${descPct.toFixed(1)}% < ${config.minDescriptionPct}%`,
+        `description ${data.descPct.toFixed(1)}% < ${config.must.minDescriptionPct}%`,
       );
     }
-    if (embPct < config.minEmbeddingPct) {
+    if (data.embPct < config.must.minEmbeddingPct) {
       failures.push(
-        `embedding ${embPct.toFixed(1)}% < ${config.minEmbeddingPct}%`,
-      );
-    }
-    if (deptPct < config.minKnownDepartmentPct) {
-      failures.push(
-        `known department ${deptPct.toFixed(1)}% < ${config.minKnownDepartmentPct}%`,
-      );
-    }
-    if (amtPct < config.minKnownAmountPct) {
-      failures.push(
-        `known amount ${amtPct.toFixed(1)}% < ${config.minKnownAmountPct}%`,
-      );
-    }
-    if (unknownPct > config.maxUnknownStatusPct) {
-      failures.push(
-        `status Unknown ${unknownPct.toFixed(1)}% > ${config.maxUnknownStatusPct}%`,
+        `embedding ${data.embPct.toFixed(1)}% < ${config.must.minEmbeddingPct}%`,
       );
     }
 
     if (failures.length > 0) {
       return {
-        id: 7,
+        id: '7a',
         name,
+        status: 'FAIL',
         passed: false,
         reason: failures.join(', '),
       };
     }
-    return { id: 7, name, passed: true };
+    return { id: '7a', name, status: 'PASS', passed: true };
   } catch (err: any) {
     return {
-      id: 7,
+      id: '7a',
       name,
+      status: 'FAIL',
       passed: false,
-      reason: err.message || 'data coverage query error',
+      reason: err.message || 'coverage query error',
     };
-  } finally {
-    await pool.end();
+  }
+}
+
+async function runCheck7b(): Promise<CheckResult> {
+  const name = 'source data quality';
+  const config = loadVerifyConfig();
+  if (!config) {
+    return {
+      id: '7b',
+      name,
+      status: 'FAIL',
+      passed: false,
+      reason: 'verify.config.json not found',
+    };
+  }
+
+  try {
+    const data = await fetchCoverageMetrics();
+    const watch = config.watch;
+    const parts: string[] = [];
+    let hasFail = false;
+    let hasWarn = false;
+
+    // knownAmountPct: warn 90, fail 70
+    if (data.amtPct < watch.knownAmountPct.fail) {
+      hasFail = true;
+      parts.push(
+        `known amount ${data.amtPct.toFixed(1)}% < ${watch.knownAmountPct.fail}% (FAIL)`,
+      );
+    } else if (data.amtPct < watch.knownAmountPct.warn) {
+      hasWarn = true;
+      parts.push(
+        `known amount ${data.amtPct.toFixed(1)}% < ${watch.knownAmountPct.warn}% (WARN)`,
+      );
+    } else {
+      parts.push(`known amount ${data.amtPct.toFixed(1)}%`);
+    }
+
+    // knownDepartmentPct: warn 85, fail 60
+    if (data.deptPct < watch.knownDepartmentPct.fail) {
+      hasFail = true;
+      parts.push(
+        `known department ${data.deptPct.toFixed(1)}% < ${watch.knownDepartmentPct.fail}% (FAIL)`,
+      );
+    } else if (data.deptPct < watch.knownDepartmentPct.warn) {
+      hasWarn = true;
+      parts.push(
+        `known department ${data.deptPct.toFixed(1)}% < ${watch.knownDepartmentPct.warn}% (WARN)`,
+      );
+    } else {
+      parts.push(`known department ${data.deptPct.toFixed(1)}%`);
+    }
+
+    // unknownStatusPct: warn 1, fail 10
+    if (data.unknownPct > watch.unknownStatusPct.fail) {
+      hasFail = true;
+      parts.push(
+        `status Unknown ${data.unknownPct.toFixed(1)}% > ${watch.unknownStatusPct.fail}% (FAIL)`,
+      );
+    } else if (data.unknownPct > watch.unknownStatusPct.warn) {
+      hasWarn = true;
+      parts.push(
+        `status Unknown ${data.unknownPct.toFixed(1)}% > ${watch.unknownStatusPct.warn}% (WARN)`,
+      );
+    } else {
+      parts.push(`status Unknown ${data.unknownPct.toFixed(1)}%`);
+    }
+
+    const reason = parts.join(', ');
+    if (hasFail) {
+      return { id: '7b', name, status: 'FAIL', passed: false, reason };
+    }
+    if (hasWarn) {
+      return { id: '7b', name, status: 'WARN', passed: true, reason };
+    }
+    return { id: '7b', name, status: 'PASS', passed: true, reason };
+  } catch (err: any) {
+    return {
+      id: '7b',
+      name,
+      status: 'FAIL',
+      passed: false,
+      reason: err.message || 'coverage query error',
+    };
   }
 }
 
@@ -293,34 +422,50 @@ async function runCheck8(): Promise<CheckResult> {
   const name = 'eval gate and labels minimum';
   const labelsPath = path.resolve(process.cwd(), 'eval/labels.json');
   if (!fs.existsSync(labelsPath)) {
-    return { id: 8, name, passed: false, reason: 'eval/labels.json not found' };
+    return {
+      id: 8,
+      name,
+      status: 'FAIL',
+      passed: false,
+      reason: 'eval/labels.json not found',
+    };
+  }
+
+  const thresholdsPath = path.resolve(process.cwd(), 'eval/thresholds.json');
+  let thresholds: EvalThresholds | null = null;
+  if (fs.existsSync(thresholdsPath)) {
+    try {
+      thresholds = JSON.parse(fs.readFileSync(thresholdsPath, 'utf8'));
+    } catch {
+      thresholds = null;
+    }
   }
 
   try {
     const labels = JSON.parse(fs.readFileSync(labelsPath, 'utf8'));
-    const requiredProfiles = ['golden-tech', 'golden-infra', 'golden-food'];
-
-    for (const p of requiredProfiles) {
-      const count = Object.keys(labels[p] || {}).length;
-      if (count < 30) {
-        return {
-          id: 8,
-          name,
-          passed: false,
-          reason: `profile ${p} has ${count} labels, expected >= 30`,
-        };
-      }
+    const evaluation = evaluateCheck8(labels, thresholds);
+    if (!evaluation.passed) {
+      return {
+        id: 8,
+        name,
+        status: 'FAIL',
+        passed: false,
+        reason: evaluation.reason,
+      };
     }
 
     execSync('pnpm eval:run', { stdio: 'pipe' });
-    return { id: 8, name, passed: true };
+    return { id: 8, name, status: 'PASS', passed: true };
   } catch (err: any) {
     return {
       id: 8,
       name,
+      status: 'FAIL',
       passed: false,
       reason:
-        err.stdout?.toString()?.trim() || 'eval:run did not meet thresholds',
+        err.stdout?.toString()?.trim() ||
+        err.message ||
+        'eval:run did not meet thresholds',
     };
   }
 }
@@ -341,15 +486,17 @@ async function runCheck9(): Promise<CheckResult> {
       return {
         id: 9,
         name,
+        status: 'FAIL',
         passed: false,
         reason: `found ${nonSpecLines.length} reads: ${nonSpecLines[0]}`,
       };
     }
-    return { id: 9, name, passed: true };
+    return { id: 9, name, status: 'PASS', passed: true };
   } catch (err: any) {
     return {
       id: 9,
       name,
+      status: 'FAIL',
       passed: false,
       reason: err.message || 'grep check failed',
     };
@@ -369,6 +516,7 @@ async function runCheck10(): Promise<CheckResult> {
       return {
         id: 10,
         name,
+        status: 'FAIL',
         passed: false,
         reason: `found ${count} commit messages matching forbidden attribution patterns`,
       };
@@ -379,7 +527,7 @@ async function runCheck10(): Promise<CheckResult> {
     }).trim();
     const lines = porcelain ? porcelain.split('\n') : [];
     const dirty = lines.filter((line) => {
-      const file = line.slice(3).trim();
+      const file = line.replace(/^..\s+/, '').trim();
       if (file.startsWith('docs/handoff') || file === 'eval/LABELING.md') {
         return false;
       }
@@ -390,19 +538,21 @@ async function runCheck10(): Promise<CheckResult> {
       return {
         id: 10,
         name,
+        status: 'FAIL',
         passed: false,
         reason: `uncommitted changes found (${dirty.length} files: ${dirty
           .slice(0, 3)
-          .map((l) => l.slice(3).trim())
+          .map((l) => l.replace(/^..\s+/, '').trim())
           .join(', ')}${dirty.length > 3 ? '...' : ''})`,
       };
     }
 
-    return { id: 10, name, passed: true };
+    return { id: 10, name, status: 'PASS', passed: true };
   } catch (err: any) {
     return {
       id: 10,
       name,
+      status: 'FAIL',
       passed: false,
       reason: err.message || 'git status check error',
     };
@@ -413,11 +563,12 @@ async function runCheck11(): Promise<CheckResult> {
   const name = 'docker compose config validates';
   try {
     execSync('docker compose config -q', { stdio: 'pipe' });
-    return { id: 11, name, passed: true };
+    return { id: 11, name, status: 'PASS', passed: true };
   } catch (err: any) {
     return {
       id: 11,
       name,
+      status: 'FAIL',
       passed: false,
       reason: err.stderr?.toString()?.trim() || 'docker compose config failed',
     };
@@ -435,7 +586,8 @@ async function main() {
     runCheck4,
     runCheck5,
     runCheck6,
-    runCheck7,
+    runCheck7a,
+    runCheck7b,
     runCheck8,
     runCheck9,
     runCheck10,

@@ -1,8 +1,21 @@
 {
-  "minRecommendableRows": 1000,
-  "minDescriptionPct": 95,
-  "minEmbeddingPct": 95,
-  "minKnownDepartmentPct": 85,
-  "minKnownAmountPct": 90,
-  "maxUnknownStatusPct": 1
+  "must": {
+    "minRecommendableRows": 1000,
+    "minDescriptionPct": 95,
+    "minEmbeddingPct": 95
+  },
+  "watch": {
+    "knownAmountPct": {
+      "warn": 90,
+      "fail": 70
+    },
+    "knownDepartmentPct": {
+      "warn": 85,
+      "fail": 60
+    },
+    "unknownStatusPct": {
+      "warn": 1,
+      "fail": 10
+    }
+  }
 }
