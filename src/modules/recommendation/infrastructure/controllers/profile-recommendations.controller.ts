@@ -102,6 +102,14 @@ export class ProfileRecommendationsController {
     description: 'Tamaño de página (máximo 50)',
     example: 20,
   })
+  @ApiQuery({
+    name: 'includeMismatches',
+    required: false,
+    type: Boolean,
+    description:
+      'Incluir recomendaciones en nivel 3 (discrepancias con preferencias)',
+    example: false,
+  })
   @ApiResponse({
     status: HttpStatus.OK,
     description:
@@ -128,6 +136,7 @@ export class ProfileRecommendationsController {
         minScore: query.minScore,
         page: query.page,
         pageSize: query.pageSize,
+        includeMismatches: query.includeMismatches,
       },
     });
 
@@ -148,6 +157,8 @@ export class ProfileRecommendationsController {
             score: item.score,
             explanation: item.explanation,
             feedback: item.feedback,
+            matchTier: item.matchTier,
+            missingCriteria: item.missingCriteria,
           },
           item.opportunity,
           now,
@@ -158,6 +169,7 @@ export class ProfileRecommendationsController {
         ),
       ),
       total: feed.total,
+      tierCounts: feed.tierCounts ?? { 1: 0, 2: 0, 3: 0 },
       page: feed.page,
       pageSize: feed.pageSize,
       lastRefreshedAt: feed.lastRefreshedAt

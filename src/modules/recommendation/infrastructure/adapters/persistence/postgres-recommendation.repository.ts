@@ -33,6 +33,8 @@ interface RecommendationRow {
   score: string | number;
   explanation: any;
   feedback: any;
+  match_tier?: number | string;
+  missing_criteria?: string[];
   total_count?: string | number;
 }
 
@@ -61,12 +63,14 @@ export class PostgresRecommendationRepository implements RecommendationRepositor
   async save(recommendation: Recommendation): Promise<void> {
     const query = `
       INSERT INTO recommendations (
-        id, profile_id, opportunity_id, score, explanation, feedback, updated_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP)
+        id, profile_id, opportunity_id, score, explanation, feedback, match_tier, missing_criteria, updated_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, CURRENT_TIMESTAMP)
       ON CONFLICT (id) DO UPDATE SET
         score = EXCLUDED.score,
         explanation = EXCLUDED.explanation,
         feedback = EXCLUDED.feedback,
+        match_tier = EXCLUDED.match_tier,
+        missing_criteria = EXCLUDED.missing_criteria,
         updated_at = CURRENT_TIMESTAMP;
     `;
 
@@ -77,6 +81,8 @@ export class PostgresRecommendationRepository implements RecommendationRepositor
       recommendation.score,
       JSON.stringify(recommendation.explanation),
       recommendation.feedback ? JSON.stringify(recommendation.feedback) : null,
+      recommendation.matchTier ?? 1,
+      recommendation.missingCriteria ?? [],
     ];
 
     await this.pool.query(query, values);
@@ -102,12 +108,14 @@ export class PostgresRecommendationRepository implements RecommendationRepositor
         keptOpportunityIds.push(rec.opportunityId);
         const res: QueryResult<RecommendationRow> = await client.query(
           `INSERT INTO recommendations (
-             id, profile_id, opportunity_id, score, explanation, feedback, updated_at
-           ) VALUES ($1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP)
+             id, profile_id, opportunity_id, score, explanation, feedback, match_tier, missing_criteria, updated_at
+           ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, CURRENT_TIMESTAMP)
            ON CONFLICT (profile_id, opportunity_id) DO UPDATE SET
              score = EXCLUDED.score,
              explanation = EXCLUDED.explanation,
              feedback = COALESCE(recommendations.feedback, EXCLUDED.feedback),
+             match_tier = EXCLUDED.match_tier,
+             missing_criteria = EXCLUDED.missing_criteria,
              updated_at = CURRENT_TIMESTAMP
            RETURNING *;`,
           [
@@ -117,6 +125,8 @@ export class PostgresRecommendationRepository implements RecommendationRepositor
             rec.score,
             JSON.stringify(rec.explanation),
             rec.feedback ? JSON.stringify(rec.feedback) : null,
+            rec.matchTier ?? 1,
+            rec.missingCriteria ?? [],
           ],
         );
         keptRows.push(this.mapRowToEntity(res.rows[0]));
@@ -151,7 +161,7 @@ export class PostgresRecommendationRepository implements RecommendationRepositor
 
   async findByProfile(profileId: ProfileId): Promise<Recommendation[]> {
     const res: QueryResult<RecommendationRow> = await this.pool.query(
-      'SELECT * FROM recommendations WHERE profile_id = $1 ORDER BY score DESC;',
+      'SELECT * FROM recommendations WHERE profile_id = $1 ORDER BY match_tier ASC, score DESC;',
       [profileId],
     );
 
@@ -185,7 +195,7 @@ export class PostgresRecommendationRepository implements RecommendationRepositor
       SELECT *, COUNT(*) OVER() AS total_count
       FROM recommendations
       WHERE ${where.join(' AND ')}
-      ORDER BY score DESC
+      ORDER BY match_tier ASC, score DESC
       LIMIT $${limitIdx} OFFSET $${offsetIdx};
     `;
 
@@ -235,6 +245,7 @@ export class PostgresRecommendationRepository implements RecommendationRepositor
       typeof options.minScore === 'number' && Number.isFinite(options.minScore)
         ? options.minScore
         : null;
+    const includeMismatches = options.includeMismatches ?? false;
 
     const query = `
       WITH profile_check AS (
@@ -247,7 +258,7 @@ export class PostgresRecommendationRepository implements RecommendationRepositor
         ORDER BY finished_at DESC, started_at DESC
         LIMIT 1
       ),
-      filtered_recs AS (
+      base_recs AS (
         SELECT
           r.id,
           r.profile_id,
@@ -255,6 +266,8 @@ export class PostgresRecommendationRepository implements RecommendationRepositor
           r.score,
           r.explanation,
           r.feedback,
+          COALESCE(r.match_tier, 1) AS match_tier,
+          COALESCE(r.missing_criteria, '{}') AS missing_criteria,
           row_to_json(o.*) AS opp_json
         FROM recommendations r
         JOIN opportunities o ON o.id = r.opportunity_id
@@ -267,15 +280,23 @@ export class PostgresRecommendationRepository implements RecommendationRepositor
           )
           AND ($3::numeric IS NULL OR r.score >= $3)
       ),
+      filtered_recs AS (
+        SELECT *
+        FROM base_recs
+        WHERE ($4::boolean = TRUE OR match_tier <> 3)
+      ),
       paged_recs AS (
         SELECT *
         FROM filtered_recs
-        ORDER BY score DESC, id ASC
-        LIMIT $4 OFFSET $5
+        ORDER BY match_tier ASC, score DESC, id ASC
+        LIMIT $5 OFFSET $6
       )
       SELECT
         (EXISTS(SELECT 1 FROM profile_check)) AS profile_exists,
         (SELECT COUNT(*) FROM filtered_recs) AS total_count,
+        (SELECT COUNT(*) FILTER (WHERE match_tier = 1) FROM filtered_recs) AS tier_1_count,
+        (SELECT COUNT(*) FILTER (WHERE match_tier = 2) FROM filtered_recs) AS tier_2_count,
+        (SELECT COUNT(*) FILTER (WHERE match_tier = 3) FROM filtered_recs) AS tier_3_count,
         (SELECT row_to_json(lr) FROM latest_run lr) AS latest_run,
         (SELECT COALESCE(json_agg(pr), '[]'::json) FROM paged_recs pr) AS items;
     `;
@@ -284,6 +305,7 @@ export class PostgresRecommendationRepository implements RecommendationRepositor
       profileId,
       state,
       minScore,
+      includeMismatches,
       pageSize,
       offset,
     ]);
@@ -321,6 +343,10 @@ export class PostgresRecommendationRepository implements RecommendationRepositor
         opportunity,
         lastRefreshedAt,
         degraded,
+        matchTier: Number(r.match_tier ?? 1) as 1 | 2 | 3,
+        missingCriteria: (r.missing_criteria ?? []) as Array<
+          'amount' | 'department' | 'category' | 'closing'
+        >,
       };
     });
 
@@ -332,6 +358,11 @@ export class PostgresRecommendationRepository implements RecommendationRepositor
       lastRefreshedAt,
       degraded,
       profileExists,
+      tierCounts: {
+        1: Number(row?.tier_1_count ?? 0),
+        2: Number(row?.tier_2_count ?? 0),
+        3: Number(row?.tier_3_count ?? 0),
+      },
     };
   }
 
@@ -635,6 +666,10 @@ export class PostgresRecommendationRepository implements RecommendationRepositor
             recordedAt: new Date(feedback.recordedAt),
           }
         : null,
+      matchTier: (row.match_tier ? Number(row.match_tier) : 1) as 1 | 2 | 3,
+      missingCriteria: (row.missing_criteria ?? []) as Array<
+        'amount' | 'department' | 'category' | 'closing'
+      >,
     };
   }
 }

@@ -14,6 +14,11 @@ export const recommendationFeedQuerySchema = z.object({
     (val) => (val === undefined || val === '' ? 20 : Number(val)),
     z.number().int().min(1).max(50).default(20),
   ),
+  includeMismatches: z.preprocess((val) => {
+    if (val === undefined || val === '') return false;
+    if (typeof val === 'string') return val.toLowerCase() === 'true';
+    return Boolean(val);
+  }, z.boolean().default(false)),
 });
 
 export type RecommendationFeedQuery = z.infer<

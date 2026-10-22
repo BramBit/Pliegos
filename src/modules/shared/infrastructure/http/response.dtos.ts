@@ -322,6 +322,17 @@ export class RecommendationDto {
   @ApiProperty({ type: OpportunitySummary, nullable: true })
   opportunity!: OpportunitySummary | null;
 
+  @ApiProperty({ enum: [1, 2, 3], example: 1 })
+  matchTier!: 1 | 2 | 3;
+
+  @ApiProperty({
+    type: [String],
+    example: ['amount'],
+    description:
+      "Criteria that could not be verified ('amount', 'department', 'category', 'closing')",
+  })
+  missingCriteria!: Array<'amount' | 'department' | 'category' | 'closing'>;
+
   @ApiPropertyOptional({
     type: String,
     nullable: true,
@@ -471,6 +482,9 @@ export class ProfilePageDto extends Page<ProfileDto> {
 export class RecommendationPageDto extends Page<RecommendationDto> {
   @ApiProperty({ type: [RecommendationDto] })
   declare items: RecommendationDto[];
+
+  @ApiProperty({ type: TierCountsDto })
+  tierCounts!: TierCountsDto;
 
   @ApiPropertyOptional({
     type: String,
@@ -793,7 +807,23 @@ export function toRecommendationDto(
           ).toISOString(),
         }
       : null,
-    opportunity: opportunity ? toOpportunitySummaryDto(opportunity, now) : null,
+    opportunity: opportunity
+      ? toOpportunitySummaryDto(
+          {
+            ...opportunity,
+            matchTier: recommendation.matchTier ?? opportunity.matchTier ?? 1,
+            missingCriteria:
+              recommendation.missingCriteria ??
+              opportunity.missingCriteria ??
+              [],
+          },
+          now,
+        )
+      : null,
+    matchTier: (recommendation.matchTier ?? 1) as 1 | 2 | 3,
+    missingCriteria: (recommendation.missingCriteria ?? []) as Array<
+      'amount' | 'department' | 'category' | 'closing'
+    >,
     lastRefreshedAt: meta?.lastRefreshedAt
       ? new Date(meta.lastRefreshedAt).toISOString()
       : null,

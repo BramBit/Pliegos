@@ -384,5 +384,69 @@ describe('PostgresRecommendationRepository (Real Test Database)', () => {
       expect(feedMissing.total).toBe(0);
       expect(feedMissing.items).toHaveLength(0);
     });
+
+    it('orders by matchTier ASC, then score DESC, hides tier 3 by default, and includes tier 3 with includeMismatches=true', async () => {
+      const profileId = asProfileId('prof-rec-1');
+
+      // Opportunity 1: complete match (tier 1), lower score 0.70
+      await repo.save({
+        id: asRecommendationId('rec-tier-1'),
+        profileId,
+        opportunityId: asOpportunityId('opp-1'),
+        score: 0.7,
+        explanation: { summary: 'Match tier 1', matchedFactors: [] },
+        feedback: null,
+        matchTier: 1,
+        missingCriteria: [],
+      });
+
+      // Opportunity 2: incomplete match with missing amount (tier 2), higher score 0.95
+      await repo.save({
+        id: asRecommendationId('rec-tier-2'),
+        profileId,
+        opportunityId: asOpportunityId('opp-2'),
+        score: 0.95,
+        explanation: { summary: 'Match tier 2', matchedFactors: [] },
+        feedback: null,
+        matchTier: 2,
+        missingCriteria: ['amount'],
+      });
+
+      // Opportunity 3: mismatch (tier 3), highest score 0.99
+      await repo.save({
+        id: asRecommendationId('rec-tier-3'),
+        profileId,
+        opportunityId: asOpportunityId('opp-3'),
+        score: 0.99,
+        explanation: { summary: 'Match tier 3', matchedFactors: [] },
+        feedback: null,
+        matchTier: 3,
+        missingCriteria: [],
+      });
+
+      // Default (includeMismatches: false): tier 3 is hidden; complete match (tier 1) precedes tier 2 despite lower score
+      const feedDefault = await repo.findFeed(profileId, { state: 'all' });
+      expect(feedDefault.total).toBe(2);
+      expect(feedDefault.items).toHaveLength(2);
+      expect(feedDefault.items[0].id).toBe('rec-tier-1');
+      expect(feedDefault.items[0].matchTier).toBe(1);
+      expect(feedDefault.items[1].id).toBe('rec-tier-2');
+      expect(feedDefault.items[1].matchTier).toBe(2);
+      expect(feedDefault.items[1].missingCriteria).toEqual(['amount']);
+      expect(feedDefault.tierCounts).toEqual({ 1: 1, 2: 1, 3: 0 });
+
+      // With includeMismatches: true: tier 3 is included, ordered tier 1, tier 2, tier 3
+      const feedWithMismatches = await repo.findFeed(profileId, {
+        state: 'all',
+        includeMismatches: true,
+      });
+      expect(feedWithMismatches.total).toBe(3);
+      expect(feedWithMismatches.items).toHaveLength(3);
+      expect(feedWithMismatches.items[0].id).toBe('rec-tier-1');
+      expect(feedWithMismatches.items[1].id).toBe('rec-tier-2');
+      expect(feedWithMismatches.items[2].id).toBe('rec-tier-3');
+      expect(feedWithMismatches.items[2].matchTier).toBe(3);
+      expect(feedWithMismatches.tierCounts).toEqual({ 1: 1, 2: 1, 3: 1 });
+    });
   });
 });

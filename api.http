@@ -282,6 +282,14 @@ Accept: application/json
 
 ###
 
+# Retrieves recommendations including tier 3 mismatches
+# @name getRecommendationsFeedWithMismatches
+GET {{baseUrl}}/profiles/{{profileId}}/recommendations?state=all&includeMismatches=true&pageSize=10
+Authorization: Bearer {{userToken}}
+Accept: application/json
+
+###
+
 # Retrieves all recommendations meeting minimum affinity score
 # @name getRecommendationsFeedAll
 GET {{baseUrl}}/profiles/{{profileId}}/recommendations?state=all&minScore=0.7&page=1&pageSize=20

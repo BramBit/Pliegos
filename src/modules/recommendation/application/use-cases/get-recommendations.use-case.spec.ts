@@ -522,4 +522,150 @@ describe('RefreshRecommendationsUseCase & GetRecommendationsUseCase (P2.6)', () 
       { id: asOpportunityId('opp-unsummarized'), summarize: true },
     ]);
   });
+
+  it('assigns tiers based on profile criteria and unknown amount lands in tier 2 with missing [amount]', async () => {
+    const tieredProfile: Profile = {
+      ...testProfile,
+      id: asProfileId('prof-tiered'),
+      preferences: {
+        categoryCodes: ['V1.80111600'],
+        keywords: ['software'],
+        amountRange: { min: 50000000, max: 200000000 },
+        departments: ['Antioquia'],
+      },
+    };
+
+    const oppTier1: Opportunity = {
+      ...oppHigh,
+      id: asOpportunityId('opp-tier-1'),
+      categoryCode: 'V1.80111600',
+      location: { city: 'Medellín', department: 'Antioquia' },
+      amount: mustCreateMoney(100000000),
+      amountKnown: true,
+    };
+
+    const oppTier2: Opportunity = {
+      ...oppHigh,
+      id: asOpportunityId('opp-tier-2'),
+      categoryCode: 'V1.80111600',
+      location: { city: 'Medellín', department: 'Antioquia' },
+      amount: mustCreateMoney(0),
+      amountKnown: false,
+    };
+
+    const oppTier3: Opportunity = {
+      ...oppHigh,
+      id: asOpportunityId('opp-tier-3'),
+      categoryCode: 'V1.80111600',
+      location: { city: 'Medellín', department: 'Antioquia' },
+      amount: mustCreateMoney(10000000), // below 50M
+      amountKnown: true,
+    };
+
+    await profileRepo.save(tieredProfile);
+    await oppRepo.save(oppTier1);
+    await oppRepo.save(oppTier2);
+    await oppRepo.save(oppTier3);
+    await searchIndex.indexOpportunity(oppTier1);
+    await searchIndex.indexOpportunity(oppTier2);
+    await searchIndex.indexOpportunity(oppTier3);
+
+    const result = await refreshUseCase.execute({
+      profileId: tieredProfile.id,
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    const rec1 = result.value.recommendations.find(
+      (r) => r.opportunityId === 'opp-tier-1',
+    );
+    const rec2 = result.value.recommendations.find(
+      (r) => r.opportunityId === 'opp-tier-2',
+    );
+    const rec3 = result.value.recommendations.find(
+      (r) => r.opportunityId === 'opp-tier-3',
+    );
+
+    expect(rec1?.matchTier).toBe(1);
+    expect(rec1?.missingCriteria).toEqual([]);
+
+    expect(rec2?.matchTier).toBe(2);
+    expect(rec2?.missingCriteria).toEqual(['amount']);
+
+    expect(rec3?.matchTier).toBe(3);
+    expect(rec3?.missingCriteria).toEqual([]);
+  });
+
+  it('enforces per-tier caps: top 50 tier 1, top 50 tier 2, and top 20 tier 3', async () => {
+    const tieredProfile: Profile = {
+      ...testProfile,
+      id: asProfileId('prof-caps'),
+      preferences: {
+        categoryCodes: ['V1.80111600'],
+        keywords: ['software'],
+        amountRange: { min: 50000000, max: 200000000 },
+        departments: ['Antioquia'],
+      },
+    };
+    await profileRepo.save(tieredProfile);
+
+    // Create 60 tier 1 opportunities, 60 tier 2 opportunities, and 30 tier 3 opportunities
+    for (let i = 0; i < 60; i++) {
+      const opp: Opportunity = {
+        ...oppHigh,
+        id: asOpportunityId(`opp-t1-${i}`),
+        categoryCode: 'V1.80111600',
+        location: { city: 'Medellín', department: 'Antioquia' },
+        amount: mustCreateMoney(100000000),
+        amountKnown: true,
+      };
+      await oppRepo.save(opp);
+      await searchIndex.indexOpportunity(opp);
+    }
+    for (let i = 0; i < 60; i++) {
+      const opp: Opportunity = {
+        ...oppHigh,
+        id: asOpportunityId(`opp-t2-${i}`),
+        categoryCode: 'V1.80111600',
+        location: { city: 'Medellín', department: 'Antioquia' },
+        amount: mustCreateMoney(0),
+        amountKnown: false,
+      };
+      await oppRepo.save(opp);
+      await searchIndex.indexOpportunity(opp);
+    }
+    for (let i = 0; i < 30; i++) {
+      const opp: Opportunity = {
+        ...oppHigh,
+        id: asOpportunityId(`opp-t3-${i}`),
+        categoryCode: 'V1.80111600',
+        location: { city: 'Medellín', department: 'Antioquia' },
+        amount: mustCreateMoney(10000000),
+        amountKnown: true,
+      };
+      await oppRepo.save(opp);
+      await searchIndex.indexOpportunity(opp);
+    }
+
+    const result = await refreshUseCase.execute({
+      profileId: tieredProfile.id,
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    const t1Kept = result.value.recommendations.filter(
+      (r) => r.matchTier === 1,
+    );
+    const t2Kept = result.value.recommendations.filter(
+      (r) => r.matchTier === 2,
+    );
+    const t3Kept = result.value.recommendations.filter(
+      (r) => r.matchTier === 3,
+    );
+
+    expect(t1Kept).toHaveLength(50);
+    expect(t2Kept).toHaveLength(50);
+    expect(t3Kept).toHaveLength(20);
+    expect(result.value.recommendations).toHaveLength(120);
+  });
 });

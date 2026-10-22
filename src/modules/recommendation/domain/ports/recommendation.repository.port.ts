@@ -45,6 +45,7 @@ export interface RecommendationFeedOptions {
   readonly minScore?: number;
   readonly page?: number;
   readonly pageSize?: number;
+  readonly includeMismatches?: boolean;
 }
 
 export interface RecommendationFeedItem {
@@ -57,6 +58,10 @@ export interface RecommendationFeedItem {
   readonly opportunity: Opportunity;
   readonly lastRefreshedAt: Date | null;
   readonly degraded: boolean;
+  readonly matchTier: 1 | 2 | 3;
+  readonly missingCriteria: Array<
+    'amount' | 'department' | 'category' | 'closing'
+  >;
 }
 
 export interface PagedRecommendationFeed {
@@ -67,6 +72,11 @@ export interface PagedRecommendationFeed {
   readonly lastRefreshedAt: Date | null;
   readonly degraded: boolean;
   readonly profileExists?: boolean;
+  readonly tierCounts?: {
+    1: number;
+    2: number;
+    3: number;
+  };
 }
 
 export interface RecommendationRepositoryPort {

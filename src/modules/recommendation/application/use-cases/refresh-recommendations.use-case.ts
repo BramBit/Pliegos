@@ -20,6 +20,10 @@ import {
 import { EmbedderPort } from '../../domain/ports/ai-provider.port';
 import { Recommendation } from '../../domain/entities/recommendation.entity';
 import {
+  evaluateCriteria,
+  Criteria,
+} from '../../../opportunity/domain/services/criteria-evaluator';
+import {
   MatchingService,
   buildProfileQuery,
   getMinRecommendationScore,
@@ -27,6 +31,9 @@ import {
 
 export const REFRESH_CANDIDATE_POOL_SIZE = 200;
 export const TOP_RECOMMENDATIONS_KEPT = 50;
+export const TIER_1_CAP = 50;
+export const TIER_2_CAP = 50;
+export const TIER_3_CAP = 20;
 
 export function computeProfileQueryHash(text: string): string {
   return createHash('sha256').update(text, 'utf8').digest('hex');
@@ -106,6 +113,17 @@ export class RefreshRecommendationsUseCase {
     );
     const minScore = this.minRecommendationScore ?? getMinRecommendationScore();
 
+    const criteria: Criteria = {
+      amountMin: profile.preferences.amountRange?.min,
+      amountMax: profile.preferences.amountRange?.max,
+      departments: profile.preferences.departments?.length
+        ? profile.preferences.departments
+        : undefined,
+      categoryPrefixes: profile.preferences.categoryCodes?.length
+        ? profile.preferences.categoryCodes
+        : undefined,
+    };
+
     const qualifying: Recommendation[] = [];
     const loadedOpportunities = new Map<OpportunityId, Opportunity>();
     for (const item of retrieval.items) {
@@ -129,17 +147,32 @@ export class RefreshRecommendationsUseCase {
         continue;
       }
 
-      const rec: Recommendation = previous
-        ? { ...scored, feedback: previous.feedback }
-        : scored;
+      const evaluation = evaluateCriteria(opportunity, criteria);
+      const rec: Recommendation = {
+        ...(previous ? { ...scored, feedback: previous.feedback } : scored),
+        matchTier: evaluation.tier,
+        missingCriteria: evaluation.missing,
+      };
       qualifying.push(rec);
     }
 
-    qualifying.sort((a, b) => b.score - a.score);
-    const top50 = qualifying.slice(0, TOP_RECOMMENDATIONS_KEPT);
+    const tier1 = qualifying
+      .filter((r) => (r.matchTier ?? 1) === 1)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, TIER_1_CAP);
+    const tier2 = qualifying
+      .filter((r) => r.matchTier === 2)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, TIER_2_CAP);
+    const tier3 = qualifying
+      .filter((r) => r.matchTier === 3)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, TIER_3_CAP);
+
+    const kept = [...tier1, ...tier2, ...tier3];
 
     if (this.analysisQueue) {
-      for (const rec of top50) {
+      for (const rec of kept) {
         const opp = loadedOpportunities.get(rec.opportunityId);
         if (opp && !hasGeneratedSummary(opp.analysis)) {
           await this.analysisQueue.enqueueAnalysis(opp.id, { summarize: true });
@@ -151,13 +184,13 @@ export class RefreshRecommendationsUseCase {
     if (this.recommendationRepository.upsertMany) {
       persisted = await this.recommendationRepository.upsertMany(
         profile.id,
-        top50,
+        kept,
       );
     } else {
-      for (const rec of top50) {
+      for (const rec of kept) {
         await this.recommendationRepository.save(rec);
       }
-      persisted = top50;
+      persisted = kept;
     }
 
     const finishedAt = new Date();

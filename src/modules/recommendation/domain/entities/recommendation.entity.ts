@@ -22,6 +22,10 @@ export interface Recommendation {
   readonly score: number; // 0..1
   readonly explanation: Explanation;
   readonly feedback: Feedback | null;
+  readonly matchTier?: 1 | 2 | 3;
+  readonly missingCriteria?: Array<
+    'amount' | 'department' | 'category' | 'closing'
+  >;
 }
 
 export interface CreateRecommendationProps {
@@ -31,6 +35,10 @@ export interface CreateRecommendationProps {
   readonly score: number;
   readonly explanation: Explanation;
   readonly feedback?: Feedback | null;
+  readonly matchTier?: 1 | 2 | 3;
+  readonly missingCriteria?: Array<
+    'amount' | 'department' | 'category' | 'closing'
+  >;
 }
 
 export const createRecommendation = (
@@ -75,6 +83,8 @@ export const createRecommendation = (
     score: props.score,
     explanation: props.explanation,
     feedback: props.feedback ?? null,
+    matchTier: props.matchTier ?? 1,
+    missingCriteria: props.missingCriteria ?? [],
   });
 };
 

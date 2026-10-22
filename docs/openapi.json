@@ -779,6 +779,16 @@
             }
           },
           {
+            "name": "includeMismatches",
+            "required": false,
+            "in": "query",
+            "description": "Incluir recomendaciones en nivel 3 (discrepancias con preferencias)",
+            "schema": {
+              "example": false,
+              "type": "boolean"
+            }
+          },
+          {
             "name": "pageSize",
             "required": false,
             "in": "query",
@@ -2658,6 +2668,25 @@
               }
             ]
           },
+          "matchTier": {
+            "type": "number",
+            "enum": [
+              1,
+              2,
+              3
+            ],
+            "example": 1
+          },
+          "missingCriteria": {
+            "example": [
+              "amount"
+            ],
+            "description": "Criteria that could not be verified ('amount', 'department', 'category', 'closing')",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "lastRefreshedAt": {
             "type": "string",
             "nullable": true,
@@ -2677,7 +2706,9 @@
           "score",
           "explanation",
           "feedback",
-          "opportunity"
+          "opportunity",
+          "matchTier",
+          "missingCriteria"
         ]
       },
       "RecommendationPageDto": {
@@ -2701,6 +2732,9 @@
             "type": "number",
             "example": 20
           },
+          "tierCounts": {
+            "$ref": "#/components/schemas/TierCountsDto"
+          },
           "lastRefreshedAt": {
             "type": "string",
             "nullable": true,
@@ -2717,7 +2751,8 @@
           "items",
           "total",
           "page",
-          "pageSize"
+          "pageSize",
+          "tierCounts"
         ]
       },
       "ProfileSummaryDto": {
