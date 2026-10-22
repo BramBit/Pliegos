@@ -29,9 +29,7 @@
           }
         },
         "summary": "Obtener información del usuario autenticado",
-        "tags": [
-          "Auth"
-        ]
+        "tags": ["Auth"]
       }
     },
     "/auth/register": {
@@ -72,9 +70,7 @@
           }
         },
         "summary": "Registrar un nuevo usuario",
-        "tags": [
-          "Auth"
-        ]
+        "tags": ["Auth"]
       }
     },
     "/auth/login": {
@@ -125,9 +121,7 @@
           }
         },
         "summary": "Iniciar sesión con credenciales",
-        "tags": [
-          "Auth"
-        ]
+        "tags": ["Auth"]
       }
     },
     "/auth/refresh": {
@@ -168,9 +162,7 @@
           }
         },
         "summary": "Rotar tokens con refresh token",
-        "tags": [
-          "Auth"
-        ]
+        "tags": ["Auth"]
       }
     },
     "/auth/logout": {
@@ -201,9 +193,7 @@
           }
         },
         "summary": "Cerrar sesión",
-        "tags": [
-          "Auth"
-        ]
+        "tags": ["Auth"]
       }
     },
     "/opportunities": {
@@ -234,9 +224,7 @@
           }
         },
         "summary": "Listado paginado de oportunidades con búsqueda y filtros",
-        "tags": [
-          "Opportunities"
-        ]
+        "tags": ["Opportunities"]
       }
     },
     "/opportunities/{id}": {
@@ -278,9 +266,7 @@
           }
         },
         "summary": "Obtener detalle de una oportunidad por ID",
-        "tags": [
-          "Opportunities"
-        ]
+        "tags": ["Opportunities"]
       }
     },
     "/alerts/{id}/read": {
@@ -322,9 +308,7 @@
           }
         },
         "summary": "Marcar una alerta como leída",
-        "tags": [
-          "Alerts"
-        ]
+        "tags": ["Alerts"]
       }
     },
     "/profiles/{id}/alerts": {
@@ -384,9 +368,7 @@
           }
         },
         "summary": "Listado paginado de alertas de un perfil",
-        "tags": [
-          "Alerts"
-        ]
+        "tags": ["Alerts"]
       }
     },
     "/profiles/{id}/alerts/read-all": {
@@ -428,9 +410,7 @@
           }
         },
         "summary": "Marcar todas las alertas de un perfil como leídas",
-        "tags": [
-          "Alerts"
-        ]
+        "tags": ["Alerts"]
       }
     },
     "/profiles": {
@@ -470,9 +450,7 @@
           }
         },
         "summary": "Listar perfiles del contratista autenticado",
-        "tags": [
-          "Profiles"
-        ]
+        "tags": ["Profiles"]
       },
       "post": {
         "description": "Crea un nuevo perfil con capacidades técnicas, preferencias territoriales canónicas de Colombia, rango de cuantía y preferencias de notificación. Encola automáticamente el job de cálculo de recomendaciones.",
@@ -511,9 +489,7 @@
           }
         },
         "summary": "Crear perfil de contratista",
-        "tags": [
-          "Profiles"
-        ]
+        "tags": ["Profiles"]
       }
     },
     "/profiles/{id}": {
@@ -555,9 +531,7 @@
           }
         },
         "summary": "Obtener un perfil por ID",
-        "tags": [
-          "Profiles"
-        ]
+        "tags": ["Profiles"]
       },
       "put": {
         "description": "Reemplaza íntegramente los datos de un perfil existente identificado por ID y refresca sus recomendaciones.",
@@ -617,9 +591,7 @@
           }
         },
         "summary": "Reemplazar perfil de contratista",
-        "tags": [
-          "Profiles"
-        ]
+        "tags": ["Profiles"]
       },
       "delete": {
         "description": "Elimina el perfil especificado por ID. La eliminación se propaga en cascada a recomendaciones y alertas.",
@@ -652,9 +624,7 @@
           }
         },
         "summary": "Eliminar un perfil de contratista",
-        "tags": [
-          "Profiles"
-        ]
+        "tags": ["Profiles"]
       }
     },
     "/recommendations/{id}/feedback": {
@@ -716,9 +686,7 @@
           }
         },
         "summary": "Registrar feedback sobre una recomendación",
-        "tags": [
-          "Recommendations"
-        ]
+        "tags": ["Recommendations"]
       },
       "delete": {
         "description": "Elimina el feedback registrado en la recomendación y remueve la vigilancia asociada si la decisión previa era Participate.",
@@ -758,9 +726,7 @@
           }
         },
         "summary": "Deshacer feedback de una recomendación",
-        "tags": [
-          "Recommendations"
-        ]
+        "tags": ["Recommendations"]
       }
     },
     "/profiles/{id}/recommendations": {
@@ -814,12 +780,7 @@
             "in": "query",
             "description": "Estado de feedback (por defecto new)",
             "schema": {
-              "enum": [
-                "new",
-                "participate",
-                "discard",
-                "all"
-              ],
+              "enum": ["new", "participate", "discard", "all"],
               "type": "string"
             }
           }
@@ -847,9 +808,7 @@
           }
         },
         "summary": "Feed de recomendaciones filtrado y paginado para un perfil",
-        "tags": [
-          "Recommendations"
-        ]
+        "tags": ["Recommendations"]
       }
     },
     "/profiles/{id}/summary": {
@@ -891,9 +850,7 @@
           }
         },
         "summary": "Resumen de actividad e indicadores clave para un perfil",
-        "tags": [
-          "Recommendations"
-        ]
+        "tags": ["Recommendations"]
       }
     },
     "/profiles/{id}/watches": {
@@ -953,9 +910,7 @@
           }
         },
         "summary": "Listado paginado de oportunidades vigiladas por un perfil",
-        "tags": [
-          "Recommendations"
-        ]
+        "tags": ["Recommendations"]
       }
     },
     "/profiles/{id}/watches/{opportunityId}": {
@@ -1007,9 +962,7 @@
           }
         },
         "summary": "Agregar una oportunidad a la lista de vigilancia del perfil",
-        "tags": [
-          "Recommendations"
-        ]
+        "tags": ["Recommendations"]
       },
       "delete": {
         "description": "Elimina la oportunidad de la lista de seguimiento del contratista.",
@@ -1059,9 +1012,7 @@
           }
         },
         "summary": "Remover una oportunidad de la lista de vigilancia del perfil",
-        "tags": [
-          "Recommendations"
-        ]
+        "tags": ["Recommendations"]
       }
     },
     "/admin/sync": {
@@ -1123,9 +1074,7 @@
           }
         ],
         "summary": "Encolar sincronización operativa de oportunidades desde SECOP II (Solo Admin)",
-        "tags": [
-          "Admin"
-        ]
+        "tags": ["Admin"]
       }
     },
     "/admin/alerts/run": {
@@ -1167,9 +1116,7 @@
           }
         ],
         "summary": "Encolar ejecución de seguimiento de alertas (Solo Admin)",
-        "tags": [
-          "Admin"
-        ]
+        "tags": ["Admin"]
       }
     },
     "/admin/recommendations/refresh": {
@@ -1211,9 +1158,7 @@
           }
         ],
         "summary": "Encolar refresco masivo de recomendaciones para todos los perfiles (Solo Admin)",
-        "tags": [
-          "Admin"
-        ]
+        "tags": ["Admin"]
       }
     },
     "/admin/jobs/{id}": {
@@ -1273,9 +1218,7 @@
           }
         ],
         "summary": "Consultar estado de un trabajo administrativo (Solo Admin)",
-        "tags": [
-          "Admin"
-        ]
+        "tags": ["Admin"]
       }
     },
     "/admin/metrics": {
@@ -1294,9 +1237,7 @@
           }
         ],
         "summary": "Consultar métricas de llamadas a modelos de IA (Solo Admin)",
-        "tags": [
-          "Admin"
-        ]
+        "tags": ["Admin"]
       }
     },
     "/admin/pipeline": {
@@ -1315,9 +1256,7 @@
           }
         ],
         "summary": "Consultar historial de ejecuciones del pipeline (Solo Admin)",
-        "tags": [
-          "Admin"
-        ]
+        "tags": ["Admin"]
       }
     },
     "/health/live": {
@@ -1331,9 +1270,7 @@
           }
         },
         "summary": "Liveness probe",
-        "tags": [
-          "Health"
-        ]
+        "tags": ["Health"]
       }
     },
     "/health/ready": {
@@ -1350,9 +1287,7 @@
           }
         },
         "summary": "Readiness probe",
-        "tags": [
-          "Health"
-        ]
+        "tags": ["Health"]
       }
     }
   },
@@ -1408,17 +1343,10 @@
           "role": {
             "type": "string",
             "example": "user",
-            "enum": [
-              "user",
-              "admin"
-            ]
+            "enum": ["user", "admin"]
           }
         },
-        "required": [
-          "id",
-          "email",
-          "role"
-        ]
+        "required": ["id", "email", "role"]
       },
       "ErrorEnvelopeDto": {
         "type": "object",
@@ -1445,12 +1373,7 @@
             "example": "c42d8e41-29a4-4f6a-9870-8d65e32b5011"
           }
         },
-        "required": [
-          "statusCode",
-          "error",
-          "message",
-          "requestId"
-        ]
+        "required": ["statusCode", "error", "message", "requestId"]
       },
       "RegisterDto": {
         "type": "object",
@@ -1465,10 +1388,7 @@
             "minLength": 10
           }
         },
-        "required": [
-          "email",
-          "password"
-        ]
+        "required": ["email", "password"]
       },
       "RegisterResponseDto": {
         "type": "object",
@@ -1482,10 +1402,7 @@
             "example": "contratista@empresa.com"
           }
         },
-        "required": [
-          "id",
-          "email"
-        ]
+        "required": ["id", "email"]
       },
       "LoginDto": {
         "type": "object",
@@ -1499,10 +1416,7 @@
             "example": "ContraseñaSegura2026!"
           }
         },
-        "required": [
-          "email",
-          "password"
-        ]
+        "required": ["email", "password"]
       },
       "AuthTokensResponseDto": {
         "type": "object",
@@ -1516,10 +1430,7 @@
             "example": "a1b2c3d4e5f6...refresh-token-string"
           }
         },
-        "required": [
-          "accessToken",
-          "refreshToken"
-        ]
+        "required": ["accessToken", "refreshToken"]
       },
       "RefreshTokenDto": {
         "type": "object",
@@ -1529,9 +1440,7 @@
             "example": "a1b2c3d4e5f6...refresh-token-string"
           }
         },
-        "required": [
-          "refreshToken"
-        ]
+        "required": ["refreshToken"]
       },
       "LogoutDto": {
         "type": "object",
@@ -1554,10 +1463,7 @@
             "example": "Logged out successfully"
           }
         },
-        "required": [
-          "success",
-          "message"
-        ]
+        "required": ["success", "message"]
       },
       "ContractingEntityDto": {
         "type": "object",
@@ -1571,10 +1477,7 @@
             "example": "899999053-1"
           }
         },
-        "required": [
-          "name",
-          "taxId"
-        ]
+        "required": ["name", "taxId"]
       },
       "LocationDto": {
         "type": "object",
@@ -1590,19 +1493,14 @@
             "example": "Bogotá D.C."
           }
         },
-        "required": [
-          "city",
-          "department"
-        ]
+        "required": ["city", "department"]
       },
       "SourceReferenceDto": {
         "type": "object",
         "properties": {
           "sourceName": {
             "type": "string",
-            "enum": [
-              "SECOP"
-            ],
+            "enum": ["SECOP"],
             "example": "SECOP"
           },
           "externalId": {
@@ -1736,12 +1634,7 @@
           },
           "summaryStatus": {
             "type": "string",
-            "enum": [
-              "pending",
-              "ready",
-              "fallback",
-              "unavailable"
-            ],
+            "enum": ["pending", "ready", "fallback", "unavailable"],
             "example": "ready"
           }
         },
@@ -1794,12 +1687,7 @@
             "example": 20
           }
         },
-        "required": [
-          "items",
-          "total",
-          "page",
-          "pageSize"
-        ]
+        "required": ["items", "total", "page", "pageSize"]
       },
       "RequirementDto": {
         "type": "object",
@@ -1810,18 +1698,11 @@
           },
           "type": {
             "type": "string",
-            "enum": [
-              "technical",
-              "financial",
-              "legal"
-            ],
+            "enum": ["technical", "financial", "legal"],
             "example": "technical"
           }
         },
-        "required": [
-          "text",
-          "type"
-        ]
+        "required": ["text", "type"]
       },
       "AnalysisDto": {
         "type": "object",
@@ -1833,12 +1714,7 @@
           },
           "summaryStatus": {
             "type": "string",
-            "enum": [
-              "pending",
-              "ready",
-              "fallback",
-              "unavailable"
-            ],
+            "enum": ["pending", "ready", "fallback", "unavailable"],
             "example": "ready"
           },
           "requirements": {
@@ -2003,12 +1879,7 @@
           },
           "summaryStatus": {
             "type": "string",
-            "enum": [
-              "pending",
-              "ready",
-              "fallback",
-              "unavailable"
-            ],
+            "enum": ["pending", "ready", "fallback", "unavailable"],
             "example": "ready"
           },
           "summary": {
@@ -2078,9 +1949,7 @@
             "example": 1
           }
         },
-        "required": [
-          "success"
-        ]
+        "required": ["success"]
       },
       "AlertItemOpportunitySummaryDto": {
         "type": "object",
@@ -2107,13 +1976,7 @@
             "example": "2026-10-25T22:00:00.000Z"
           }
         },
-        "required": [
-          "id",
-          "title",
-          "entity",
-          "amount",
-          "closingDate"
-        ]
+        "required": ["id", "title", "entity", "amount", "closingDate"]
       },
       "AlertInboxItemDto": {
         "type": "object",
@@ -2124,11 +1987,7 @@
           },
           "trigger": {
             "type": "string",
-            "enum": [
-              "Amendment",
-              "DeadlineApproaching",
-              "StatusChange"
-            ],
+            "enum": ["Amendment", "DeadlineApproaching", "StatusChange"],
             "example": "Amendment"
           },
           "changeKey": {
@@ -2184,12 +2043,7 @@
             "example": 20
           }
         },
-        "required": [
-          "items",
-          "total",
-          "page",
-          "pageSize"
-        ]
+        "required": ["items", "total", "page", "pageSize"]
       },
       "CapabilityDto": {
         "type": "object",
@@ -2203,10 +2057,7 @@
             "example": 5
           }
         },
-        "required": [
-          "name",
-          "yearsOfExperience"
-        ]
+        "required": ["name", "yearsOfExperience"]
       },
       "AmountRangeDto": {
         "type": "object",
@@ -2220,28 +2071,20 @@
             "example": 500000000
           }
         },
-        "required": [
-          "min",
-          "max"
-        ]
+        "required": ["min", "max"]
       },
       "ProfilePreferencesDto": {
         "type": "object",
         "properties": {
           "categoryCodes": {
-            "example": [
-              "80111600"
-            ],
+            "example": ["80111600"],
             "type": "array",
             "items": {
               "type": "string"
             }
           },
           "keywords": {
-            "example": [
-              "software",
-              "arquitectura"
-            ],
+            "example": ["software", "arquitectura"],
             "type": "array",
             "items": {
               "type": "string"
@@ -2257,22 +2100,14 @@
             ]
           },
           "departments": {
-            "example": [
-              "Bogotá D.C.",
-              "Antioquia"
-            ],
+            "example": ["Bogotá D.C.", "Antioquia"],
             "type": "array",
             "items": {
               "type": "string"
             }
           }
         },
-        "required": [
-          "categoryCodes",
-          "keywords",
-          "amountRange",
-          "departments"
-        ]
+        "required": ["categoryCodes", "keywords", "amountRange", "departments"]
       },
       "ProfileDto": {
         "type": "object",
@@ -2351,12 +2186,7 @@
             "example": 20
           }
         },
-        "required": [
-          "items",
-          "total",
-          "page",
-          "pageSize"
-        ]
+        "required": ["items", "total", "page", "pageSize"]
       },
       "ConfigureProfileDto": {
         "type": "object",
@@ -2414,11 +2244,7 @@
             ]
           }
         },
-        "required": [
-          "sector",
-          "capabilities",
-          "preferences"
-        ]
+        "required": ["sector", "capabilities", "preferences"]
       },
       "RegisterFeedbackDto": {
         "type": "object",
@@ -2426,16 +2252,11 @@
           "decision": {
             "type": "string",
             "description": "Decisión tomada por el contratista respecto a la recomendación",
-            "enum": [
-              "Participate",
-              "Discard"
-            ],
+            "enum": ["Participate", "Discard"],
             "example": "Participate"
           }
         },
-        "required": [
-          "decision"
-        ]
+        "required": ["decision"]
       },
       "RegisterFeedbackResponseDto": {
         "type": "object",
@@ -2449,10 +2270,7 @@
             "example": "Feedback recorded successfully"
           }
         },
-        "required": [
-          "success",
-          "message"
-        ]
+        "required": ["success", "message"]
       },
       "MatchedFactorDto": {
         "type": "object",
@@ -2476,11 +2294,7 @@
             "example": "Coincidencia semántica con tu perfil (85%)"
           }
         },
-        "required": [
-          "factor",
-          "score",
-          "description"
-        ]
+        "required": ["factor", "score", "description"]
       },
       "ExplanationDto": {
         "type": "object",
@@ -2496,30 +2310,21 @@
             }
           },
           "unavailableFactors": {
-            "example": [
-              "La oportunidad no declara categoría UNSPSC"
-            ],
+            "example": ["La oportunidad no declara categoría UNSPSC"],
             "type": "array",
             "items": {
               "type": "string"
             }
           }
         },
-        "required": [
-          "summary",
-          "matchedFactors",
-          "unavailableFactors"
-        ]
+        "required": ["summary", "matchedFactors", "unavailableFactors"]
       },
       "FeedbackDto": {
         "type": "object",
         "properties": {
           "decision": {
             "type": "string",
-            "enum": [
-              "Participate",
-              "Discard"
-            ],
+            "enum": ["Participate", "Discard"],
             "example": "Participate"
           },
           "recordedAt": {
@@ -2527,10 +2332,7 @@
             "example": "2026-10-16T10:30:00.000Z"
           }
         },
-        "required": [
-          "decision",
-          "recordedAt"
-        ]
+        "required": ["decision", "recordedAt"]
       },
       "RecommendationDto": {
         "type": "object",
@@ -2627,12 +2429,7 @@
             "example": false
           }
         },
-        "required": [
-          "items",
-          "total",
-          "page",
-          "pageSize"
-        ]
+        "required": ["items", "total", "page", "pageSize"]
       },
       "ProfileSummaryDto": {
         "type": "object",
@@ -2682,11 +2479,7 @@
             "example": "2026-10-18T10:00:00.000Z"
           }
         },
-        "required": [
-          "opportunity",
-          "last10Changes",
-          "addedAt"
-        ]
+        "required": ["opportunity", "last10Changes", "addedAt"]
       },
       "WatchedOpportunityPageDto": {
         "type": "object",
@@ -2710,12 +2503,7 @@
             "example": 20
           }
         },
-        "required": [
-          "items",
-          "total",
-          "page",
-          "pageSize"
-        ]
+        "required": ["items", "total", "page", "pageSize"]
       },
       "SyncOpportunitiesDto": {
         "type": "object",
@@ -2749,11 +2537,7 @@
           },
           "trigger": {
             "type": "string",
-            "enum": [
-              "Amendment",
-              "DeadlineApproaching",
-              "StatusChange"
-            ],
+            "enum": ["Amendment", "DeadlineApproaching", "StatusChange"],
             "example": "Amendment"
           },
           "deliveredAt": {
@@ -2792,12 +2576,7 @@
             "example": 20
           }
         },
-        "required": [
-          "items",
-          "total",
-          "page",
-          "pageSize"
-        ]
+        "required": ["items", "total", "page", "pageSize"]
       },
       "AlertPageDto": {
         "type": "object",
@@ -2821,12 +2600,7 @@
             "example": 20
           }
         },
-        "required": [
-          "items",
-          "total",
-          "page",
-          "pageSize"
-        ]
+        "required": ["items", "total", "page", "pageSize"]
       },
       "SyncOpportunitiesResponseDto": {
         "type": "object",
@@ -2880,9 +2654,7 @@
             "example": 5
           }
         },
-        "required": [
-          "alertsSent"
-        ]
+        "required": ["alertsSent"]
       }
     }
   }
