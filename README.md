@@ -335,4 +335,4 @@ Los datos provienen del portal de datos abiertos del Estado colombiano (datos.go
 
 ## Licencia
 
-Todos los derechos reservados. El código se publica con fines de consulta y evaluación.
+Todos los derechos reservados. El código se publica únicamente con fines de consulta y evaluación; no se concede permiso para copiarlo, modificarlo, distribuirlo ni usarlo comercialmente sin autorización escrita. Consulta el archivo [LICENSE](LICENSE).

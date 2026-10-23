@@ -31,9 +31,28 @@
     "verify": "tsc && node dist/scripts/verify.js"
   },
   "packageManager": "pnpm@12.4.2",
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "secop",
+    "contratacion-publica",
+    "public-procurement",
+    "colombia",
+    "nestjs",
+    "typescript",
+    "postgresql",
+    "pgvector",
+    "hybrid-search",
+    "recommendations"
+  ],
+  "author": "Brayan Mercado San Martín",
   "license": "UNLICENSED",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/BramBit/Pliegos.git"
+  },
+  "homepage": "https://github.com/BramBit/Pliegos#readme",
+  "bugs": {
+    "url": "https://github.com/BramBit/Pliegos/issues"
+  },
   "dependencies": {
     "@nestjs/bullmq": "^12.0.0",
     "@nestjs/common": "^12.1.2",
