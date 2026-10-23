@@ -89,12 +89,12 @@ Los resultados se ordenan por nivel y luego por relevancia. Cada ítem incluye `
 
 El puntaje combina cuatro factores, y **solo cuenta los que se pueden evaluar**:
 
-| Factor | Peso relativo | Qué mide |
-| --- | --- | --- |
-| Similitud semántica | 0,35 | Coseno entre el perfil y la oportunidad, normalizado entre 0,40 y 0,75 |
-| Categoría UNSPSC | 0,35 | Coincidencia jerárquica del código |
-| Monto | 0,20 | 1 dentro del rango; decae linealmente a 0 al salir de él |
-| Ubicación | 0,10 | Departamento canónico del perfil frente al de la entidad |
+| Factor              | Peso relativo | Qué mide                                                               |
+| ------------------- | ------------- | ---------------------------------------------------------------------- |
+| Similitud semántica | 0,35          | Coseno entre el perfil y la oportunidad, normalizado entre 0,40 y 0,75 |
+| Categoría UNSPSC    | 0,35          | Coincidencia jerárquica del código                                     |
+| Monto               | 0,20          | 1 dentro del rango; decae linealmente a 0 al salir de él               |
+| Ubicación           | 0,10          | Departamento canónico del perfil frente al de la entidad               |
 
 `score = Σ(peso × factor) / Σ(pesos disponibles)`. Si una oportunidad no declara categoría, ese factor no cuenta como cero: se excluye y los demás se reescalan. Las recomendaciones bajo `0,45` no se muestran.
 
@@ -106,8 +106,16 @@ El puntaje combina cuatro factores, y **solo cuenta los que se pueden evaluar**:
   "explanation": {
     "summary": "Oportunidad recomendada por: Coincidencia semántica con tu perfil (85%); La ubicación coincide con tus departamentos de interés.",
     "matchedFactors": [
-      { "factor": "semanticSimilarity", "score": 0.85, "description": "Coincidencia semántica con tu perfil (85%)" },
-      { "factor": "locationMatch", "score": 1, "description": "La ubicación coincide con tus departamentos de interés" }
+      {
+        "factor": "semanticSimilarity",
+        "score": 0.85,
+        "description": "Coincidencia semántica con tu perfil (85%)"
+      },
+      {
+        "factor": "locationMatch",
+        "score": 1,
+        "description": "La ubicación coincide con tus departamentos de interés"
+      }
     ],
     "unavailableFactors": ["La oportunidad no declara categoría UNSPSC"]
   }
@@ -150,17 +158,17 @@ flowchart TB
 
 Estructura de `src/modules`:
 
-| Módulo | Responsabilidad |
-| --- | --- |
-| `opportunity` | Ingesta, normalización, búsqueda, análisis y detalle de procesos |
-| `profile` | Perfiles de contratista: capacidades, categorías, rango de monto, departamentos |
-| `recommendation` | Scoring, niveles, retroalimentación y vigilancia |
-| `alert` | Alertas por cambios y por plazos, bandeja y envío de correo |
-| `auth` | Usuarios, JWT con rotación de refresh, roles |
-| `admin` | Rutas operativas: sync, alertas, refresco, métricas y ejecuciones |
-| `health` | Sondas de vida y disponibilidad |
-| `scheduler` | Tareas programadas del proceso worker |
-| `shared` | Configuración, lock en Postgres, medición de IA, utilidades de prueba |
+| Módulo           | Responsabilidad                                                                 |
+| ---------------- | ------------------------------------------------------------------------------- |
+| `opportunity`    | Ingesta, normalización, búsqueda, análisis y detalle de procesos                |
+| `profile`        | Perfiles de contratista: capacidades, categorías, rango de monto, departamentos |
+| `recommendation` | Scoring, niveles, retroalimentación y vigilancia                                |
+| `alert`          | Alertas por cambios y por plazos, bandeja y envío de correo                     |
+| `auth`           | Usuarios, JWT con rotación de refresh, roles                                    |
+| `admin`          | Rutas operativas: sync, alertas, refresco, métricas y ejecuciones               |
+| `health`         | Sondas de vida y disponibilidad                                                 |
+| `scheduler`      | Tareas programadas del proceso worker                                           |
+| `shared`         | Configuración, lock en Postgres, medición de IA, utilidades de prueba           |
 
 **Decisiones notables:** errores de negocio como valores (`Result<T, E>`), `throw` solo para fallos de infraestructura; migraciones SQL versionadas e idempotentes; consultas por lote sin N+1; cron protegido con lock advisory para que no se duplique con varias instancias; proceso API y proceso worker separados.
 
@@ -208,12 +216,12 @@ docker compose up -d --build
 
 Esto levanta PostgreSQL con pgvector (puerto `5433`), Redis, Mailpit (SMTP `1025`, bandeja web `8025`), aplica las migraciones y arranca la API (`3000`) y el worker.
 
-| URL | Qué es |
-| --- | --- |
-| http://localhost:3000/reference | Documentación interactiva (Scalar) |
-| http://localhost:3000/api-json | Especificación OpenAPI |
+| URL                                | Qué es                                     |
+| ---------------------------------- | ------------------------------------------ |
+| http://localhost:3000/reference    | Documentación interactiva (Scalar)         |
+| http://localhost:3000/api-json     | Especificación OpenAPI                     |
 | http://localhost:3000/health/ready | Disponibilidad de Postgres, Redis y Ollama |
-| http://localhost:8025 | Correos de desarrollo (Mailpit) |
+| http://localhost:8025              | Correos de desarrollo (Mailpit)            |
 
 ### Desarrollo local
 
@@ -249,24 +257,24 @@ curl "localhost:3000/opportunities?q=software&department=Antioquia&minAmount=500
   -H "authorization: Bearer $TOKEN"
 ```
 
-Para cargar datos hay que ejecutar un sync como administrador: `pnpm admin:create <correo> <clave>`, iniciar sesión con ese usuario y llamar a `POST /admin/sync`. La guía operativa completa está en [`docs/runbook.md`](docs/runbook.md).
+Para cargar datos hay que ejecutar un sync como administrador: `pnpm admin:create <correo> <clave>`, iniciar sesión con ese usuario y llamar a `POST /admin/sync`.
 
 ---
 
 ## API
 
-La especificación completa está en [`docs/openapi.json`](docs/openapi.json). Resumen por área:
+La especificación completa está en [`openapi.json`](openapi.json). Resumen por área:
 
-| Área | Rutas principales |
-| --- | --- |
-| Sesión | `POST /auth/register` · `/auth/login` · `/auth/refresh` · `/auth/logout` · `GET /auth/me` |
-| Oportunidades | `GET /opportunities` (búsqueda, filtros, niveles, paginación) · `GET /opportunities/{id}` |
-| Perfiles | `POST/GET /profiles` · `GET/PUT/DELETE /profiles/{id}` · `GET /profiles/{id}/summary` |
-| Recomendaciones | `GET /profiles/{id}/recommendations` · `POST/DELETE /recommendations/{id}/feedback` |
-| Vigilancia | `GET /profiles/{id}/watches` · `POST/DELETE /profiles/{id}/watches/{opportunityId}` |
-| Alertas | `GET /profiles/{id}/alerts` · `POST /alerts/{id}/read` · `POST /profiles/{id}/alerts/read-all` |
-| Administración | `POST /admin/sync` · `/admin/alerts/run` · `/admin/recommendations/refresh` · `GET /admin/jobs/{id}` · `/admin/metrics` · `/admin/pipeline` |
-| Operación | `GET /health/live` · `/health/ready` |
+| Área            | Rutas principales                                                                                                                           |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Sesión          | `POST /auth/register` · `/auth/login` · `/auth/refresh` · `/auth/logout` · `GET /auth/me`                                                   |
+| Oportunidades   | `GET /opportunities` (búsqueda, filtros, niveles, paginación) · `GET /opportunities/{id}`                                                   |
+| Perfiles        | `POST/GET /profiles` · `GET/PUT/DELETE /profiles/{id}` · `GET /profiles/{id}/summary`                                                       |
+| Recomendaciones | `GET /profiles/{id}/recommendations` · `POST/DELETE /recommendations/{id}/feedback`                                                         |
+| Vigilancia      | `GET /profiles/{id}/watches` · `POST/DELETE /profiles/{id}/watches/{opportunityId}`                                                         |
+| Alertas         | `GET /profiles/{id}/alerts` · `POST /alerts/{id}/read` · `POST /profiles/{id}/alerts/read-all`                                              |
+| Administración  | `POST /admin/sync` · `/admin/alerts/run` · `/admin/recommendations/refresh` · `GET /admin/jobs/{id}` · `/admin/metrics` · `/admin/pipeline` |
+| Operación       | `GET /health/live` · `/health/ready`                                                                                                        |
 
 Salvo el registro, el login, el refresco y cierre de sesión, las sondas `/health/*` y la documentación, todas las rutas requieren `Authorization: Bearer <token>`.
 
@@ -276,34 +284,34 @@ Salvo el registro, el login, el refresco y cierre de sesión, las sondas `/healt
 
 Todas las variables se validan con Zod al arrancar y el proceso falla con un mensaje claro si alguna es inválida. La lista completa, con comentarios, está en [`.env.example`](.env.example). Las más relevantes:
 
-| Variable | Descripción |
-| --- | --- |
-| `DATABASE_URL` | Conexión a PostgreSQL (sin valor por defecto) |
-| `REDIS_HOST`, `REDIS_PORT` | Redis para las colas |
-| `OLLAMA_BASE_URL`, `OLLAMA_EMBED_MODEL`, `OLLAMA_CHAT_MODEL` | IA local |
-| `JWT_SECRET` | Mínimo 32 caracteres; la plantilla se rechaza en producción |
-| `ROLE` | `api`, `worker` o `all` |
-| `SYNC_OPPORTUNITIES_CRON` | Frecuencia del sync (por defecto cada 4 horas) |
-| `SECOP_APP_TOKEN` | Token opcional de Socrata para aumentar el límite de consultas |
-| `MIN_RECOMMENDATION_SCORE` | Puntaje mínimo para recomendar (por defecto 0,45) |
-| `CORS_ORIGINS` | Orígenes permitidos, separados por comas |
-| `SMTP_*` | Servidor de correo para las alertas |
+| Variable                                                     | Descripción                                                    |
+| ------------------------------------------------------------ | -------------------------------------------------------------- |
+| `DATABASE_URL`                                               | Conexión a PostgreSQL (sin valor por defecto)                  |
+| `REDIS_HOST`, `REDIS_PORT`                                   | Redis para las colas                                           |
+| `OLLAMA_BASE_URL`, `OLLAMA_EMBED_MODEL`, `OLLAMA_CHAT_MODEL` | IA local                                                       |
+| `JWT_SECRET`                                                 | Mínimo 32 caracteres; la plantilla se rechaza en producción    |
+| `ROLE`                                                       | `api`, `worker` o `all`                                        |
+| `SYNC_OPPORTUNITIES_CRON`                                    | Frecuencia del sync (por defecto cada 4 horas)                 |
+| `SECOP_APP_TOKEN`                                            | Token opcional de Socrata para aumentar el límite de consultas |
+| `MIN_RECOMMENDATION_SCORE`                                   | Puntaje mínimo para recomendar (por defecto 0,45)              |
+| `CORS_ORIGINS`                                               | Orígenes permitidos, separados por comas                       |
+| `SMTP_*`                                                     | Servidor de correo para las alertas                            |
 
 ---
 
 ## Scripts útiles
 
-| Script | Para qué sirve |
-| --- | --- |
-| `pnpm test` | Suite completa (requiere Postgres y Redis) |
-| `pnpm verify` | Puerta de calidad del backend |
-| `pnpm db:migrate` | Aplica las migraciones pendientes |
-| `pnpm reindex` | Genera embeddings de las oportunidades recomendables pendientes (reanudable) |
-| `pnpm audit:data` | Informe de calidad y cobertura de los datos |
-| `pnpm eval:export` · `pnpm eval:run` | Genera candidatos y mide la relevancia contra las etiquetas |
-| `pnpm backfill:departments` · `pnpm resync:unknown` | Mantenimiento de datos |
-| `pnpm check:arch` | Reglas de la arquitectura hexagonal |
-| `pnpm admin:create` | Crea un usuario administrador |
+| Script                                              | Para qué sirve                                                               |
+| --------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `pnpm test`                                         | Suite completa (requiere Postgres y Redis)                                   |
+| `pnpm verify`                                       | Puerta de calidad del backend                                                |
+| `pnpm db:migrate`                                   | Aplica las migraciones pendientes                                            |
+| `pnpm reindex`                                      | Genera embeddings de las oportunidades recomendables pendientes (reanudable) |
+| `pnpm audit:data`                                   | Informe de calidad y cobertura de los datos                                  |
+| `pnpm eval:export` · `pnpm eval:run`                | Genera candidatos y mide la relevancia contra las etiquetas                  |
+| `pnpm backfill:departments` · `pnpm resync:unknown` | Mantenimiento de datos                                                       |
+| `pnpm check:arch`                                   | Reglas de la arquitectura hexagonal                                          |
+| `pnpm admin:create`                                 | Crea un usuario administrador                                                |
 
 ---
 

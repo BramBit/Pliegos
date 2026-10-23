@@ -3,5 +3,5 @@ node_modules
 coverage
 pnpm-lock.yaml
 eval/LABELING.md
-docs/openapi.json
+openapi.json
 

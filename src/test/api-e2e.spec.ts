@@ -176,7 +176,7 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
   });
 
   describe('API Documentation Surfaces', () => {
-    it('GET /api-json returns valid OpenAPI 3.0 specification and saves docs/openapi.json', async () => {
+    it('GET /api-json returns valid OpenAPI 3.0 specification and saves openapi.json', async () => {
       const response = await request(app.getHttpServer())
         .get('/api-json')
         .set('X-Request-Id', 'e2e-openapi-req-1')
@@ -224,7 +224,7 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
       expect(response.body.paths).toHaveProperty('/auth/me');
 
       writeFileSync(
-        resolve(process.cwd(), 'docs/openapi.json'),
+        resolve(process.cwd(), 'openapi.json'),
         JSON.stringify(response.body, null, 2) + '\n',
         'utf8',
       );

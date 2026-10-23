@@ -150,7 +150,7 @@ async function runCheck5(): Promise<CheckResult> {
 }
 
 async function runCheck6(): Promise<CheckResult> {
-  const name = 'docs/openapi.json is up to date';
+  const name = 'openapi.json is up to date';
   try {
     const app = await NestFactory.create(AppModule, { logger: false });
     const doc = setupSwaggerAndScalar(app);
@@ -160,14 +160,14 @@ async function runCheck6(): Promise<CheckResult> {
     const regenerated = JSON.stringify(doc, null, 2) + '\n';
     fs.writeFileSync(tmpPath, regenerated, 'utf8');
 
-    const openApiPath = path.resolve(process.cwd(), 'docs/openapi.json');
+    const openApiPath = path.resolve(process.cwd(), 'openapi.json');
     if (!fs.existsSync(openApiPath)) {
       return {
         id: 6,
         name,
         status: 'FAIL',
         passed: false,
-        reason: 'docs/openapi.json does not exist',
+        reason: 'openapi.json does not exist',
       };
     }
 
@@ -178,7 +178,7 @@ async function runCheck6(): Promise<CheckResult> {
         name,
         status: 'FAIL',
         passed: false,
-        reason: 'docs/openapi.json differs from current API definition',
+        reason: 'openapi.json differs from current API definition',
       };
     }
     return { id: 6, name, status: 'PASS', passed: true };

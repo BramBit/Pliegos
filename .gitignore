@@ -23,12 +23,5 @@ pnpm-debug.log*
 *.sw?
 .env
 
-# Private working files
-AGENT.md
-.githooks/
-docs/handoff*
-docs/golden-set/
-docs/Plan Pliegos.md
-docs/layer-a-validation-plan.md
-docs/pliegos-technical-design.md
-docs/pliegos-vision-producto.md
+# Local documentation
+docs/

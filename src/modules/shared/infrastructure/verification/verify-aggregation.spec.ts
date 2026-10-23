@@ -180,11 +180,11 @@ describe('Verify Aggregation (P8.4)', () => {
 
     it('fails on any uncommitted or untracked file, with no special cases', () => {
       const result = evaluateCheck10(
-        ' M README.md\n?? docs/handoff-2026-10-16.md\n M eval/LABELING.md\n',
+        ' M src/index.ts\n?? notes.txt\n M package.json\n',
       );
       expect(result.passed).toBe(false);
       expect(result.reason).toBe(
-        'uncommitted changes found (3 files: README.md, docs/handoff-2026-10-16.md, eval/LABELING.md)',
+        'uncommitted changes found (3 files: src/index.ts, notes.txt, package.json)',
       );
     });
 
