@@ -210,7 +210,184 @@
       "get": {
         "description": "Retorna una página de oportunidades con niveles de coincidencia (matchTier 1, 2 o 3). Con parámetro `q`, toma hasta 300 candidatos del recuperador híbrido (solo exclusiones duras), los evalúa y pagina en memoria; los resultados más allá de 300 no son alcanzables. Sin `q`, consulta directamente sobre PostgreSQL aplicando los criterios en tres estados y ordenando por nivel.",
         "operationId": "OpportunityController_list",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20
+            },
+            "description": "Cantidad de elementos por página (1 a 50)"
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            },
+            "description": "Número de página a consultar (inicia en 1)"
+          },
+          {
+            "name": "order",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "default": "desc"
+            },
+            "description": "Dirección del ordenamiento"
+          },
+          {
+            "name": "sort",
+            "required": false,
+            "in": "query",
+            "description": "Criterio de orden; por defecto 'relevance' con q y 'publishedAt' sin q",
+            "schema": {
+              "enum": [
+                "publishedAt",
+                "closingDate",
+                "amount",
+                "relevance"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "includeMismatches",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            },
+            "description": "Incluye resultados que incumplen algún criterio definido (nivel 3)"
+          },
+          {
+            "name": "onlyOpen",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": true
+            },
+            "description": "Solo procesos abiertos para presentación de propuestas"
+          },
+          {
+            "name": "onlyCompetitive",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": true
+            },
+            "description": "Solo procesos competitivos (excluye contratación directa)"
+          },
+          {
+            "name": "closingBefore",
+            "required": false,
+            "in": "query",
+            "description": "Fecha límite de presentación anterior a esta fecha (ISO-8601)",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "closingAfter",
+            "required": false,
+            "in": "query",
+            "description": "Fecha límite de presentación posterior a esta fecha (ISO-8601)",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "modality",
+            "required": false,
+            "in": "query",
+            "description": "Modalidad de selección (ej. Licitación pública)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "description": "Estado administrativo del proceso de contratación",
+            "schema": {
+              "enum": [
+                "Draft",
+                "Published",
+                "Amended",
+                "Closed",
+                "Awarded",
+                "Cancelled",
+                "Unknown"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "maxAmount",
+            "required": false,
+            "in": "query",
+            "description": "Cuantía máxima estimada en COP",
+            "schema": {
+              "minimum": 0,
+              "type": "number"
+            }
+          },
+          {
+            "name": "minAmount",
+            "required": false,
+            "in": "query",
+            "description": "Cuantía mínima estimada en COP",
+            "schema": {
+              "minimum": 0,
+              "type": "number"
+            }
+          },
+          {
+            "name": "categoryPrefix",
+            "required": false,
+            "in": "query",
+            "description": "Prefijo de código UNSPSC (ej. V1.4323 o 4323)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "department",
+            "required": false,
+            "in": "query",
+            "description": "Departamento de ejecución territorial del contrato",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "description": "Consulta en lenguaje natural o palabras clave (habilita búsqueda híbrida y sort='relevance')",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Página de oportunidades que cumplen los criterios de búsqueda y filtrado",

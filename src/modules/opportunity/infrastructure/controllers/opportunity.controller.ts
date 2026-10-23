@@ -8,7 +8,13 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
+  ApiQuery,
+} from '@nestjs/swagger';
 import { asOpportunityId } from '../../../shared/domain/typed-id';
 import { createOpportunityNotFoundError } from '../../../shared/domain/errors';
 import { SyncOpportunitiesUseCase } from '../../application/use-cases/sync-opportunities.use-case';
@@ -61,6 +67,122 @@ export class OpportunityController {
     status: HttpStatus.BAD_REQUEST,
     description: 'Parámetros de consulta o paginación inválidos',
     type: ErrorEnvelopeDto,
+  })
+  @ApiQuery({
+    name: 'q',
+    required: false,
+    type: String,
+    description:
+      "Consulta en lenguaje natural o palabras clave (habilita búsqueda híbrida y sort='relevance')",
+  })
+  @ApiQuery({
+    name: 'department',
+    required: false,
+    type: String,
+    description: 'Departamento de ejecución territorial del contrato',
+  })
+  @ApiQuery({
+    name: 'categoryPrefix',
+    required: false,
+    type: String,
+    description: 'Prefijo de código UNSPSC (ej. V1.4323 o 4323)',
+  })
+  @ApiQuery({
+    name: 'minAmount',
+    required: false,
+    type: Number,
+    minimum: 0,
+    description: 'Cuantía mínima estimada en COP',
+  })
+  @ApiQuery({
+    name: 'maxAmount',
+    required: false,
+    type: Number,
+    minimum: 0,
+    description: 'Cuantía máxima estimada en COP',
+  })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    enum: [
+      'Draft',
+      'Published',
+      'Amended',
+      'Closed',
+      'Awarded',
+      'Cancelled',
+      'Unknown',
+    ],
+    description: 'Estado administrativo del proceso de contratación',
+  })
+  @ApiQuery({
+    name: 'modality',
+    required: false,
+    type: String,
+    description: 'Modalidad de selección (ej. Licitación pública)',
+  })
+  @ApiQuery({
+    name: 'closingAfter',
+    required: false,
+    type: String,
+    format: 'date-time',
+    description:
+      'Fecha límite de presentación posterior a esta fecha (ISO-8601)',
+  })
+  @ApiQuery({
+    name: 'closingBefore',
+    required: false,
+    type: String,
+    format: 'date-time',
+    description:
+      'Fecha límite de presentación anterior a esta fecha (ISO-8601)',
+  })
+  @ApiQuery({
+    name: 'onlyCompetitive',
+    required: false,
+    type: Boolean,
+    schema: { type: 'boolean', default: true },
+    description: 'Solo procesos competitivos (excluye contratación directa)',
+  })
+  @ApiQuery({
+    name: 'onlyOpen',
+    required: false,
+    type: Boolean,
+    schema: { type: 'boolean', default: true },
+    description: 'Solo procesos abiertos para presentación de propuestas',
+  })
+  @ApiQuery({
+    name: 'includeMismatches',
+    required: false,
+    type: Boolean,
+    schema: { type: 'boolean', default: false },
+    description:
+      'Incluye resultados que incumplen algún criterio definido (nivel 3)',
+  })
+  @ApiQuery({
+    name: 'sort',
+    required: false,
+    enum: ['publishedAt', 'closingDate', 'amount', 'relevance'],
+    description:
+      "Criterio de orden; por defecto 'relevance' con q y 'publishedAt' sin q",
+  })
+  @ApiQuery({
+    name: 'order',
+    required: false,
+    schema: { type: 'string', enum: ['asc', 'desc'], default: 'desc' },
+    description: 'Dirección del ordenamiento',
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    schema: { type: 'integer', minimum: 1, default: 1 },
+    description: 'Número de página a consultar (inicia en 1)',
+  })
+  @ApiQuery({
+    name: 'pageSize',
+    required: false,
+    schema: { type: 'integer', minimum: 1, maximum: 50, default: 20 },
+    description: 'Cantidad de elementos por página (1 a 50)',
   })
   async list(
     @Query(new ZodValidationPipe(listOpportunitiesQuerySchema))

@@ -44,6 +44,7 @@ import { createRecommendation } from '../modules/recommendation/domain/entities/
 import { createRelevanceScore } from '../modules/opportunity/domain/value-objects/relevance-score.vo';
 import { HashEmbedder } from '../modules/shared/testing/hash-embedder';
 import { JwtService } from '@nestjs/jwt';
+import { listOpportunitiesQuerySchema } from '../modules/opportunity/infrastructure/controllers/dtos/search-opportunities.dto';
 
 describe('Pliegos Phase 1 REST Surface (E2E)', () => {
   let app: INestApplication;
@@ -227,6 +228,22 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
         JSON.stringify(response.body, null, 2) + '\n',
         'utf8',
       );
+    });
+
+    it('GET /opportunities documents every key of listOpportunitiesQuerySchema as a query parameter', async () => {
+      const response = await request(app.getHttpServer())
+        .get('/api-json')
+        .expect(200);
+
+      const schemaKeys = Object.keys(listOpportunitiesQuerySchema.in.shape);
+      const parameters: Array<{ name: string; in: string }> =
+        response.body.paths['/opportunities'].get.parameters ?? [];
+      const queryParamNames = parameters
+        .filter((p) => p.in === 'query')
+        .map((p) => p.name);
+
+      expect(schemaKeys.length).toBeGreaterThan(0);
+      expect(queryParamNames.sort()).toEqual([...schemaKeys].sort());
     });
 
     it('GET /reference mounts Scalar interactive reference HTML', async () => {
