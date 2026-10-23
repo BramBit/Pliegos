@@ -100,3 +100,24 @@ export function evaluateCheck8(
 
   return { passed: true };
 }
+
+export function evaluateCheck10(porcelain: string): {
+  passed: boolean;
+  reason?: string;
+} {
+  const dirty = porcelain
+    .split('\n')
+    .filter((l) => l.trim().length > 0)
+    .map((l) => l.substring(3).trim());
+
+  if (dirty.length > 0) {
+    return {
+      passed: false,
+      reason: `uncommitted changes found (${dirty.length} files: ${dirty
+        .slice(0, 3)
+        .join(', ')}${dirty.length > 3 ? '...' : ''})`,
+    };
+  }
+
+  return { passed: true };
+}

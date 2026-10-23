@@ -4,7 +4,6 @@
   "description": "Pliegos - Public procurement intelligence platform",
   "private": true,
   "scripts": {
-    "prepare": "git config core.hooksPath .githooks",
     "build": "tsc",
     "start": "tsc && node dist/src/main.js",
     "start:dev": "tsc && node --watch dist/src/main.js",

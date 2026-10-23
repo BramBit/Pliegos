@@ -2,6 +2,7 @@ import {
   aggregateResults,
   CheckResult,
   evaluateCheck8,
+  evaluateCheck10,
 } from './verify-aggregation';
 
 describe('Verify Aggregation (P8.4)', () => {
@@ -168,6 +169,31 @@ describe('Verify Aggregation (P8.4)', () => {
       });
       expect(result.passed).toBe(true);
       expect(result.reason).toBeUndefined();
+    });
+  });
+
+  describe('evaluateCheck10', () => {
+    it('passes when git status --porcelain is empty', () => {
+      expect(evaluateCheck10('')).toEqual({ passed: true });
+      expect(evaluateCheck10('\n')).toEqual({ passed: true });
+    });
+
+    it('fails on any uncommitted or untracked file, with no special cases', () => {
+      const result = evaluateCheck10(
+        ' M README.md\n?? docs/handoff-2026-10-16.md\n M eval/LABELING.md\n',
+      );
+      expect(result.passed).toBe(false);
+      expect(result.reason).toBe(
+        'uncommitted changes found (3 files: README.md, docs/handoff-2026-10-16.md, eval/LABELING.md)',
+      );
+    });
+
+    it('truncates the file list after three entries', () => {
+      const result = evaluateCheck10(' M a.ts\n M b.ts\n M c.ts\n?? d.ts\n');
+      expect(result.passed).toBe(false);
+      expect(result.reason).toBe(
+        'uncommitted changes found (4 files: a.ts, b.ts, c.ts...)',
+      );
     });
   });
 });

@@ -178,7 +178,7 @@ async function main() {
     const profileResult = await profileUseCase.execute({
       profileId: null,
       data: {
-        ownerId: asUserId('user-brayan-01'),
+        ownerId: asUserId('user-e2e-01'),
         sector: 'Tecnologia, Consultoria y Servicios Profesionales',
         capabilities: [
           {

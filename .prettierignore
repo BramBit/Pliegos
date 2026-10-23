@@ -2,7 +2,6 @@ dist
 node_modules
 coverage
 pnpm-lock.yaml
-docs/handoff*
 eval/LABELING.md
 docs/openapi.json
 
