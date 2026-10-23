@@ -1,329 +1,338 @@
-# Pliegos — Inteligencia de Contratación Pública
+# Pliegos
 
-> Plataforma de inteligencia para contratación pública estatal en Colombia (SECOP II). Pliegos no es simplemente un buscador de licitaciones: actúa como un analista digital que descubre, filtra, prioriza con explicaciones transparentes y monitorea oportunidades de negocio para contratistas y oferentes.
+**Inteligencia de contratación pública para Colombia.** Pliegos descubre las oportunidades de contratación estatal publicadas en SECOP II, las ordena según el perfil de cada contratista, explica por qué recomienda cada una y vigila los cambios que importan.
+
+[![CI](https://github.com/BramBit/Pliegos/actions/workflows/ci.yml/badge.svg)](https://github.com/BramBit/Pliegos/actions/workflows/ci.yml)
+![Node](https://img.shields.io/badge/node-24-339933?logo=node.js&logoColor=white)
+![TypeScript](https://img.shields.io/badge/typescript-5.9_strict-3178C6?logo=typescript&logoColor=white)
+![NestJS](https://img.shields.io/badge/nestjs-12-E0234E?logo=nestjs&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/postgresql-16_+_pgvector-4169E1?logo=postgresql&logoColor=white)
+
+> Este repositorio contiene el **backend** completo. El frontend está en diseño.
 
 ---
 
-## 🏛 Arquitectura del Sistema
+## ¿Qué es Pliegos?
 
-El proyecto está diseñado bajo **Arquitectura Hexagonal (Puertos y Adaptadores)** y principios **SOLID**, garantizando que el núcleo del dominio y la lógica de negocio permanezcan completamente desacoplados de frameworks, bases de datos o servicios externos.
+Cada día se publican cientos de procesos en SECOP II. Un contratista que quiere participar tiene que revisarlos a mano, interpretar descripciones poco uniformes, descartar los que no puede ofertar y volver a mirar los que le interesan por si cambia un plazo. Es un trabajo repetitivo y fácil de hacer mal.
 
-```
-                    ┌────────────────────────────────────────────────────────┐
-                    │                    DRIVING ADAPTERS                    │
-                    │  ┌─────────────────────────┐  ┌─────────────────────┐  │
-                    │  │   REST API Controllers  │  │  Scheduler Adapter  │  │
-                    │  │  (NestJS + Swagger UI)  │  │  (@nestjs/schedule) │  │
-                    │  └────────────┬────────────┘  └──────────┬──────────┘  │
-                    └───────────────┼──────────────────────────┼─────────────┘
-                                    │ (Input Ports)            │
-                                    ▼                          ▼
-┌─────────────────────────────────────────────────────────────────────────────────────────────┐
-│ APPLICATION LAYER (Use Cases returning Result<T, E>)                                        │
-│  • SyncOpportunitiesUseCase       • SearchOpportunitiesUseCase   • ConfigureProfileUseCase  │
-│  • GetRecommendationsUseCase      • RegisterFeedbackUseCase      • ReviewFollowUpUseCase    │
-└──────────────────────────────────────────┬──────────────────────────────────────────────────┘
-                                           │
-                                           ▼
-┌─────────────────────────────────────────────────────────────────────────────────────────────┐
-│ DOMAIN LAYER (Zero external dependencies)                                                   │
-│  • Entities: Opportunity, Profile, Recommendation, Alert                                    │
-│  • Value Objects: Money (COP), RelevanceScore [0..1], AmountRange, Typed IDs               │
-│  • Domain Services: MatchingService (Weighted scoring: UNSPSC + Semantic + Amount + Location)│
-└──────────────────────────────────────────▲──────────────────────────────────────────────────┘
-                                           │
-                                           │ (Output Ports)
-                    ┌──────────────────────┴─────────────────────────────────┐
-                    │                    DRIVEN ADAPTERS                     │
-                    │  ┌─────────────────────────┐  ┌─────────────────────┐  │
-                    │  │  PostgreSQL Repositories│  │    SecopAdapter     │  │
-                    │  │   (Native pg + SQL)     │  │  (Socrata Open Data)│  │
-                    │  ├─────────────────────────┤  ├─────────────────────┤  │
-                    │  │    PgVectorAdapter      │  │    OllamaAdapter    │  │
-                    │  │   (768-dim Embeddings)  │  │  (Local AI: nomic)  │  │
-                    │  ├─────────────────────────┤  ├─────────────────────┤  │
-                    │  │   BullMQ Queue Adapter  │  │    EmailAdapter     │  │
-                    │  │  (Async Analysis Job)   │  │(Notification Channel)│ │
-                    │  └─────────────────────────┘  └─────────────────────┘  │
-                    └────────────────────────────────────────────────────────┘
+Pliegos no es solo un buscador. Es un analista que trabaja en segundo plano:
+
+1. **Descubre.** Sincroniza los procesos de SECOP II de forma incremental y detecta qué es nuevo y qué cambió.
+2. **Filtra.** Descarta lo que no se puede ofertar: contratación directa, régimen especial, procesos cerrados, adjudicados o cancelados.
+3. **Prioriza con explicación.** Cada recomendación trae un puntaje y los factores que lo componen. Nada es una caja negra.
+4. **Es honesto con los datos incompletos.** SECOP publica información faltante o inconsistente. Pliegos no la esconde ni la descarta: muestra esos procesos en un nivel aparte, indicando qué no se pudo comprobar.
+5. **Vigila.** Si un proceso que sigues cambia su fecha de cierre, su monto o su estado, o se acerca a su plazo, te avisa en la bandeja y por correo.
+
+---
+
+## Cómo funciona
+
+```mermaid
+flowchart LR
+  A["SECOP II<br/>datos abiertos"] --> B["Sync incremental<br/>cada 4 horas"]
+  B --> C["Normalización y<br/>detección de cambios"]
+  C --> D[("PostgreSQL<br/>+ pgvector")]
+  C -->|"solo lo recomendable"| E["Cola BullMQ<br/>embeddings y resumen"]
+  E --> D
+  D --> F["Recuperación híbrida<br/>vectorial + texto + RRF"]
+  F --> G["Scoring explicable<br/>y niveles 1, 2 y 3"]
+  G --> H["Recomendaciones<br/>precalculadas"]
+  C -->|"cambios materiales"| I["Alertas"]
+  H --> J["API REST"]
+  I --> J
+  I --> K["Correo SMTP"]
 ```
 
-### Principios Fundamentales
+**Ingesta.** El `SecopAdapter` consulta el conjunto de datos abiertos «SECOP II – Procesos de Contratación» (`p6dx-8zbt`, plataforma Socrata). Pagina, reintenta ante fallos transitorios y usa la fecha de última publicación como marca de agua con un día de solape, de modo que las adendas de procesos antiguos también llegan. Una segunda pasada trae los procesos competitivos que siguen abiertos.
 
-- **Sin ORM:** Acceso a PostgreSQL mediante el driver nativo `pg` y sentencias SQL directas, garantizando control sobre consultas y rendimiento vectorial.
-- **Railway Oriented Programming (`Result<T, E>`):** Manejo explícito y tipado de errores de negocio sin excepciones descontroladas (`throw` reservado exclusivamente para fallos de infraestructura no recuperables).
-- **Inversión de Dependencias:** La capa de aplicación y dominio define interfaces TypeScript (puertos); la infraestructura implementa adaptadores inyectados vía tokens de NestJS.
-- **Explicabilidad (No Black Box):** Cada recomendación entrega los factores específicos que la motivaron (_"Coincide con tu categoría de interés"_, _"Monto dentro de tu rango declarado"_, etc.).
+**Normalización.** Todo el mapeo del formato crudo vive en el adaptador. Los marcadores vacíos («No Definido», «UNSPECIFIED»), los códigos UNSPSC con prefijo y los nombres de departamento se llevan a una forma canónica, y el valor original se conserva en columnas aparte. Un monto ausente se registra como desconocido, no como cero.
 
----
+**Análisis.** Solo las oportunidades recomendables se convierten en vectores de 768 dimensiones (`nomic-embed-text`, vía Ollama). El análisis es idempotente: un hash del contenido evita recalcular cuando solo cambió la fecha de cierre. Los resúmenes con LLM se generan bajo demanda, tratando el texto de SECOP como dato y no como instrucciones, con un texto de respaldo si el modelo falla.
 
-## 🚀 Alcance Implementado en Fase 1 (MVP)
+**Recuperación.** Una búsqueda híbrida combina similitud coseno en pgvector con búsqueda de texto completo en español, fusionadas con Reciprocal Rank Fusion. Si una de las dos vías falla, se responde con la otra y se marca `degraded`.
 
-1. **Módulo de Oportunidades (`OpportunityModule`)**:
-   - Ingesta y normalización de procesos públicos de SECOP II vía Socrata API (`SecopAdapter`).
-   - Detección automática de adendas, cambios de estado y registro histórico de variaciones.
-   - Búsqueda híbrida (`PgVectorAdapter`): Búsqueda semántica vectorial por distancia coseno (768 dimensiones) combinada con filtros estructurados (categoría UNSPSC, departamento, cuantía).
-   - Cola asíncrona de análisis (`AnalyzeOpportunityJob` con BullMQ y Redis) para generación de embeddings y resúmenes analíticos bajo demanda sin bloquear la ingesta. Pliego document extraction is out of scope for this stage.
-
-2. **Módulo de Perfiles de Contratista (`ProfileModule`)**:
-   - Modelado de capacidades técnicas, años de experiencia y preferencias de contratación (códigos UNSPSC, palabras clave, rango de cuantía en COP y departamentos de interés).
-
-3. **Módulo de Recomendaciones (`RecommendationModule`)**:
-   - Motor de afinidad ponderada (`MatchingService`):
-     $$\text{Score} = 0.35 \times \text{category} + 0.35 \times \text{semantic} + 0.20 \times \text{amount} + 0.10 \times \text{location}$$
-   - Explicaciones estructuradas y registro de retroalimentación (`Participate` / `Discard`) para calibración continua.
-   - Adaptador local de Inteligencia Artificial (`OllamaAdapter`) con cero costos de API (modelo de embeddings `nomic-embed-text` y modelo conversacional `llama3.1`).
-
-4. **Módulo de Alertas (`AlertModule`)**:
-   - Identificación de alertas no entregadas ante adendas, cambios de estado y fechas de cierre próximas.
-   - Despacho de notificaciones por correo electrónico (`EmailAdapter`).
-
-5. **Módulo de Automatización / Scheduler (`SchedulerModule`)**:
-   - Driving adapter cron (`@nestjs/schedule`) configurado para:
-     - Sincronización periódica de SECOP II: **Cada 4 horas** (`0 0-23/4 * * *`).
-     - Revisión diaria de alertas y seguimiento: **Diario a las 8:00 AM** (`0 08 * * *`).
-
-6. **Documentación Interactiva de API**:
-   - Interfaz interactiva moderna montada con **Scalar** en `/reference`.
-   - Especificación OpenAPI 3.0 cruda disponible en `/api-json`.
+**Recomendación.** Un job recalcula las recomendaciones de cada perfil cuando cambia el perfil o el sync trae novedades. La lectura (`GET`) nunca calcula ni escribe.
 
 ---
 
-## 🛠 Stack Tecnológico
+## Filosofía de diseño
 
-| Componente             | Tecnología                                         | Versión                  |
-| ---------------------- | -------------------------------------------------- | ------------------------ |
-| **Runtime**            | Node.js (Active LTS)                               | **24.x**                 |
-| **Gestor de Paquetes** | pnpm                                               | **12.x**                 |
-| **Lenguaje**           | TypeScript                                         | **5.9.x** (Strict Mode)  |
-| **Framework Backend**  | NestJS                                             | **12.1.x**               |
-| **Base de Datos**      | PostgreSQL + pgvector (768 dims)                   | **16.x**                 |
-| **Driver BD**          | `pg` nativo (Sin ORM)                              | **8.23.x**               |
-| **Cola de Tareas**     | BullMQ + Redis                                     | **6.3.x** / **7-alpine** |
-| **IA Local**           | Ollama (`nomic-embed-text`, `llama3.1`)            | Local                    |
-| **Documentación**      | `@nestjs/swagger` + `@scalar/nestjs-api-reference` | **12.0.x** / **1.2.x**   |
-| **Testing**            | Jest + ts-jest                                     | **30.5.x** / **29.4.x**  |
+- **Explicable antes que ingenioso.** Si el sistema no puede decir por qué recomienda algo, no lo recomienda.
+- **Los datos faltantes no son un error del usuario.** Un criterio que no se puede comprobar no excluye un proceso: lo mueve de nivel y lo etiqueta.
+- **Lo que no se puede ofertar no se muestra.** La exclusión es por razones objetivas y no depende de los filtros del usuario.
+- **IA local y costo cero.** Embeddings y resúmenes corren en Ollama. Sin claves de API, sin datos que salgan de tu máquina.
+- **Medir la relevancia.** Hay un conjunto de oro etiquetado, métricas de ranking y un umbral que falla el build si la calidad retrocede.
+- **Operable.** Cada ejecución de sync, análisis, refresco y alertas queda registrada; los modelos se miden; hay sondas de salud y cierre ordenado.
+- **Sin ORM.** SQL explícito sobre el driver `pg`, para controlar las consultas vectoriales y de texto.
 
 ---
 
-## 💻 Puesta en Marcha Local
+## Resultados por niveles
 
-### 1. Prerrequisitos
+Nada es obligatorio. Con un texto o las palabras clave del perfil basta para definir el sector. Cada criterio adicional (monto, departamento, categoría, fechas de cierre) se evalúa en tres estados: **cumple**, **no cumple** o **sin dato**.
 
-- Node.js 24.x LTS y `pnpm` instalados.
-- Docker y Docker Compose instalados.
-- [Ollama](https://ollama.com/) instalado y corriendo en tu máquina con los modelos necesarios:
-  ```bash
-  ollama pull nomic-embed-text
-  ollama pull llama3.1
-  ```
+```mermaid
+flowchart TD
+  A["Oportunidad recomendable"] --> B{"¿Incumple algún criterio<br/>que definiste?"}
+  B -->|"Sí"| T3["Nivel 3: fuera de rango<br/>solo con includeMismatches=true"]
+  B -->|"No"| C{"¿Falta algún dato<br/>para comprobarlo?"}
+  C -->|"Sí"| T2["Nivel 2: coincide, pero faltan datos<br/>se indica qué falta"]
+  C -->|"No"| T1["Nivel 1: coincidencia completa"]
+```
 
-### 2. Configurar Variables de Entorno
+Los resultados se ordenan por nivel y luego por relevancia. Cada ítem incluye `matchTier`, `missingCriteria` (por ejemplo `["amount"]`) y `statusConfidence`, y cada página incluye `tierCounts`, para que el frontend pueda mostrar «12 coinciden, 40 con datos incompletos» y dejar que el usuario decida.
 
-Copia la plantilla de variables de entorno:
+---
+
+## Recomendaciones explicables
+
+El puntaje combina cuatro factores, y **solo cuenta los que se pueden evaluar**:
+
+| Factor | Peso relativo | Qué mide |
+| --- | --- | --- |
+| Similitud semántica | 0,35 | Coseno entre el perfil y la oportunidad, normalizado entre 0,40 y 0,75 |
+| Categoría UNSPSC | 0,35 | Coincidencia jerárquica del código |
+| Monto | 0,20 | 1 dentro del rango; decae linealmente a 0 al salir de él |
+| Ubicación | 0,10 | Departamento canónico del perfil frente al de la entidad |
+
+`score = Σ(peso × factor) / Σ(pesos disponibles)`. Si una oportunidad no declara categoría, ese factor no cuenta como cero: se excluye y los demás se reescalan. Las recomendaciones bajo `0,45` no se muestran.
+
+```json
+{
+  "score": 0.78,
+  "matchTier": 2,
+  "missingCriteria": ["amount"],
+  "explanation": {
+    "summary": "Oportunidad recomendada por: Coincidencia semántica con tu perfil (85%); La ubicación coincide con tus departamentos de interés.",
+    "matchedFactors": [
+      { "factor": "semanticSimilarity", "score": 0.85, "description": "Coincidencia semántica con tu perfil (85%)" },
+      { "factor": "locationMatch", "score": 1, "description": "La ubicación coincide con tus departamentos de interés" }
+    ],
+    "unavailableFactors": ["La oportunidad no declara categoría UNSPSC"]
+  }
+}
+```
+
+El usuario puede marcar cada recomendación como **Participar** (la añade a su vigilancia) o **Descartar**, y puede deshacerlo.
+
+---
+
+## Arquitectura
+
+Arquitectura hexagonal (puertos y adaptadores). El dominio no depende de ningún framework; las reglas de dependencia se verifican automáticamente en CI.
+
+```mermaid
+flowchart TB
+  subgraph Entrada["Adaptadores de entrada"]
+    REST["API REST<br/>NestJS + OpenAPI + Scalar"]
+    CRON["Scheduler y Worker<br/>cron con lock en Postgres"]
+  end
+  subgraph App["Casos de uso: devuelven Result"]
+    UC["Sync · Búsqueda · Perfiles<br/>Recomendaciones · Alertas · Auth"]
+  end
+  subgraph Dom["Dominio puro"]
+    DOM["Entidades · Objetos de valor<br/>MatchingService · Evaluador de criterios"]
+  end
+  subgraph Salida["Adaptadores de salida"]
+    PG[("PostgreSQL<br/>pg nativo")]
+    VEC["pgvector"]
+    SEC["SecopAdapter"]
+    OLL["Ollama"]
+    Q["BullMQ + Redis"]
+    SMTP["SMTP"]
+  end
+  REST --> UC
+  CRON --> UC
+  UC --> DOM
+  UC -->|"puertos"| PG & VEC & SEC & OLL & Q & SMTP
+```
+
+Estructura de `src/modules`:
+
+| Módulo | Responsabilidad |
+| --- | --- |
+| `opportunity` | Ingesta, normalización, búsqueda, análisis y detalle de procesos |
+| `profile` | Perfiles de contratista: capacidades, categorías, rango de monto, departamentos |
+| `recommendation` | Scoring, niveles, retroalimentación y vigilancia |
+| `alert` | Alertas por cambios y por plazos, bandeja y envío de correo |
+| `auth` | Usuarios, JWT con rotación de refresh, roles |
+| `admin` | Rutas operativas: sync, alertas, refresco, métricas y ejecuciones |
+| `health` | Sondas de vida y disponibilidad |
+| `scheduler` | Tareas programadas del proceso worker |
+| `shared` | Configuración, lock en Postgres, medición de IA, utilidades de prueba |
+
+**Decisiones notables:** errores de negocio como valores (`Result<T, E>`), `throw` solo para fallos de infraestructura; migraciones SQL versionadas e idempotentes; consultas por lote sin N+1; cron protegido con lock advisory para que no se duplique con varias instancias; proceso API y proceso worker separados.
+
+---
+
+## Seguridad
+
+- Autenticación con JWT de acceso (15 minutos) y refresco con rotación (7 días). Contraseñas con `scrypt`.
+- Cada recurso pertenece a un usuario: acceder al recurso de otro devuelve `404`, sin filtrar su existencia.
+- Rutas `/admin/*` solo para rol `admin`.
+- Validación de entrada con Zod en cuerpo, parámetros y consultas.
+- Límite global de 120 solicitudes por minuto por IP, 10 por minuto en `/auth/*` y bloqueo de login tras 5 intentos fallidos en 15 minutos.
+- `helmet`, CORS restringido por lista (`CORS_ORIGINS`) y rechazo del secreto JWT de plantilla en producción.
+
+---
+
+## Calidad y verificación
+
+- Más de 500 pruebas automatizadas (unitarias, de integración con Postgres real y de extremo a extremo de la API).
+- TypeScript en modo estricto, ESLint, Prettier y reglas de arquitectura con `dependency-cruiser`.
+- **Evaluación de relevancia.** `eval/` contiene perfiles de prueba, candidatos obtenidos con búsqueda de texto y vectorial, etiquetas de relevancia (criterios en [`eval/LABELING.md`](eval/LABELING.md)) y umbrales de `precision@10` y `nDCG@10`. `pnpm eval:run` falla si la calidad baja de esos umbrales.
+- **Puerta de calidad.** `pnpm verify` ejecuta compilación, lint, pruebas, arquitectura, migraciones sobre una base vacía, OpenAPI al día, cobertura de datos reales y evaluación de relevancia, y responde con una línea por cada comprobación.
+- La calidad de los datos de la fuente se reporta como advertencia con un piso de seguridad, porque no depende del proyecto.
+
+---
+
+## Puesta en marcha
+
+### Requisitos
+
+- Docker y Docker Compose.
+- [Ollama](https://ollama.com/) corriendo en tu máquina con los modelos:
+
+```bash
+ollama pull nomic-embed-text
+ollama pull llama3.1
+```
+
+### Con Docker (recomendado)
 
 ```bash
 cp .env.example .env
+docker compose up -d --build
 ```
 
-Ajusta los valores si necesitas cambiar puertos o credenciales locales.
+Esto levanta PostgreSQL con pgvector (puerto `5433`), Redis, Mailpit (SMTP `1025`, bandeja web `8025`), aplica las migraciones y arranca la API (`3000`) y el worker.
 
-### 3. Levantar Servicios con Docker Compose
+| URL | Qué es |
+| --- | --- |
+| http://localhost:3000/reference | Documentación interactiva (Scalar) |
+| http://localhost:3000/api-json | Especificación OpenAPI |
+| http://localhost:3000/health/ready | Disponibilidad de Postgres, Redis y Ollama |
+| http://localhost:8025 | Correos de desarrollo (Mailpit) |
 
-Inicia toda la infraestructura local con un solo comando:
+### Desarrollo local
 
-```bash
-docker compose up -d
-```
-
-Esto levanta:
-
-- `pliegos-postgres`: PostgreSQL 16 con extensión `pgvector` (puerto `5433:5432`).
-- `pliegos-redis`: Redis 7 para colas asíncronas BullMQ y rate limiting (puerto `6379`).
-- `pliegos-mailpit`: Servidor SMTP de desarrollo y bandeja web (SMTP `1025`, Web UI `8025`).
-- `pliegos-api`: Servicio HTTP API de Pliegos (`ROLE=api`, puerto `3000`).
-- `pliegos-worker`: Trabajador en segundo plano para cron jobs y colas BullMQ (`ROLE=worker`).
-
-Verifica que los contenedores estén saludables:
-
-```bash
-docker compose ps
-```
-
-### 4. Instalar Dependencias
+Node.js 24 y pnpm:
 
 ```bash
 pnpm install
+docker compose up -d postgres redis mailpit
+pnpm db:migrate
+pnpm start:dev          # API y worker en un solo proceso
 ```
 
-### 5. Inicializar el Esquema de Base de Datos
+Para separar procesos: `pnpm build`, luego `pnpm start:api` y `pnpm start:worker`.
 
-Aplica las migraciones SQL versionadas de `migrations/` (extensión `vector`, tablas, índices y restricciones). Es idempotente: solo ejecuta las que faltan.
+### Primer recorrido por la API
 
 ```bash
-pnpm run db:migrate
+# 1. Registro y sesión
+curl -X POST localhost:3000/auth/register -H 'content-type: application/json' \
+  -d '{"email":"yo@ejemplo.co","password":"una-clave-larga-123"}'
+TOKEN=$(curl -s -X POST localhost:3000/auth/login -H 'content-type: application/json' \
+  -d '{"email":"yo@ejemplo.co","password":"una-clave-larga-123"}' | jq -r .accessToken)
+
+# 2. Perfil
+curl -X POST localhost:3000/profiles -H "authorization: Bearer $TOKEN" -H 'content-type: application/json' \
+  -d '{"name":"Mi perfil","contactEmail":"yo@ejemplo.co","sector":"Tecnologías de la información",
+       "capabilities":[{"name":"Desarrollo de software","yearsOfExperience":5}],
+       "preferences":{"categoryCodes":[],"keywords":["software","ciberseguridad"],
+                      "departments":["Antioquia"],"amountRange":{"min":50000000,"max":500000000}}}'
+
+# 3. Búsqueda con niveles
+curl "localhost:3000/opportunities?q=software&department=Antioquia&minAmount=50000000" \
+  -H "authorization: Bearer $TOKEN"
 ```
 
-### 6. Iniciar la Aplicación (Localmente fuera de Docker)
-
-**Modo Desarrollo (con recarga automática):**
-
-```bash
-pnpm run start:dev
-```
-
-**Modo Producción Separado:**
-
-```bash
-pnpm run build
-
-# Terminal 1: Proceso API HTTP
-pnpm run start:api
-
-# Terminal 2: Proceso Worker en segundo plano
-pnpm run start:worker
-```
-
-La consola confirmará el inicio del servicio:
-
-```text
-[Bootstrap] Pliegos API running on http://localhost:3000
-[Bootstrap] Scalar API Reference available at http://localhost:3000/reference
-[Bootstrap] OpenAPI JSON available at http://localhost:3000/api-json
-```
+Para cargar datos hay que ejecutar un sync como administrador: `pnpm admin:create <correo> <clave>`, iniciar sesión con ese usuario y llamar a `POST /admin/sync`. La guía operativa completa está en [`docs/runbook.md`](docs/runbook.md).
 
 ---
 
-## 📖 Superficie de la API REST
+## API
 
-La especificación completa OpenAPI 3.0 se encuentra en [`docs/openapi.json`](docs/openapi.json). La documentación interactiva de Scalar está disponible en vivo en:
-👉 **[http://localhost:3000/reference](http://localhost:3000/reference)**
+La especificación completa está en [`docs/openapi.json`](docs/openapi.json). Resumen por área:
 
-| Método   | Ruta                                     | Autenticación | Rol             | Descripción                                                                           |
-| -------- | ---------------------------------------- | ------------- | --------------- | ------------------------------------------------------------------------------------- |
-| `GET`    | `/health/live`                           | Pública       | —               | Sonda de vida del proceso Node.js                                                     |
-| `GET`    | `/health/ready`                          | Pública       | —               | Sonda de disponibilidad (PostgreSQL, Redis, Ollama)                                   |
-| `GET`    | `/reference`                             | Pública       | —               | Interfaz interactiva Scalar                                                           |
-| `GET`    | `/api-json`                              | Pública       | —               | Especificación OpenAPI 3.0 cruda                                                      |
-| `POST`   | `/auth/register`                         | Pública       | —               | Registro de nuevo usuario (mínimo 10 caracteres)                                      |
-| `POST`   | `/auth/login`                            | Pública       | —               | Inicio de sesión (retorna accessToken 15m y refreshToken 7d)                          |
-| `POST`   | `/auth/refresh`                          | Pública       | —               | Rotación de token con revocación del token previo                                     |
-| `POST`   | `/auth/logout`                           | Pública       | —               | Revocación de refresh token                                                           |
-| `GET`    | `/auth/me`                               | Bearer JWT    | `user`, `admin` | Datos del usuario actualmente autenticado                                             |
-| `GET`    | `/opportunities`                         | Bearer JWT    | `user`, `admin` | Búsqueda híbrida (vectorial + filtros) y listado paginado                             |
-| `GET`    | `/opportunities/{id}`                    | Bearer JWT    | `user`, `admin` | Detalle de proceso con generación perezosa de resumen IA                              |
-| `POST`   | `/profiles`                              | Bearer JWT    | `user`, `admin` | Creación de perfil de contratista (HTTP 201)                                          |
-| `GET`    | `/profiles`                              | Bearer JWT    | `user`, `admin` | Lista paginada de perfiles del usuario (`Page<ProfileDto>`)                           |
-| `GET`    | `/profiles/{id}`                         | Bearer JWT    | `user`, `admin` | Detalle de un perfil específico                                                       |
-| `PUT`    | `/profiles/{id}`                         | Bearer JWT    | `user`, `admin` | Actualización completa de un perfil existente                                         |
-| `DELETE` | `/profiles/{id}`                         | Bearer JWT    | `user`, `admin` | Eliminación de perfil (cascada sobre recomendaciones y alertas)                       |
-| `GET`    | `/profiles/{id}/recommendations`         | Bearer JWT    | `user`, `admin` | Feed paginado de recomendaciones con desglose de afinidad                             |
-| `GET`    | `/profiles/{id}/summary`                 | Bearer JWT    | `user`, `admin` | Contadores de dashboard (nuevas, vigiladas, por cerrar, alertas)                      |
-| `GET`    | `/profiles/{id}/watches`                 | Bearer JWT    | `user`, `admin` | Lista paginada de procesos vigilados con historial de cambios                         |
-| `POST`   | `/profiles/{id}/watches/{opportunityId}` | Bearer JWT    | `user`, `admin` | Agregar proceso a la lista de vigilancia                                              |
-| `DELETE` | `/profiles/{id}/watches/{opportunityId}` | Bearer JWT    | `user`, `admin` | Remover proceso de la lista de vigilancia                                             |
-| `GET`    | `/profiles/{id}/alerts`                  | Bearer JWT    | `user`, `admin` | Bandeja de entrada de alertas de un perfil                                            |
-| `POST`   | `/profiles/{id}/alerts/read-all`         | Bearer JWT    | `user`, `admin` | Marcar todas las alertas del perfil como leídas                                       |
-| `POST`   | `/recommendations/{id}/feedback`         | Bearer JWT    | `user`, `admin` | Registrar feedback (`Participate`/`Discard`) con sincronización atómica de vigilancia |
-| `DELETE` | `/recommendations/{id}/feedback`         | Bearer JWT    | `user`, `admin` | Deshacer feedback de recomendación                                                    |
-| `POST`   | `/alerts/{id}/read`                      | Bearer JWT    | `user`, `admin` | Marcar una alerta individual como leída                                               |
-| `POST`   | `/admin/sync`                            | Bearer JWT    | `admin`         | Encolar sincronización SECOP II (HTTP 202 `{ jobId }`)                                |
-| `POST`   | `/admin/alerts/run`                      | Bearer JWT    | `admin`         | Encolar revisión de alertas (HTTP 202 `{ jobId }`)                                    |
-| `POST`   | `/admin/recommendations/refresh`         | Bearer JWT    | `admin`         | Encolar refresco de recomendaciones para todos los perfiles                           |
-| `GET`    | `/admin/jobs/{id}`                       | Bearer JWT    | `admin`         | Consultar estado de trabajo BullMQ por UUID                                           |
-| `GET`    | `/admin/metrics`                         | Bearer JWT    | `admin`         | Reporte en memoria de métricas de IA (latencias $p_{50}$ y $p_{95}$)                  |
-| `GET`    | `/admin/pipeline`                        | Bearer JWT    | `admin`         | Historial de las últimas 20 ejecuciones de pipeline y cron                            |
+| Área | Rutas principales |
+| --- | --- |
+| Sesión | `POST /auth/register` · `/auth/login` · `/auth/refresh` · `/auth/logout` · `GET /auth/me` |
+| Oportunidades | `GET /opportunities` (búsqueda, filtros, niveles, paginación) · `GET /opportunities/{id}` |
+| Perfiles | `POST/GET /profiles` · `GET/PUT/DELETE /profiles/{id}` · `GET /profiles/{id}/summary` |
+| Recomendaciones | `GET /profiles/{id}/recommendations` · `POST/DELETE /recommendations/{id}/feedback` |
+| Vigilancia | `GET /profiles/{id}/watches` · `POST/DELETE /profiles/{id}/watches/{opportunityId}` |
+| Alertas | `GET /profiles/{id}/alerts` · `POST /alerts/{id}/read` · `POST /profiles/{id}/alerts/read-all` |
+| Administración | `POST /admin/sync` · `/admin/alerts/run` · `/admin/recommendations/refresh` · `GET /admin/jobs/{id}` · `/admin/metrics` · `/admin/pipeline` |
+| Operación | `GET /health/live` · `/health/ready` |
+
+Salvo el registro, el login, el refresco y cierre de sesión, las sondas `/health/*` y la documentación, todas las rutas requieren `Authorization: Bearer <token>`.
 
 ---
 
-## ⚙️ Variables de Entorno
+## Configuración
 
-Validadas estrictamente con Zod al arranque en `src/config/env.ts`:
+Todas las variables se validan con Zod al arrancar y el proceso falla con un mensaje claro si alguna es inválida. La lista completa, con comentarios, está en [`.env.example`](.env.example). Las más relevantes:
 
-| Variable                    | Tipo                                | Default                        | Descripción                                          |
-| --------------------------- | ----------------------------------- | ------------------------------ | ---------------------------------------------------- |
-| `NODE_ENV`                  | `development \| test \| production` | `development`                  | Entorno de ejecución                                 |
-| `ROLE`                      | `api \| worker \| all`              | `all`                          | Rol del proceso (`api`, `worker` o monolítico `all`) |
-| `PORT`                      | Entero (1..65535)                   | `3000`                         | Puerto HTTP del servidor API                         |
-| `LOG_LEVEL`                 | `debug \| info \| warn \| error`    | `info`                         | Nivel mínimo de logs estructurados                   |
-| `DATABASE_URL`              | PostgreSQL URL                      | _Requerido_                    | Conexión a base de datos PostgreSQL                  |
-| `TEST_DATABASE_URL`         | PostgreSQL URL                      | _Opcional_                     | Conexión para base de datos de tests Jest            |
-| `REDIS_HOST`                | String                              | _Requerido_                    | Host de Redis                                        |
-| `REDIS_PORT`                | Entero (1..65535)                   | _Requerido_                    | Puerto de Redis                                      |
-| `OLLAMA_BASE_URL`           | HTTP URL                            | _Requerido_                    | URL base de Ollama (`http://localhost:11434`)        |
-| `OLLAMA_EMBED_MODEL`        | String                              | _Requerido_                    | Modelo de embeddings (`nomic-embed-text`)            |
-| `OLLAMA_CHAT_MODEL`         | String                              | _Requerido_                    | Modelo LLM (`llama3.1`)                              |
-| `OLLAMA_EMBED_TIMEOUT_MS`   | Entero positivo                     | `30000`                        | Timeout llamadas embeddings (ms)                     |
-| `OLLAMA_CHAT_TIMEOUT_MS`    | Entero positivo                     | `120000`                       | Timeout llamadas chat/resumen (ms)                   |
-| `SYNC_OPPORTUNITIES_CRON`   | Cron string                         | `0 0-23/4 * * *`               | Frecuencia de sincronización SECOP II                |
-| `REVIEW_FOLLOW_UP_CRON`     | Cron string                         | `0 08 * * *`                   | Frecuencia de revisión y envío de alertas            |
-| `SCAN_DEADLINES_CRON`       | Cron string                         | `30 07 * * *`                  | Frecuencia de escaneo de plazos próximos             |
-| `SECOP_APP_TOKEN`           | String                              | _Opcional_                     | Socrata App Token para SECOP II                      |
-| `SECOP_PAGE_SIZE`           | Entero positivo                     | `1000`                         | Límite por página en peticiones Socrata              |
-| `SECOP_SYNC_MAX_RECORDS`    | Entero positivo                     | `5000`                         | Límite máximo de registros por corrida de sync       |
-| `SECOP_SYNC_WINDOW_DAYS`    | Entero positivo                     | `14`                           | Ventana temporal retroactiva en días                 |
-| `ANALYSIS_CONCURRENCY`      | Entero positivo                     | `2`                            | Concurrencia de trabajadores BullMQ de análisis      |
-| `SEMANTIC_COSINE_LOW`       | Float (-1..1)                       | `0.4`                          | Umbral inferior de similitud semántica               |
-| `SEMANTIC_COSINE_HIGH`      | Float (-1..1)                       | `0.75`                         | Umbral superior de similitud semántica               |
-| `MIN_RECOMMENDATION_SCORE`  | Float (0..1)                        | `0.45`                         | Afinidad mínima para recomendar                      |
-| `JWT_SECRET`                | String (mínimo 32)                  | _Requerido_                    | Secreto de firmado JWT (no plantilla en prod)        |
-| `JWT_ACCESS_TTL`            | String                              | `15m`                          | Tiempo de vida del token de acceso                   |
-| `JWT_REFRESH_TTL`           | String                              | `7d`                           | Tiempo de vida del token de refresco                 |
-| `MAX_PROFILES_PER_USER`     | Entero positivo                     | `5`                            | Máximo de perfiles por cuenta de usuario             |
-| `CORS_ORIGINS`              | Comma-separated                     | `""`                           | Orígenes permitidos (vacío = sin CORS)               |
-| `SMTP_HOST`                 | String                              | `localhost`                    | Host del servidor SMTP                               |
-| `SMTP_PORT`                 | Entero (1..65535)                   | `1025`                         | Puerto SMTP (Mailpit en desarrollo)                  |
-| `SMTP_USER`                 | String                              | `""`                           | Usuario de autenticación SMTP                        |
-| `SMTP_PASS`                 | String                              | `""`                           | Contraseña SMTP                                      |
-| `SMTP_FROM`                 | String                              | `Pliegos <alertas@pliegos.co>` | Remitente de alertas por correo                      |
-| `SMTP_SECURE`               | Booleano                            | `false`                        | Conexión SSL/TLS directa                             |
-| `RECOMMEND_DEADLINE_ALERTS` | Booleano                            | `false`                        | Alertas de vencimiento para top recomendaciones      |
+| Variable | Descripción |
+| --- | --- |
+| `DATABASE_URL` | Conexión a PostgreSQL (sin valor por defecto) |
+| `REDIS_HOST`, `REDIS_PORT` | Redis para las colas |
+| `OLLAMA_BASE_URL`, `OLLAMA_EMBED_MODEL`, `OLLAMA_CHAT_MODEL` | IA local |
+| `JWT_SECRET` | Mínimo 32 caracteres; la plantilla se rechaza en producción |
+| `ROLE` | `api`, `worker` o `all` |
+| `SYNC_OPPORTUNITIES_CRON` | Frecuencia del sync (por defecto cada 4 horas) |
+| `SECOP_APP_TOKEN` | Token opcional de Socrata para aumentar el límite de consultas |
+| `MIN_RECOMMENDATION_SCORE` | Puntaje mínimo para recomendar (por defecto 0,45) |
+| `CORS_ORIGINS` | Orígenes permitidos, separados por comas |
+| `SMTP_*` | Servidor de correo para las alertas |
 
 ---
 
-## 🧪 Pruebas Automatizadas
+## Scripts útiles
 
-El proyecto cuenta con una cobertura integral de pruebas unitarias, de integración y End-to-End:
-
-```bash
-# Ejecutar todas las suites de prueba (53 suites, 458 tests)
-pnpm test
-
-# Ejecutar pruebas en modo watch
-pnpm run test:watch
-
-# Generar reporte de cobertura de código
-pnpm run test:cov
-
-# Ejecutar flujo completo E2E de verificación
-pnpm run e2e
-```
+| Script | Para qué sirve |
+| --- | --- |
+| `pnpm test` | Suite completa (requiere Postgres y Redis) |
+| `pnpm verify` | Puerta de calidad del backend |
+| `pnpm db:migrate` | Aplica las migraciones pendientes |
+| `pnpm reindex` | Genera embeddings de las oportunidades recomendables pendientes (reanudable) |
+| `pnpm audit:data` | Informe de calidad y cobertura de los datos |
+| `pnpm eval:export` · `pnpm eval:run` | Genera candidatos y mide la relevancia contra las etiquetas |
+| `pnpm backfill:departments` · `pnpm resync:unknown` | Mantenimiento de datos |
+| `pnpm check:arch` | Reglas de la arquitectura hexagonal |
+| `pnpm admin:create` | Crea un usuario administrador |
 
 ---
 
-## 📜 Scripts de package.json
+## Limitaciones conocidas y hoja de ruta
 
-| Script                          | Descripción                                                                           |
-| ------------------------------- | ------------------------------------------------------------------------------------- |
-| `pnpm run build`                | Compila el código TypeScript a JavaScript en `./dist`.                                |
-| `pnpm start`                    | Inicia la aplicación en producción desde `./dist/src/main.js`.                        |
-| `pnpm run start:dev`            | Compila y levanta la aplicación con el modo watch nativo de Node.js.                  |
-| `pnpm run start:api`            | Inicia el servicio API HTTP (`ROLE=api`).                                             |
-| `pnpm run start:worker`         | Inicia el proceso de tareas en segundo plano (`ROLE=worker`).                         |
-| `pnpm run db:migrate`           | Aplica migraciones SQL de `migrations/` contra `DATABASE_URL` (idempotente).          |
-| `pnpm test`                     | Ejecuta la suite completa de pruebas con Jest (53 suites, 458 tests).                 |
-| `pnpm run test:watch`           | Ejecuta las pruebas en modo interactivo watch.                                        |
-| `pnpm run test:cov`             | Ejecuta las pruebas y calcula la cobertura de código.                                 |
-| `pnpm run audit:data`           | Auditoría de calidad de datos y cobertura de oportunidades recomendables.             |
-| `pnpm run reindex`              | Genera embeddings para oportunidades recomendables pendientes y encola refresco.      |
-| `pnpm run backfill:departments` | Backfill e idempotencia de departamentos colombianos canónicos.                       |
-| `pnpm run resync:unknown`       | Reintenta la ingesta desde SECOP para oportunidades con estado Unknown.               |
-| `pnpm run eval:export`          | Exporta muestra de oportunidades para etiquetado de relevancia.                       |
-| `pnpm run eval:run`             | Ejecuta la evaluación contra `eval/labels.json` y compara con `eval/thresholds.json`. |
-| `pnpm run admin:create`         | Crea un usuario administrador (`pnpm run admin:create <email> <password>`).           |
-| `pnpm run lint`                 | Analiza el código con ESLint.                                                         |
-| `pnpm run lint:fix`             | Corrige advertencias de formato y estilo con ESLint.                                  |
-| `pnpm run format:check`         | Comprueba el formateo del repositorio con Prettier.                                   |
-| `pnpm run check:arch`           | Verifica las reglas de arquitectura hexagonal con Dependency Cruiser.                 |
-| `pnpm run check:ollama`         | Valida la conectividad con Ollama y la generación de embeddings.                      |
-| `pnpm run e2e`                  | Ejecuta el script de verificación del flujo de extremo a extremo.                     |
+**Limitaciones**
+
+- **No lee los documentos del proceso.** Pliegos trabaja con los metadatos y la descripción que SECOP publica como datos abiertos. No analiza los pliegos de condiciones ni sus anexos, así que no extrae requisitos habilitantes.
+- **La calidad depende de la fuente.** Montos, categorías o departamentos ausentes son frecuentes. Por eso existen los niveles.
+- **Embeddings en español.** `nomic-embed-text` está pensado sobre todo para inglés. Está pendiente comparar un modelo multilingüe contra el conjunto de oro.
+- **La evaluación es acotada.** Tres perfiles de prueba etiquetados por una sola persona: sirve para detectar retrocesos, no como medida absoluta.
+- **IA local.** La velocidad de indexación y resumen depende del hardware donde corra Ollama.
+- **Límite de login en memoria.** Con varias instancias de la API, el bloqueo por intentos fallidos sería por instancia.
+- **Una sola fuente.** SECOP II. La ingesta está detrás de un puerto, por lo que añadir otra fuente no toca el dominio.
+
+**Hoja de ruta**
+
+- Frontend.
+- Análisis de los documentos de cada proceso, sujeto a revisar el acceso técnico y las condiciones de uso.
+- Selector de categorías UNSPSC con nombres en español.
+- Comparación de modelos de embeddings multilingües.
+- Estado de límites y sesiones compartido entre instancias.
+
+---
+
+## Fuente de datos y uso responsable
+
+Los datos provienen del portal de datos abiertos del Estado colombiano (datos.gov.co), conjunto «SECOP II – Procesos de Contratación». Pliegos es un proyecto independiente y no tiene relación con Colombia Compra Eficiente ni con las entidades contratantes. Las recomendaciones son una ayuda para priorizar: antes de ofertar, consulta siempre el proceso original en SECOP II.
+
+## Licencia
+
+Todos los derechos reservados. El código se publica con fines de consulta y evaluación.
