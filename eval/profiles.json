@@ -58,39 +58,37 @@
   {
     "id": "golden-food",
     "ownerId": "golden",
-    "sector": "Consultoría en Calidad, Inocuidad e Ingeniería de Alimentos",
+    "sector": "Alimentación escolar e institucional (operación y suministro de alimentos)",
     "capabilities": [
       {
-        "name": "Auditoría de inocuidad alimentaria, BPM y HACCP",
-        "yearsOfExperience": 8
-      },
-      {
-        "name": "Control de calidad microbiológica y fisicoquímica de alimentos",
+        "name": "Operación de programas de alimentación escolar (PAE)",
         "yearsOfExperience": 6
       },
       {
-        "name": "Interventoría y supervisión de programas de alimentación escolar (PAE)",
+        "name": "Suministro de víveres y complementos alimentarios",
+        "yearsOfExperience": 8
+      },
+      {
+        "name": "Preparación y manipulación de alimentos en sitio",
         "yearsOfExperience": 5
       }
     ],
     "preferences": {
-      "categoryCodes": ["80101500", "81141500", "93131600", "50000000"],
+      "categoryCodes": ["50000000", "90101500"],
       "keywords": [
-        "inocuidad alimentaria",
-        "calidad de alimentos",
-        "BPM",
-        "HACCP",
         "alimentación escolar",
-        "ingeniería de alimentos",
-        "manipulación de alimentos"
+        "PAE",
+        "complemento alimentario",
+        "suministro de víveres",
+        "ración preparada",
+        "manipulación de alimentos",
+        "canasta alimentaria"
       ],
-      "amountRange": { "min": 20000000, "max": 400000000 },
-      "departments": [
-        "Bogotá D.C.",
-        "Cundinamarca",
-        "Antioquia",
-        "Valle del Cauca"
-      ]
+      "amountRange": {
+        "min": 80000000,
+        "max": 1500000000
+      },
+      "departments": ["Antioquia", "Cundinamarca", "Meta", "Valle del Cauca"]
     }
   }
 ]

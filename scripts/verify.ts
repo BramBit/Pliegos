@@ -524,10 +524,10 @@ async function runCheck10(): Promise<CheckResult> {
 
     const porcelain = execSync('git status --porcelain', {
       encoding: 'utf8',
-    }).trim();
-    const lines = porcelain ? porcelain.split('\n') : [];
+    });
+    const lines = porcelain.split('\n').filter((l) => l.trim().length > 0);
     const dirty = lines.filter((line) => {
-      const file = line.replace(/^..\s+/, '').trim();
+      const file = line.substring(3).trim();
       if (file.startsWith('docs/handoff') || file === 'eval/LABELING.md') {
         return false;
       }
@@ -542,7 +542,7 @@ async function runCheck10(): Promise<CheckResult> {
         passed: false,
         reason: `uncommitted changes found (${dirty.length} files: ${dirty
           .slice(0, 3)
-          .map((l) => l.replace(/^..\s+/, '').trim())
+          .map((l) => l.substring(3).trim())
           .join(', ')}${dirty.length > 3 ? '...' : ''})`,
       };
     }

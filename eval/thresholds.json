@@ -1,4 +1,4 @@
 {
-  "precisionAt10": 0,
-  "ndcgAt10": 0
+  "precisionAt10": 0.54,
+  "ndcgAt10": 0.68
 }
