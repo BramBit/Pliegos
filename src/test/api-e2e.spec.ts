@@ -58,6 +58,15 @@ describe('Pliegos Phase 1 REST Surface (E2E)', () => {
 
   beforeAll(async () => {
     const testDbUrl = requireTestDatabaseUrl();
+    process.env.DATABASE_URL ||= testDbUrl;
+    process.env.REDIS_HOST ||= 'localhost';
+    process.env.REDIS_PORT ||= '6379';
+    process.env.OLLAMA_BASE_URL ||= 'http://localhost:11434';
+    process.env.OLLAMA_EMBED_MODEL ||= 'nomic-embed-text';
+    process.env.OLLAMA_CHAT_MODEL ||= 'llama3.1';
+    process.env.SYNC_OPPORTUNITIES_CRON ||= '0 0-23/4 * * *';
+    process.env.REVIEW_FOLLOW_UP_CRON ||= '0 08 * * *';
+    process.env.JWT_SECRET ||= 'test-jwt-secret-at-least-32-characters-long';
 
     pool = new Pool({ connectionString: testDbUrl });
     await migrateTestDatabase(pool);

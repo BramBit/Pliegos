@@ -79,4 +79,9 @@ jobs:
           REDIS_HOST: localhost
           REDIS_PORT: 6379
           JWT_SECRET: test-jwt-secret-at-least-32-characters-long
+          OLLAMA_BASE_URL: http://localhost:11434
+          OLLAMA_EMBED_MODEL: nomic-embed-text
+          OLLAMA_CHAT_MODEL: llama3.1
+          SYNC_OPPORTUNITIES_CRON: '0 0-23/4 * * *'
+          REVIEW_FOLLOW_UP_CRON: '0 08 * * *'
         run: pnpm test
